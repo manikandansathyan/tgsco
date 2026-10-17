@@ -1,7 +1,15 @@
+
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Api } from '../../../core/services/api';
+
+interface SustainabilityImage {
+  alt: string;
+  file: File | null;
+  previewUrl: string | null;
+  existingUrl: string | null;
+}
 
 @Component({
   selector: 'app-sustainability',
@@ -16,12 +24,9 @@ export class Sustainability implements OnInit, OnDestroy {
   title = 'Slow by Tradition, Sustainable by Design';
   description = '';
   closingTitle = 'Slow fashion, made with intention';
-  imageAlt = 'Hands weaving fabric on a traditional loom';
   backgroundColor = '#000000';
 
-  sustainabilityImage: File | null = null;
-  imagePreview: string | null = null;
-  existingImageUrl: string | null = null;
+  images: SustainabilityImage[] = [];
 
   isLoading = false;
   isSaving = false;
@@ -32,11 +37,24 @@ export class Sustainability implements OnInit, OnDestroy {
   messageType: 'success' | 'error' = 'success';
 
   ngOnInit(): void {
+    this.initializeImages();
     this.loadSustainability();
   }
 
   ngOnDestroy(): void {
-    this.clearImagePreview();
+    this.clearAllPreviews();
+  }
+
+  private initializeImages(): void {
+    this.images = Array.from({ length: 6 }, (_, index) => ({
+      alt:
+        index === 0
+          ? 'Hands weaving fabric on a traditional loom'
+          : '',
+      file: null,
+      previewUrl: null,
+      existingUrl: null,
+    }));
   }
 
   loadSustainability(): void {
@@ -46,23 +64,59 @@ export class Sustainability implements OnInit, OnDestroy {
     this.api.getHeritageSustainability().subscribe({
       next: (response: any) => {
         const result = response?.data ?? response;
-        const content = result?.content ?? result;
+        let content = result?.content ?? result;
 
-        if (
-          content &&
-          typeof content === 'object' &&
-          content.title
-        ) {
+        if (typeof content === 'string') {
+          try {
+            content = JSON.parse(content);
+          } catch {
+            content = {};
+          }
+        }
+
+        if (content && typeof content === 'object' && content.title) {
           this.title = content.title ?? '';
           this.description = content.description ?? '';
           this.closingTitle = content.closingTitle ?? '';
-          this.imageAlt = content.imageAlt ?? '';
           this.backgroundColor = content.backgroundColor ?? '#000000';
 
-          this.existingImageUrl = this.extractImageUrl(content, result);
+          this.initializeImages();
+
+          const apiImages = Array.isArray(content.images)
+            ? content.images
+            : [];
+
+          apiImages.slice(0, 6).forEach((image: any, index: number) => {
+            this.images[index].alt =
+              image?.alt ??
+              image?.imageAlt ??
+              (index === 0
+                ? 'Hands weaving fabric on a traditional loom'
+                : '');
+
+            this.images[index].existingUrl =
+              this.extractImageUrl(image);
+          });
+
+          if (apiImages.length === 0) {
+            const legacyImageUrl = this.extractLegacyImageUrl(
+              content,
+              result
+            );
+
+            if (legacyImageUrl) {
+              this.images[0].existingUrl = legacyImageUrl;
+            }
+
+            this.images[0].alt =
+              content.imageAlt ??
+              this.images[0].alt;
+          }
+
           this.isEditing = true;
         } else {
           this.isEditing = false;
+          this.initializeImages();
         }
 
         this.isLoading = false;
@@ -79,7 +133,7 @@ export class Sustainability implements OnInit, OnDestroy {
     });
   }
 
-  onImageSelected(event: Event): void {
+  onImageSelected(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
@@ -92,20 +146,25 @@ export class Sustainability implements OnInit, OnDestroy {
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      this.showMessage('Image size must be 5 MB or less.', 'error');
+      this.showMessage('Each image must be 5 MB or less.', 'error');
       input.value = '';
       return;
     }
 
-    this.clearImagePreview();
-    this.sustainabilityImage = file;
-    this.imagePreview = URL.createObjectURL(file);
+    const image = this.images[index];
+
+    this.clearPreview(image);
+    image.file = file;
+    image.previewUrl = URL.createObjectURL(file);
+
     this.message = '';
   }
 
-  removeSelectedImage(): void {
-    this.sustainabilityImage = null;
-    this.clearImagePreview();
+  removeSelectedImage(index: number): void {
+    const image = this.images[index];
+
+    image.file = null;
+    this.clearPreview(image);
   }
 
   saveSustainability(): void {
@@ -124,11 +183,6 @@ export class Sustainability implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.imageAlt.trim()) {
-      this.showMessage('Please enter the image alt text.', 'error');
-      return;
-    }
-
     if (!/^#[0-9A-Fa-f]{6}$/.test(this.backgroundColor)) {
       this.showMessage(
         'Enter a valid six-digit hexadecimal background color.',
@@ -137,22 +191,60 @@ export class Sustainability implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.isEditing && !this.sustainabilityImage) {
+    const hasAnyImage = this.images.some(
+      (image) => image.file || image.existingUrl
+    );
+
+    if (!hasAnyImage) {
       this.showMessage(
-        'Please upload the sustainability image before creating the content.',
+        'Please upload at least one sustainability image.',
         'error'
       );
       return;
+    }
+
+    for (let index = 0; index < this.images.length; index++) {
+      const image = this.images[index];
+
+      if (
+        (image.file || image.existingUrl) &&
+        !image.alt.trim()
+      ) {
+        this.showMessage(
+          `Please enter alt text for image ${index + 1}.`,
+          'error'
+        );
+        return;
+      }
     }
 
     const content = {
       title: this.title.trim(),
       description: this.description.trim(),
       closingTitle: this.closingTitle.trim(),
-      imageField: 'sustainabilityImage',
-      imageAlt: this.imageAlt.trim(),
       backgroundColor: this.backgroundColor,
+      imageField: 'sustainabilityImage',
+      imageAlt: this.images[0].alt.trim(),
+      images: this.images
+        .map((image, index) => ({
+          field: `sustainabilityImage${index + 1}`,
+          alt: image.alt.trim(),
+          index,
+        }))
+        .filter(
+          (image) =>
+            this.images[image.index].file ||
+            this.images[image.index].existingUrl
+        ),
     };
+
+    const uploadedImages: Record<number, File> = {};
+
+    this.images.forEach((image, index) => {
+      if (image.file) {
+        uploadedImages[index] = image.file;
+      }
+    });
 
     this.isSaving = true;
     this.message = '';
@@ -162,20 +254,18 @@ export class Sustainability implements OnInit, OnDestroy {
     const request = wasEditing
       ? this.api.updateHeritageSustainability(
           content,
-          this.sustainabilityImage ?? undefined
+          uploadedImages
         )
       : this.api.createHeritageSustainability(
           content,
-          this.sustainabilityImage ?? undefined
+          uploadedImages
         );
 
     request.subscribe({
       next: (response: any) => {
         this.isSaving = false;
-        this.isEditing = true;
-        this.sustainabilityImage = null;
-        this.clearImagePreview();
 
+        this.clearAllPreviews();
         this.showMessage(
           response?.message ??
             (wasEditing
@@ -214,15 +304,12 @@ export class Sustainability implements OnInit, OnDestroy {
       next: (response: any) => {
         this.isDeleting = false;
 
-        this.title = '';
+        this.clearAllPreviews();
+        this.title = 'Slow by Tradition, Sustainable by Design';
         this.description = '';
-        this.closingTitle = '';
-        this.imageAlt = '';
+        this.closingTitle = 'Slow fashion, made with intention';
         this.backgroundColor = '#000000';
-
-        this.sustainabilityImage = null;
-        this.existingImageUrl = null;
-        this.clearImagePreview();
+        this.initializeImages();
         this.isEditing = false;
 
         this.showMessage(
@@ -244,8 +331,7 @@ export class Sustainability implements OnInit, OnDestroy {
   }
 
   resetForm(): void {
-    this.sustainabilityImage = null;
-    this.clearImagePreview();
+    this.clearAllPreviews();
     this.message = '';
 
     if (this.isEditing) {
@@ -256,12 +342,26 @@ export class Sustainability implements OnInit, OnDestroy {
     this.title = 'Slow by Tradition, Sustainable by Design';
     this.description = '';
     this.closingTitle = 'Slow fashion, made with intention';
-    this.imageAlt = 'Hands weaving fabric on a traditional loom';
     this.backgroundColor = '#000000';
-    this.existingImageUrl = null;
+    this.initializeImages();
   }
 
-  private extractImageUrl(content: any, result: any): string | null {
+  private extractImageUrl(image: any): string | null {
+    if (typeof image === 'string') return image;
+
+    return (
+      image?.imageUrl ??
+      image?.url ??
+      image?.image ??
+      image?.path ??
+      null
+    );
+  }
+
+  private extractLegacyImageUrl(
+    content: any,
+    result: any
+  ): string | null {
     const image = content?.sustainabilityImage;
 
     return (
@@ -275,12 +375,16 @@ export class Sustainability implements OnInit, OnDestroy {
     );
   }
 
-  private clearImagePreview(): void {
-    if (this.imagePreview) {
-      URL.revokeObjectURL(this.imagePreview);
+  private clearPreview(image: SustainabilityImage): void {
+    if (image.previewUrl) {
+      URL.revokeObjectURL(image.previewUrl);
     }
 
-    this.imagePreview = null;
+    image.previewUrl = null;
+  }
+
+  private clearAllPreviews(): void {
+    this.images.forEach((image) => this.clearPreview(image));
   }
 
   private showMessage(

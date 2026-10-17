@@ -1315,6 +1315,7 @@ export class Api {
     );
   }
 
+
   getHeritageSustainability() {
     return this.http.get(
       `${this.baseURL}/heritage-content/sustainability`,
@@ -1324,15 +1325,15 @@ export class Api {
 
   createHeritageSustainability(
     content: Record<string, any>,
-    sustainabilityImage?: File
+    images: Record<number, File> = {}
   ) {
     const formData = new FormData();
 
     formData.append('content', JSON.stringify(content));
 
-    if (sustainabilityImage) {
-      formData.append('sustainabilityImage', sustainabilityImage);
-    }
+    Object.entries(images).forEach(([index, file]) => {
+      formData.append(`images[${index}].image`, file);
+    });
 
     return this.http.post(
       `${this.baseURL}/heritage-content/sustainability`,
@@ -1343,15 +1344,15 @@ export class Api {
 
   updateHeritageSustainability(
     content: Record<string, any>,
-    sustainabilityImage?: File
+    images: Record<number, File> = {}
   ) {
     const formData = new FormData();
 
     formData.append('content', JSON.stringify(content));
 
-    if (sustainabilityImage) {
-      formData.append('sustainabilityImage', sustainabilityImage);
-    }
+    Object.entries(images).forEach(([index, file]) => {
+      formData.append(`images[${index}].image`, file);
+    });
 
     return this.http.patch(
       `${this.baseURL}/heritage-content/sustainability`,
@@ -1366,6 +1367,7 @@ export class Api {
       this.appendToken()
     );
   }
+
 
   getHeritageMissionGuides() {
     return this.http.get(
@@ -1703,440 +1705,440 @@ export class Api {
     );
   }
 
-getPressReleases() {
-  return this.http.get(
-    `${this.baseURL}/news-content/press-releases`,
-    this.appendToken()
-  );
-}
-
-createPressReleases(
-  content: Record<string, any>,
-  itemImages: Record<number, File> = {},
-  sliderIcon?: File
-) {
-  const formData = new FormData();
-
-  formData.append('content', JSON.stringify(content));
-
-  Object.entries(itemImages).forEach(([index, file]) => {
-    formData.append(`items[${index}].image`, file);
-  });
-
-  if (sliderIcon) {
-    formData.append('sliderIcon', sliderIcon);
+  getPressReleases() {
+    return this.http.get(
+      `${this.baseURL}/news-content/press-releases`,
+      this.appendToken()
+    );
   }
 
-  return this.http.post(
-    `${this.baseURL}/news-content/press-releases`,
-    formData,
-    this.appendToken()
-  );
-}
-
-updatePressReleases(
-  content: Record<string, any>,
-  itemImages: Record<number, File> = {},
-  sliderIcon?: File
-) {
-  const formData = new FormData();
-
-  formData.append('content', JSON.stringify(content));
-
-  Object.entries(itemImages).forEach(([index, file]) => {
-    formData.append(`items[${index}].image`, file);
-  });
-
-  if (sliderIcon) {
-    formData.append('sliderIcon', sliderIcon);
-  }
-
-  return this.http.patch(
-    `${this.baseURL}/news-content/press-releases`,
-    formData,
-    this.appendToken()
-  );
-}
-
-deletePressReleases() {
-  return this.http.delete(
-    `${this.baseURL}/news-content/press-releases`,
-    this.appendToken()
-  );
-}
-
-
-getThreadsOfTriumph() {
-  return this.http.get(
-    `${this.baseURL}/news-content/threads-of-triumph`,
-    this.appendToken()
-  );
-}
-
-getFeaturedWeaver(id: string) {
-  return this.http.get(
-    `${this.baseURL}/news-content/threads-of-triumph/items/${encodeURIComponent(id)}`,
-    this.appendToken()
-  );
-}
-
-createThreadsOfTriumph(
-  content: Record<string, any>,
-  images: Record<number, File> = {}
-) {
-  const formData = new FormData();
-
-  formData.append('content', JSON.stringify(content));
-
-  Object.entries(images).forEach(([index, file]) => {
-    formData.append(`items[${index}].mainImage`, file);
-  });
-
-  return this.http.post(
-    `${this.baseURL}/news-content/threads-of-triumph`,
-    formData,
-    this.appendToken()
-  );
-}
-
-updateThreadsOfTriumph(
-  content: Record<string, any>,
-  images: Record<number, File> = {}
-) {
-  const formData = new FormData();
-
-  formData.append('content', JSON.stringify(content));
-
-  Object.entries(images).forEach(([index, file]) => {
-    formData.append(`items[${index}].mainImage`, file);
-  });
-
-  return this.http.patch(
-    `${this.baseURL}/news-content/threads-of-triumph`,
-    formData,
-    this.appendToken()
-  );
-}
-
-deleteThreadsOfTriumph() {
-  return this.http.delete(
-    `${this.baseURL}/news-content/threads-of-triumph`,
-    this.appendToken()
-  );
-}
-
-
-getMediaGallery() {
-  return this.http.get(
-    `${this.baseURL}/news-content/media-gallery`,
-    this.appendToken()
-  );
-}
-
-getMediaGalleryCategory(id: string) {
-  return this.http.get(
-    `${this.baseURL}/news-content/media-gallery/items/${encodeURIComponent(id)}`,
-    this.appendToken()
-  );
-}
-
-createMediaGallery(
-  content: Record<string, any>,
-  mainImages: Record<number, File> = {},
-  associatedImages: Record<string, File> = {}
-) {
-  const formData = new FormData();
-
-  formData.append('content', JSON.stringify(content));
-
-  Object.entries(mainImages).forEach(([index, file]) => {
-    formData.append(`categories[${index}].mainImage`, file);
-  });
-
-  Object.entries(associatedImages).forEach(([field, file]) => {
-    formData.append(field, file);
-  });
-
-  return this.http.post(
-    `${this.baseURL}/news-content/media-gallery`,
-    formData,
-    this.appendToken()
-  );
-}
-
-updateMediaGallery(
-  content: Record<string, any>,
-  mainImages: Record<number, File> = {},
-  associatedImages: Record<string, File> = {}
-) {
-  const formData = new FormData();
-
-  formData.append('content', JSON.stringify(content));
-
-  Object.entries(mainImages).forEach(([index, file]) => {
-    formData.append(`categories[${index}].mainImage`, file);
-  });
-
-  Object.entries(associatedImages).forEach(([field, file]) => {
-    formData.append(field, file);
-  });
-
-  return this.http.patch(
-    `${this.baseURL}/news-content/media-gallery`,
-    formData,
-    this.appendToken()
-  );
-}
-
-deleteMediaGallery() {
-  return this.http.delete(
-    `${this.baseURL}/news-content/media-gallery`,
-    this.appendToken()
-  );
-}
-
-
-getContactHero() {
-  return this.http.get(
-    `${this.baseURL}/contact-content/contact-hero`,
-    this.appendToken()
-  );
-}
-
-createContactHero(content: Record<string, any>, heroImage?: File) {
-  const formData = new FormData();
-
-  formData.append('content', JSON.stringify(content));
-
-  if (heroImage) {
-    formData.append('heroImage', heroImage);
-  }
-
-  return this.http.post(
-    `${this.baseURL}/contact-content/contact-hero`,
-    formData,
-    this.appendToken()
-  );
-}
-
-updateContactHero(content: Record<string, any>, heroImage?: File) {
-  const formData = new FormData();
-
-  formData.append('content', JSON.stringify(content));
-
-  if (heroImage) {
-    formData.append('heroImage', heroImage);
-  }
-
-  return this.http.patch(
-    `${this.baseURL}/contact-content/contact-hero`,
-    formData,
-    this.appendToken()
-  );
-}
-
-deleteContactHero() {
-  return this.http.delete(
-    `${this.baseURL}/contact-content/contact-hero`,
-    this.appendToken()
-  );
-}
-
-
-getRegionalMap() {
-  return this.http.get(
-    `${this.baseURL}/contact-content/regional-map`,
-    this.appendToken()
-  );
-}
-
-getRegionalMapItem(id: string) {
-  return this.http.get(
-    `${this.baseURL}/contact-content/regional-map/items/${encodeURIComponent(id)}`,
-    this.appendToken()
-  );
-}
-
-createRegionalMap(
-  content: Record<string, any>,
-  mapImage?: File,
-  itemImages: Record<number, File> = {}
-) {
-  const formData = new FormData();
-
-  formData.append('content', JSON.stringify(content));
-
-  if (mapImage) {
-    formData.append('mapImage', mapImage);
-  }
-
-  Object.entries(itemImages).forEach(([index, file]) => {
-    formData.append(`items[${index}].mapImage`, file);
-  });
-
-  return this.http.post(
-    `${this.baseURL}/contact-content/regional-map`,
-    formData,
-    this.appendToken()
-  );
-}
-
-updateRegionalMap(
-  content: Record<string, any>,
-  mapImage?: File,
-  itemImages: Record<number, File> = {}
-) {
-  const formData = new FormData();
-
-  formData.append('content', JSON.stringify(content));
-
-  if (mapImage) {
-    formData.append('mapImage', mapImage);
-  }
-
-  Object.entries(itemImages).forEach(([index, file]) => {
-    formData.append(`items[${index}].mapImage`, file);
-  });
-
-  return this.http.patch(
-    `${this.baseURL}/contact-content/regional-map`,
-    formData,
-    this.appendToken()
-  );
-}
-
-deleteRegionalMap() {
-  return this.http.delete(
-    `${this.baseURL}/contact-content/regional-map`,
-    this.appendToken()
-  );
-}
-
-
-getContactForm() {
-  return this.http.get(
-    `${this.baseURL}/contact-content/contact-form`,
-    this.appendToken()
-  );
-}
-
-createContactForm(content: Record<string, any>, formImage?: File) {
-  const formData = new FormData();
-
-  formData.append('content', JSON.stringify(content));
-
-  if (formImage) {
-    formData.append('formImage', formImage);
-  }
-
-  return this.http.post(
-    `${this.baseURL}/contact-content/contact-form`,
-    formData,
-    this.appendToken()
-  );
-}
-
-updateContactForm(content: Record<string, any>, formImage?: File) {
-  const formData = new FormData();
-
-  formData.append('content', JSON.stringify(content));
-
-  if (formImage) {
-    formData.append('formImage', formImage);
-  }
-
-  return this.http.patch(
-    `${this.baseURL}/contact-content/contact-form`,
-    formData,
-    this.appendToken()
-  );
-}
-
-deleteContactForm() {
-  return this.http.delete(
-    `${this.baseURL}/contact-content/contact-form`,
-    this.appendToken()
-  );
-}
-
-
-getFaq() {
-  return this.http.get(
-    `${this.baseURL}/contact-content/faq`,
-    this.appendToken()
-  );
-}
-
-createFaq(content: Record<string, any>) {
-  const formData = new FormData();
-  formData.append('content', JSON.stringify(content));
-
-  return this.http.post(
-    `${this.baseURL}/contact-content/faq`,
-    formData,
-    this.appendToken()
-  );
-}
-
-updateFaq(content: Record<string, any>) {
-  const formData = new FormData();
-  formData.append('content', JSON.stringify(content));
-
-  return this.http.patch(
-    `${this.baseURL}/contact-content/faq`,
-    formData,
-    this.appendToken()
-  );
-}
-
-deleteFaq() {
-  return this.http.delete(
-    `${this.baseURL}/contact-content/faq`,
-    this.appendToken()
-  );
-}
-
-
-getContactInquiries() {
-  return this.http.get(
-    `${this.baseURL}/contact-inquiries`,
-    this.appendToken()
-  );
-}
-
-createContactInquiry(inquiry: {
-  name: string;
-  email: string;
-  phone: string;
-  message: string;
-}) {
-  return this.http.post(
-    `${this.baseURL}/contact-inquiries`,
-    inquiry
-  );
-}
-
-
-
-uploadVideo(video: File) {
-  const formData = new FormData();
-  formData.append('video', video);
-
-  return this.http.post(
-    `${this.baseURL}/media/videos`,
-    formData,
-    this.appendToken()
-  );
-}
-
-deleteVideo(key: string) {
-  return this.http.delete(
-    `${this.baseURL}/media/videos`,
-    {
-      ...this.appendToken(),
-      body: { key },
+  createPressReleases(
+    content: Record<string, any>,
+    itemImages: Record<number, File> = {},
+    sliderIcon?: File
+  ) {
+    const formData = new FormData();
+
+    formData.append('content', JSON.stringify(content));
+
+    Object.entries(itemImages).forEach(([index, file]) => {
+      formData.append(`items[${index}].image`, file);
+    });
+
+    if (sliderIcon) {
+      formData.append('sliderIcon', sliderIcon);
     }
-  );
-}
+
+    return this.http.post(
+      `${this.baseURL}/news-content/press-releases`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  updatePressReleases(
+    content: Record<string, any>,
+    itemImages: Record<number, File> = {},
+    sliderIcon?: File
+  ) {
+    const formData = new FormData();
+
+    formData.append('content', JSON.stringify(content));
+
+    Object.entries(itemImages).forEach(([index, file]) => {
+      formData.append(`items[${index}].image`, file);
+    });
+
+    if (sliderIcon) {
+      formData.append('sliderIcon', sliderIcon);
+    }
+
+    return this.http.patch(
+      `${this.baseURL}/news-content/press-releases`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  deletePressReleases() {
+    return this.http.delete(
+      `${this.baseURL}/news-content/press-releases`,
+      this.appendToken()
+    );
+  }
+
+
+  getThreadsOfTriumph() {
+    return this.http.get(
+      `${this.baseURL}/news-content/threads-of-triumph`,
+      this.appendToken()
+    );
+  }
+
+  getFeaturedWeaver(id: string) {
+    return this.http.get(
+      `${this.baseURL}/news-content/threads-of-triumph/items/${encodeURIComponent(id)}`,
+      this.appendToken()
+    );
+  }
+
+  createThreadsOfTriumph(
+    content: Record<string, any>,
+    images: Record<number, File> = {}
+  ) {
+    const formData = new FormData();
+
+    formData.append('content', JSON.stringify(content));
+
+    Object.entries(images).forEach(([index, file]) => {
+      formData.append(`items[${index}].mainImage`, file);
+    });
+
+    return this.http.post(
+      `${this.baseURL}/news-content/threads-of-triumph`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  updateThreadsOfTriumph(
+    content: Record<string, any>,
+    images: Record<number, File> = {}
+  ) {
+    const formData = new FormData();
+
+    formData.append('content', JSON.stringify(content));
+
+    Object.entries(images).forEach(([index, file]) => {
+      formData.append(`items[${index}].mainImage`, file);
+    });
+
+    return this.http.patch(
+      `${this.baseURL}/news-content/threads-of-triumph`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  deleteThreadsOfTriumph() {
+    return this.http.delete(
+      `${this.baseURL}/news-content/threads-of-triumph`,
+      this.appendToken()
+    );
+  }
+
+
+  getMediaGallery() {
+    return this.http.get(
+      `${this.baseURL}/news-content/media-gallery`,
+      this.appendToken()
+    );
+  }
+
+  getMediaGalleryCategory(id: string) {
+    return this.http.get(
+      `${this.baseURL}/news-content/media-gallery/items/${encodeURIComponent(id)}`,
+      this.appendToken()
+    );
+  }
+
+  createMediaGallery(
+    content: Record<string, any>,
+    mainImages: Record<number, File> = {},
+    associatedImages: Record<string, File> = {}
+  ) {
+    const formData = new FormData();
+
+    formData.append('content', JSON.stringify(content));
+
+    Object.entries(mainImages).forEach(([index, file]) => {
+      formData.append(`categories[${index}].mainImage`, file);
+    });
+
+    Object.entries(associatedImages).forEach(([field, file]) => {
+      formData.append(field, file);
+    });
+
+    return this.http.post(
+      `${this.baseURL}/news-content/media-gallery`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  updateMediaGallery(
+    content: Record<string, any>,
+    mainImages: Record<number, File> = {},
+    associatedImages: Record<string, File> = {}
+  ) {
+    const formData = new FormData();
+
+    formData.append('content', JSON.stringify(content));
+
+    Object.entries(mainImages).forEach(([index, file]) => {
+      formData.append(`categories[${index}].mainImage`, file);
+    });
+
+    Object.entries(associatedImages).forEach(([field, file]) => {
+      formData.append(field, file);
+    });
+
+    return this.http.patch(
+      `${this.baseURL}/news-content/media-gallery`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  deleteMediaGallery() {
+    return this.http.delete(
+      `${this.baseURL}/news-content/media-gallery`,
+      this.appendToken()
+    );
+  }
+
+
+  getContactHero() {
+    return this.http.get(
+      `${this.baseURL}/contact-content/contact-hero`,
+      this.appendToken()
+    );
+  }
+
+  createContactHero(content: Record<string, any>, heroImage?: File) {
+    const formData = new FormData();
+
+    formData.append('content', JSON.stringify(content));
+
+    if (heroImage) {
+      formData.append('heroImage', heroImage);
+    }
+
+    return this.http.post(
+      `${this.baseURL}/contact-content/contact-hero`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  updateContactHero(content: Record<string, any>, heroImage?: File) {
+    const formData = new FormData();
+
+    formData.append('content', JSON.stringify(content));
+
+    if (heroImage) {
+      formData.append('heroImage', heroImage);
+    }
+
+    return this.http.patch(
+      `${this.baseURL}/contact-content/contact-hero`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  deleteContactHero() {
+    return this.http.delete(
+      `${this.baseURL}/contact-content/contact-hero`,
+      this.appendToken()
+    );
+  }
+
+
+  getRegionalMap() {
+    return this.http.get(
+      `${this.baseURL}/contact-content/regional-map`,
+      this.appendToken()
+    );
+  }
+
+  getRegionalMapItem(id: string) {
+    return this.http.get(
+      `${this.baseURL}/contact-content/regional-map/items/${encodeURIComponent(id)}`,
+      this.appendToken()
+    );
+  }
+
+  createRegionalMap(
+    content: Record<string, any>,
+    mapImage?: File,
+    itemImages: Record<number, File> = {}
+  ) {
+    const formData = new FormData();
+
+    formData.append('content', JSON.stringify(content));
+
+    if (mapImage) {
+      formData.append('mapImage', mapImage);
+    }
+
+    Object.entries(itemImages).forEach(([index, file]) => {
+      formData.append(`items[${index}].mapImage`, file);
+    });
+
+    return this.http.post(
+      `${this.baseURL}/contact-content/regional-map`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  updateRegionalMap(
+    content: Record<string, any>,
+    mapImage?: File,
+    itemImages: Record<number, File> = {}
+  ) {
+    const formData = new FormData();
+
+    formData.append('content', JSON.stringify(content));
+
+    if (mapImage) {
+      formData.append('mapImage', mapImage);
+    }
+
+    Object.entries(itemImages).forEach(([index, file]) => {
+      formData.append(`items[${index}].mapImage`, file);
+    });
+
+    return this.http.patch(
+      `${this.baseURL}/contact-content/regional-map`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  deleteRegionalMap() {
+    return this.http.delete(
+      `${this.baseURL}/contact-content/regional-map`,
+      this.appendToken()
+    );
+  }
+
+
+  getContactForm() {
+    return this.http.get(
+      `${this.baseURL}/contact-content/contact-form`,
+      this.appendToken()
+    );
+  }
+
+  createContactForm(content: Record<string, any>, formImage?: File) {
+    const formData = new FormData();
+
+    formData.append('content', JSON.stringify(content));
+
+    if (formImage) {
+      formData.append('formImage', formImage);
+    }
+
+    return this.http.post(
+      `${this.baseURL}/contact-content/contact-form`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  updateContactForm(content: Record<string, any>, formImage?: File) {
+    const formData = new FormData();
+
+    formData.append('content', JSON.stringify(content));
+
+    if (formImage) {
+      formData.append('formImage', formImage);
+    }
+
+    return this.http.patch(
+      `${this.baseURL}/contact-content/contact-form`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  deleteContactForm() {
+    return this.http.delete(
+      `${this.baseURL}/contact-content/contact-form`,
+      this.appendToken()
+    );
+  }
+
+
+  getFaq() {
+    return this.http.get(
+      `${this.baseURL}/contact-content/faq`,
+      this.appendToken()
+    );
+  }
+
+  createFaq(content: Record<string, any>) {
+    const formData = new FormData();
+    formData.append('content', JSON.stringify(content));
+
+    return this.http.post(
+      `${this.baseURL}/contact-content/faq`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  updateFaq(content: Record<string, any>) {
+    const formData = new FormData();
+    formData.append('content', JSON.stringify(content));
+
+    return this.http.patch(
+      `${this.baseURL}/contact-content/faq`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  deleteFaq() {
+    return this.http.delete(
+      `${this.baseURL}/contact-content/faq`,
+      this.appendToken()
+    );
+  }
+
+
+  getContactInquiries() {
+    return this.http.get(
+      `${this.baseURL}/contact-inquiries`,
+      this.appendToken()
+    );
+  }
+
+  createContactInquiry(inquiry: {
+    name: string;
+    email: string;
+    phone: string;
+    message: string;
+  }) {
+    return this.http.post(
+      `${this.baseURL}/contact-inquiries`,
+      inquiry
+    );
+  }
+
+
+
+  uploadVideo(video: File) {
+    const formData = new FormData();
+    formData.append('video', video);
+
+    return this.http.post(
+      `${this.baseURL}/media/videos`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  deleteVideo(key: string) {
+    return this.http.delete(
+      `${this.baseURL}/media/videos`,
+      {
+        ...this.appendToken(),
+        body: { key },
+      }
+    );
+  }
 
 }

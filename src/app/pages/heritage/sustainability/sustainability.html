@@ -76,15 +76,24 @@
         </div>
       </section>
 
-      <section class="form-section">
-        <div class="section-heading">
-          <div>
-            <h2>Sustainability Image</h2>
-            <p>Upload the image that represents traditional handloom weaving.</p>
-          </div>
+
+<section class="form-section">
+  <div class="section-heading">
+    <div>
+      <h2>Sustainability Images</h2>
+      <p>Upload up to six images representing sustainable handloom practices. Each image can be up to 5 MB.</p>
+    </div>
+  </div>
+
+  <div class="sustainability-images">
+    @for (image of images; track $index) {
+      <div class="sustainability-image-card">
+        <div class="image-card-heading">
+          <h3>Image {{ $index + 1 }}</h3>
+          <span>{{ image.file ? 'New image' : image.existingUrl ? 'Uploaded image' : 'No image selected' }}</span>
         </div>
 
-        <label class="upload-area" for="sustainabilityImage">
+        <label class="upload-area" [for]="'sustainabilityImage' + $index">
           <div class="upload-icon">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -105,32 +114,33 @@
 
           <strong>
             {{
-              sustainabilityImage
-                ? sustainabilityImage.name
-                : 'Click to upload sustainability image'
+              image.file
+                ? image.file.name
+                : 'Click to upload image'
             }}
           </strong>
 
           <span>PNG, JPG, JPEG or WebP · Maximum 5 MB</span>
 
           <input
-            id="sustainabilityImage"
+            [id]="'sustainabilityImage' + $index"
+            [name]="'sustainabilityImage' + $index"
             type="file"
             accept="image/*"
-            (change)="onImageSelected($event)"
+            (change)="onImageSelected($event, $index)"
           />
         </label>
 
-        @if (imagePreview || existingImageUrl) {
+        @if (image.previewUrl || image.existingUrl) {
           <div class="preview-container">
             <div class="preview-header">
               <h3>Image Preview</h3>
 
-              @if (sustainabilityImage) {
+              @if (image.file) {
                 <button
                   type="button"
                   class="text-button"
-                  (click)="removeSelectedImage()"
+                  (click)="removeSelectedImage($index)"
                 >
                   Remove selected image
                 </button>
@@ -139,24 +149,36 @@
 
             <img
               class="image-preview"
-              [src]="imagePreview || existingImageUrl"
-              [alt]="imageAlt || 'Sustainability image preview'"
+              [src]="image.previewUrl || image.existingUrl"
+              [alt]="image.alt || 'Sustainability image preview'"
             />
           </div>
         }
 
         <div class="form-group alt-group">
-          <label for="imageAlt">Image Alt Text <span>*</span></label>
+          <label [for]="'imageAlt' + $index">
+            Image {{ $index + 1 }} Alt Text
+            @if (image.file || image.existingUrl) {
+              <span>*</span>
+            }
+          </label>
+
           <input
-            id="imageAlt"
-            name="imageAlt"
-            [(ngModel)]="imageAlt"
-            placeholder="Hands weaving fabric on a traditional loom"
-            required
+            [id]="'imageAlt' + $index"
+            [name]="'imageAlt' + $index"
+            [(ngModel)]="image.alt"
+            placeholder="Describe the image"
           />
-          <small>Describe the image for accessibility and screen readers.</small>
+
+          <small>
+            Describe the image for accessibility and screen readers.
+          </small>
         </div>
-      </section>
+      </div>
+    }
+  </div>
+</section>
+
 
       <section class="form-section">
         <div class="section-heading">

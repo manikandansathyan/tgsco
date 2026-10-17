@@ -16,11 +16,13 @@ interface GalleryCategory {
   id: string;
   slug: string;
   title: string;
+  subtitle: string;
   description: string;
   mainImageAlt: string;
   mainImageUrl: string;
   mainImageFile: File | null;
   mainPreviewUrl: string;
+  videoLink: string;
   associatedImages: GalleryImage[];
 }
 
@@ -47,35 +49,48 @@ export class Media implements OnInit, OnDestroy {
   errorMessage = '';
 
   private readonly defaultDescription =
-    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.';
+    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.';
 
   private readonly defaultCategories = [
     {
       id: 'exhibitions',
       title: 'Exhibitions',
-      mainImageAlt: 'Handloom exhibition textiles',
+      subtitle: 'Explore our exhibitions',
+      mainImageAlt: 'Handloom textiles and weaving materials at an exhibition',
       associatedAlts: [
-        'Handloom threads on a loom',
-        'Women examining handloom fabric',
+        'Handloom weaving on a traditional loom',
+        'Women examining handloom textiles',
       ],
     },
     {
       id: 'weaving-villages',
       title: 'Weaving villages',
-      mainImageAlt: 'Weaving village',
-      associatedAlts: [],
+      subtitle: 'Discover traditional weaving villages',
+      mainImageAlt: 'Weaving village and handloom artisan',
+      associatedAlts: [
+        'Weaver working in a village workshop',
+        'Traditional village handloom',
+      ],
     },
     {
       id: 'campaigns',
       title: 'Campaigns',
-      mainImageAlt: 'TGSCO handloom campaign',
-      associatedAlts: [],
+      subtitle: 'Handloom awareness and support campaigns',
+      mainImageAlt: 'TGSCO handloom support campaign',
+      associatedAlts: [
+        'TGSCO handloom campaign event',
+        'Handloom support programme',
+      ],
     },
     {
       id: 'cooperative-events',
       title: 'Cooperative events',
-      mainImageAlt: 'Cooperative event',
-      associatedAlts: [],
+      subtitle: 'Events celebrating cooperative craftsmanship',
+      mainImageAlt: 'TGSCO cooperative event',
+      associatedAlts: [
+        'Cooperative members at an event',
+        'Artisans and cooperative members meeting',
+      ],
     },
   ];
 
@@ -99,17 +114,19 @@ export class Media implements OnInit, OnDestroy {
 
   private createCategory(
     config: (typeof this.defaultCategories)[number],
-    index: number
+    _index: number
   ): GalleryCategory {
     return {
       id: config.id,
       slug: config.id,
       title: config.title,
+      subtitle: config.subtitle,
       description: this.defaultDescription,
       mainImageAlt: config.mainImageAlt,
       mainImageUrl: '',
       mainImageFile: null,
       mainPreviewUrl: '',
+      videoLink: '',
       associatedImages: config.associatedAlts.map((alt) =>
         this.emptyImage(alt)
       ),
@@ -140,7 +157,7 @@ export class Media implements OnInit, OnDestroy {
         try {
           payload = JSON.parse(payload.content);
         } catch {
-          // Keep the original payload when content is not JSON.
+          return payload;
         }
       } else if (typeof payload.content === 'object') {
         payload = payload.content;
@@ -186,48 +203,52 @@ export class Media implements OnInit, OnDestroy {
       this.defaultCategories[index] || {
         id: `category-${index + 1}`,
         title: `Category ${index + 1}`,
+        subtitle: '',
         mainImageAlt: '',
         associatedAlts: [],
       };
 
     const fallback = this.createCategory(config, index);
+
     const apiImages = Array.isArray(apiCategory?.associatedImages)
       ? apiCategory.associatedImages
       : [];
 
+    const mainUrl = this.imageUrl(
+      apiCategory?.mainImageUrl ??
+        apiCategory?.mainImage ??
+        apiCategory?.image
+    );
+
     return {
       ...fallback,
-      ...apiCategory,
       id: apiCategory?.id || config.id,
       slug: apiCategory?.slug || apiCategory?.id || config.id,
       title: apiCategory?.title || config.title,
-      description: apiCategory?.description || '',
+      subtitle: apiCategory?.subtitle ?? fallback.subtitle,
+      description:
+        apiCategory?.description ?? fallback.description,
       mainImageAlt:
         apiCategory?.mainImageAlt || config.mainImageAlt,
-      mainImageUrl: this.imageUrl(
-        apiCategory?.mainImageUrl ??
-          apiCategory?.mainImage ??
-          apiCategory?.image
-      ),
+      mainImageUrl: mainUrl,
       mainImageFile: null,
-      mainPreviewUrl: this.imageUrl(
-        apiCategory?.mainImageUrl ??
-          apiCategory?.mainImage ??
-          apiCategory?.image
-      ),
-      associatedImages: apiImages.map((image: any, imageIndex: number) => {
-        const url = this.imageUrl(image);
+      mainPreviewUrl: mainUrl,
+      videoLink: apiCategory?.videoLink ?? '',
+      associatedImages: apiImages.map(
+        (image: any, imageIndex: number) => {
+          const url = this.imageUrl(image);
 
-        return {
-          alt:
-            image?.alt ||
-            config.associatedAlts[imageIndex] ||
-            `Gallery image ${imageIndex + 1}`,
-          url,
-          file: null,
-          previewUrl: url,
-        };
-      }),
+          return {
+            alt:
+              image?.alt ||
+              config.associatedAlts[imageIndex] ||
+              `Gallery image ${imageIndex + 1}`,
+            url,
+            file: null,
+            previewUrl: url,
+          };
+        }
+      ),
     };
   }
 
@@ -289,12 +310,13 @@ export class Media implements OnInit, OnDestroy {
           category.id = updated.id;
           category.slug = updated.slug;
           category.title = updated.title;
+          category.subtitle = updated.subtitle;
           category.description = updated.description;
           category.mainImageAlt = updated.mainImageAlt;
           category.mainImageUrl = updated.mainImageUrl;
-          category.mainPreviewUrl =
-            updated.mainPreviewUrl || category.mainImageUrl;
+          category.mainPreviewUrl = updated.mainPreviewUrl;
           category.mainImageFile = null;
+          category.videoLink = updated.videoLink;
 
           category.associatedImages.forEach((image) =>
             this.revokeUrl(image.previewUrl)
@@ -302,7 +324,8 @@ export class Media implements OnInit, OnDestroy {
 
           category.associatedImages = updated.associatedImages;
 
-          this.successMessage = `${category.title} loaded successfully.`;
+          this.successMessage =
+            `${category.title} loaded successfully.`;
         },
         error: (error: any) => {
           this.errorMessage =
@@ -332,6 +355,7 @@ export class Media implements OnInit, OnDestroy {
     }
 
     const category = this.categories[index];
+
     this.revokeUrl(category.mainPreviewUrl);
 
     category.mainImageFile = file;
@@ -367,6 +391,7 @@ export class Media implements OnInit, OnDestroy {
       this.categories[categoryIndex].associatedImages[imageIndex];
 
     this.revokeUrl(image.previewUrl);
+
     image.file = file;
     image.previewUrl = URL.createObjectURL(file);
 
@@ -378,7 +403,8 @@ export class Media implements OnInit, OnDestroy {
     const category = this.categories[categoryIndex];
 
     if (category.associatedImages.length >= 10) {
-      this.errorMessage = 'Maximum 10 associated images per category.';
+      this.errorMessage =
+        'Maximum 10 associated images per category.';
       return;
     }
 
@@ -393,7 +419,9 @@ export class Media implements OnInit, OnDestroy {
     categoryIndex: number,
     imageIndex: number
   ): void {
-    const images = this.categories[categoryIndex].associatedImages;
+    const images =
+      this.categories[categoryIndex].associatedImages;
+
     const image = images[imageIndex];
 
     this.revokeUrl(image.previewUrl);
@@ -407,6 +435,7 @@ export class Media implements OnInit, OnDestroy {
         id: category.id.trim(),
         slug: category.slug.trim() || category.id.trim(),
         title: category.title.trim(),
+        subtitle: category.subtitle.trim(),
         description: category.description.trim(),
         mainImageField: `categories[${categoryIndex}].mainImage`,
         mainImageAlt:
@@ -414,9 +443,11 @@ export class Media implements OnInit, OnDestroy {
         associatedImages: category.associatedImages.map(
           (image, imageIndex) => ({
             field: `categories[${categoryIndex}].associatedImages[${imageIndex}]`,
-            alt: image.alt.trim() || `Gallery image ${imageIndex + 1}`,
+            alt:
+              image.alt.trim() || `Gallery image ${imageIndex + 1}`,
           })
         ),
+        videoLink: category.videoLink.trim(),
       })),
     };
   }
@@ -430,12 +461,15 @@ export class Media implements OnInit, OnDestroy {
       return;
     }
 
-    for (let i = 0; i < this.categories.length; i++) {
-      const category = this.categories[i];
-
-      if (!category.title.trim() || !category.description.trim()) {
+    for (const category of this.categories) {
+      if (
+        !category.id.trim() ||
+        !category.title.trim() ||
+        !category.subtitle.trim() ||
+        !category.description.trim()
+      ) {
         this.errorMessage =
-          `Please complete the title and description for ${category.title}.`;
+          'Please complete the ID, title, subtitle and description for every category.';
         return;
       }
 
@@ -457,6 +491,7 @@ export class Media implements OnInit, OnDestroy {
     }
 
     const content = this.buildContent();
+
     const mainImages: Record<number, File> = {};
     const associatedImages: Record<string, File> = {};
 
@@ -527,13 +562,14 @@ export class Media implements OnInit, OnDestroy {
           this.isDeleting = false;
           this.clearPreviews();
 
-          this.categories = this.defaultCategories.map((config, index) =>
-            this.createCategory(config, index)
+          this.categories = this.defaultCategories.map(
+            (config, index) => this.createCategory(config, index)
           );
 
           this.sectionTitle = 'Media Gallery';
           this.isEditMode = false;
-          this.successMessage = 'Media Gallery deleted successfully.';
+          this.successMessage =
+            'Media Gallery deleted successfully.';
         },
         error: (error: any) => {
           this.isDeleting = false;
@@ -546,7 +582,11 @@ export class Media implements OnInit, OnDestroy {
   }
 
   resetForm(): void {
-    if (confirm('Discard your unsaved changes and reload the gallery?')) {
+    if (
+      confirm(
+        'Discard your unsaved changes and reload the gallery?'
+      )
+    ) {
       this.loadMediaGallery();
     }
   }
