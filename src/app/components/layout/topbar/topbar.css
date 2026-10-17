@@ -1,0 +1,279 @@
+
+:host {
+  display: block;
+  flex-shrink: 0;
+}
+
+.topbar {
+  display: flex;
+  height: 76px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 30px;
+  border-bottom: 1px solid #e8e6df;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.search-box {
+  display: flex;
+  width: min(380px, 45%);
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e8e6df;
+  border-radius: 8px;
+  color: #929292;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.search-box:focus-within {
+  border-color: #a34a57;
+  box-shadow: 0 0 0 3px rgb(139 38 53 / 8%);
+}
+
+.search-box svg {
+  flex-shrink: 0;
+}
+
+.search-box input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #252525;
+  font: inherit;
+  font-size: 13px;
+}
+
+.search-box input::placeholder {
+  color: #929292;
+}
+
+.search-shortcut {
+  flex-shrink: 0;
+  padding: 3px 6px;
+  border: 1px solid #e8e6df;
+  border-radius: 4px;
+  color: #929292;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.icon-button {
+  position: relative;
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #e8e6df;
+  border-radius: 8px;
+  background: #fff;
+  color: #55585f;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.icon-button:hover {
+  border-color: #e4c9ce;
+  background: #faf5f6;
+  color: #8b2635;
+}
+
+.icon-button:focus-visible {
+  outline: 2px solid #a34a57;
+  outline-offset: 2px;
+}
+
+.notification-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: #e9b800;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #f5edcc;
+  color: #252525;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-name {
+  color: #252525;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.profile-role {
+  color: #929292;
+  font-size: 11px;
+}
+
+.profile-chevron {
+  flex-shrink: 0;
+  color: #6b7280;
+}
+
+.mobile-menu {
+  display: none;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logout-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #7b2434;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.logout-button:hover {
+  background: #fff5f5;
+  border-color: #e5b9c0;
+}
+
+.logout-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .profile-info,
+  .profile-chevron {
+    display: none;
+  }
+
+  .topbar-actions {
+    gap: 10px;
+  }
+
+  .logout-button {
+    padding: 9px;
+  }
+
+  .logout-button span {
+    display: none;
+  }
+}
+
+
+@media (max-width: 900px) {
+  .topbar {
+    gap: 14px;
+    padding: 0 20px;
+  }
+
+  .topbar-actions {
+    gap: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    height: 64px;
+    gap: 10px;
+    padding: 0 14px;
+  }
+
+  .mobile-menu {
+    display: grid;
+  }
+
+  .search-box {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+    gap: 7px;
+    padding: 9px;
+  }
+
+  .search-box input {
+    font-size: 12px;
+  }
+
+  .search-shortcut,
+  .profile-info,
+  .profile-chevron {
+    display: none;
+  }
+
+  .topbar-actions {
+    gap: 8px;
+  }
+
+  .profile {
+    gap: 0;
+  }
+
+  .avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .icon-button {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-box,
+  .icon-button {
+    transition: none;
+  }
+}

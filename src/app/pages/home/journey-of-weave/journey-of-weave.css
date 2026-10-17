@@ -1,0 +1,510 @@
+
+:host {
+  display: block;
+  color: #202124;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.journey-page {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 28px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.page-title {
+  min-width: 0;
+}
+
+.eyebrow {
+  display: inline-block;
+  margin-bottom: 9px;
+  color: #c51f32;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.page-header h1 {
+  margin: 0;
+  color: #202124;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.page-header p {
+  margin: 9px 0 0;
+  color: #777b85;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.save-button,
+.delete-button,
+.secondary-button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.save-button {
+  border: 1px solid #c51f32;
+  background: #c51f32;
+  color: #ffffff;
+}
+
+.save-button:hover:not(:disabled) {
+  border-color: #a71829;
+  background: #a71829;
+}
+
+.delete-button {
+  border: 1px solid #f0c7cc;
+  background: #ffffff;
+  color: #c51f32;
+}
+
+.delete-button:hover:not(:disabled) {
+  background: #fff1f2;
+}
+
+.secondary-button {
+  border: 1px solid #dedfe5;
+  background: #ffffff;
+  color: #343741;
+}
+
+.secondary-button:hover:not(:disabled) {
+  border-color: #c51f32;
+  color: #c51f32;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgb(197 31 50 / 15%);
+  outline-offset: 2px;
+}
+
+.alert {
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.error-alert {
+  border-color: #f2c5cb;
+  background: #fff1f2;
+  color: #a71829;
+}
+
+.success-alert {
+  border-color: #b9e4cc;
+  background: #effaf3;
+  color: #187746;
+}
+
+.loading-state {
+  display: flex;
+  min-height: 260px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: #777b85;
+}
+
+.loading-state p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #f0d7db;
+  border-top-color: #c51f32;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.journey-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.form-card {
+  min-width: 0;
+  padding: 25px;
+  border: 1px solid #e9e9ed;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 3px 12px rgb(20 20 40 / 3%);
+}
+
+.card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 26px;
+}
+
+.card-heading h2 {
+  margin: 0;
+  color: #262832;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.card-heading p {
+  margin: 7px 0 0;
+  color: #858792;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.steps-heading {
+  align-items: center;
+}
+
+.plus-icon {
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.form-group {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 9px;
+  margin-bottom: 22px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-group label {
+  color: #383a44;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid #dedfe5;
+  border-radius: 8px;
+  outline: none;
+  background: #ffffff;
+  color: #252630;
+  font: inherit;
+  font-size: 13px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.form-group input {
+  min-height: 44px;
+}
+
+.form-group textarea {
+  min-height: 90px;
+  resize: vertical;
+  line-height: 1.7;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: #c51f32;
+  box-shadow: 0 0 0 3px rgb(197 31 50 / 8%);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #a3a5ae;
+}
+
+.field-hint {
+  color: #888b95;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* Journey step cards */
+
+.step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.step-card {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid #e8e8ed;
+  border-radius: 10px;
+  background: #fcfcfd;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.step-card:hover {
+  border-color: #dedfe5;
+}
+
+.step-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+}
+
+.step-number {
+  display: flex;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: #fbeaec;
+  color: #c51f32;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.step-heading-text {
+  min-width: 0;
+  flex: 1;
+  padding-top: 2px;
+}
+
+.step-heading-text h3 {
+  margin: 0;
+  color: #292b35;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.step-heading-text p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 5px 0 0;
+  color: #898b95;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.remove-button {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #f0d1d5;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #c51f32;
+  font-size: 23px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.remove-button:hover:not(:disabled) {
+  border-color: #e8aab2;
+  background: #fff0f2;
+}
+
+.step-body {
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid #ededf1;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 40px 20px;
+  border: 1px dashed #d9dae1;
+  border-radius: 9px;
+  color: #858792;
+  text-align: center;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.empty-icon {
+  display: flex;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fbeaec;
+  color: #c51f32;
+  font-size: 25px;
+}
+
+/* Responsive layout */
+
+@media (max-width: 768px) {
+  .journey-page {
+    padding: 18px;
+  }
+
+  .page-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .form-card {
+    padding: 18px;
+  }
+
+  .steps-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .step-card {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .journey-page {
+    padding: 12px;
+  }
+
+  .page-header h1 {
+    font-size: 25px;
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+  }
+
+  .save-button,
+  .delete-button,
+  .secondary-button {
+    padding: 10px 13px;
+    font-size: 12px;
+  }
+
+  .form-card {
+    padding: 16px;
+  }
+
+  .card-heading h2 {
+    font-size: 16px;
+  }
+
+  .step-card {
+    padding: 14px;
+  }
+
+  .step-header {
+    gap: 9px;
+  }
+
+  .step-number {
+    width: 36px;
+    height: 36px;
+  }
+
+  .remove-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .step-body {
+    margin-top: 18px;
+    padding-top: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

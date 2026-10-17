@@ -1,0 +1,339 @@
+
+<div class="message-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">CONTACT MANAGEMENT</span>
+      <h1>Contact Form</h1>
+      <p>Manage the contact page form, field labels, placeholders, and image.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-outline"
+        (click)="loadContactForm()"
+        [disabled]="isLoading || isSaving || isDeleting"
+      >
+        Refresh
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-danger-outline"
+        (click)="deleteContactForm()"
+        [disabled]="!isEditMode || isDeleting || isSaving"
+      >
+        {{ isDeleting ? 'Deleting...' : 'Delete Content' }}
+      </button>
+    </div>
+  </header>
+
+  @if (successMessage) {
+    <div class="alert alert-success">{{ successMessage }}</div>
+  }
+
+  @if (errorMessage) {
+    <div class="alert alert-error">{{ errorMessage }}</div>
+  }
+
+  @if (isLoading) {
+    <div class="loading-panel">
+      <span class="spinner"></span>
+      <p>Loading Contact Form...</p>
+    </div>
+  } @else {
+    <section class="editor-card">
+      <div class="section-heading">
+        <div>
+          <h2>Section Settings</h2>
+          <p>Configure the main heading and form submission settings.</p>
+        </div>
+
+        <span class="status-pill" [class.status-existing]="isEditMode">
+          {{ isEditMode ? 'Existing content' : 'New content' }}
+        </span>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="eyebrow">Eyebrow</label>
+          <input
+            id="eyebrow"
+            name="eyebrow"
+            [(ngModel)]="eyebrow"
+            placeholder="Contact form"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="title">Section Title</label>
+          <input
+            id="title"
+            name="title"
+            [(ngModel)]="title"
+            placeholder="SEND A MESSAGE"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="submitLabel">Submit Button Label</label>
+          <input
+            id="submitLabel"
+            name="submitLabel"
+            [(ngModel)]="submitLabel"
+            placeholder="Send Message"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="submitAction">Submit Action</label>
+          <input
+            id="submitAction"
+            name="submitAction"
+            [(ngModel)]="submitAction"
+            placeholder="/contact-inquiries"
+          />
+          <span class="field-hint">
+            This value configures the website form action; it does not submit an inquiry from this admin page.
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="editor-card">
+      <div class="section-heading">
+        <div>
+          <h2>Form Image</h2>
+          <p>Choose the image displayed alongside the contact form.</p>
+        </div>
+      </div>
+
+      <div class="image-layout">
+        <div class="image-preview">
+          @if (formImagePreview) {
+            <img [src]="formImagePreview" [alt]="imageAlt" />
+          } @else {
+            <div class="image-placeholder">
+              <span class="placeholder-symbol">＋</span>
+              <span>No image selected</span>
+            </div>
+          }
+        </div>
+
+        <div class="image-controls">
+          <label class="upload-button">
+            {{ formImageFile ? 'Choose Another Image' : 'Choose Image' }}
+            <input
+              type="file"
+              accept="image/*"
+              (change)="onImageSelected($event)"
+            />
+          </label>
+
+          <p class="field-hint">Image files only. Maximum size: 5 MB.</p>
+
+          @if (formImageFile) {
+            <div class="selected-file">
+              <span>{{ formImageFile.name }}</span>
+              <button
+                type="button"
+                class="remove-image"
+                (click)="removeSelectedImage()"
+              >
+                Remove selection
+              </button>
+            </div>
+          }
+
+          <div class="form-group">
+            <label for="imageAlt">Image Alt Text</label>
+            <input
+              id="imageAlt"
+              name="imageAlt"
+              [(ngModel)]="imageAlt"
+              placeholder="Describe the image"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="editor-card">
+      <div class="section-heading fields-heading">
+        <div>
+          <h2>Form Fields</h2>
+          <p>Manage the fields shown on the public contact form.</p>
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="addField()"
+          [disabled]="isSaving"
+        >
+          + Add Field
+        </button>
+      </div>
+
+      @for (field of fields; track $index; let i = $index) {
+        <div class="field-card">
+          <div class="field-card-header">
+            <div class="field-title">
+              <span class="field-number">
+                {{ (i + 1).toString().padStart(2, '0') }}
+              </span>
+              <div>
+                <h3>{{ field.label || 'Untitled Field' }}</h3>
+                <p>{{ field.name || 'Enter a field name' }}</p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-danger-outline btn-small"
+              (click)="removeField(i)"
+              [disabled]="isSaving"
+            >
+              Remove
+            </button>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label [for]="'fieldName' + i">Field Name</label>
+              <input
+                [id]="'fieldName' + i"
+                [name]="'fieldName' + i"
+                [(ngModel)]="field.name"
+                placeholder="e.g. name"
+              />
+            </div>
+
+            <div class="form-group">
+              <label [for]="'fieldLabel' + i">Field Label</label>
+              <input
+                [id]="'fieldLabel' + i"
+                [name]="'fieldLabel' + i"
+                [(ngModel)]="field.label"
+                placeholder="e.g. Name"
+              />
+            </div>
+
+            <div class="form-group">
+              <label [for]="'fieldType' + i">Input Type</label>
+              <select
+                [id]="'fieldType' + i"
+                [name]="'fieldType' + i"
+                [(ngModel)]="field.type"
+              >
+                <option value="text">Text</option>
+                <option value="email">Email</option>
+                <option value="tel">Telephone</option>
+                <option value="textarea">Text Area</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label [for]="'fieldPlaceholder' + i">Placeholder</label>
+              <input
+                [id]="'fieldPlaceholder' + i"
+                [name]="'fieldPlaceholder' + i"
+                [(ngModel)]="field.placeholder"
+                placeholder="Enter placeholder text"
+              />
+            </div>
+
+            <div class="required-setting">
+              <div>
+                <strong>Required field</strong>
+                <p>Visitors must complete this field.</p>
+              </div>
+
+              <label class="toggle">
+                <input
+                  type="checkbox"
+                  [name]="'fieldRequired' + i"
+                  [(ngModel)]="field.required"
+                />
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      }
+    </section>
+
+    <section class="preview-card">
+      <div class="section-heading">
+        <div>
+          <h2>Form Preview</h2>
+          <p>A preview of how your configured form fields will appear.</p>
+        </div>
+      </div>
+
+      <div class="public-form-preview">
+        <span class="preview-eyebrow">{{ eyebrow }}</span>
+        <h3>{{ title }}</h3>
+
+        @for (field of fields; track $index) {
+          <div class="preview-field">
+            <label>
+              {{ field.label || 'Field label' }}
+              @if (field.required) {
+                <span class="required-star">*</span>
+              }
+            </label>
+
+            @if (field.type === 'textarea') {
+              <textarea
+                [placeholder]="field.placeholder"
+                disabled
+                rows="3"
+              ></textarea>
+            } @else {
+              <input
+                [type]="field.type === 'tel' ? 'tel' : field.type"
+                [placeholder]="field.placeholder"
+                disabled
+              />
+            }
+          </div>
+        }
+
+        <button type="button" class="preview-submit" disabled>
+          {{ submitLabel || 'Submit' }}
+        </button>
+      </div>
+    </section>
+
+    <footer class="form-footer">
+      <p>Save your changes to publish the Contact Form content.</p>
+
+      <div class="footer-actions">
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="resetForm()"
+          [disabled]="isSaving || isDeleting"
+        >
+          Reset
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="saveContactForm()"
+          [disabled]="isSaving || isDeleting"
+        >
+          {{
+            isSaving
+              ? 'Saving...'
+              : isEditMode
+                ? 'Update Contact Form'
+                : 'Create Contact Form'
+          }}
+        </button>
+      </div>
+    </footer>
+  }
+</div>

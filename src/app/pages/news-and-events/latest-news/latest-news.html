@@ -1,0 +1,244 @@
+<div class="latest-news-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">NEWS AND EVENTS MANAGEMENT</span>
+      <h1>Latest News</h1>
+      <p>Manage news articles, announcements, updates, and their images.</p>
+    </div>
+
+    <button
+      type="button"
+      class="secondary-button"
+      (click)="resetForm()"
+      [disabled]="loading || saving || deleting"
+    >
+      Refresh
+    </button>
+  </header>
+
+  @if (message) {
+    <div class="alert success-alert">{{ message }}</div>
+  }
+
+  @if (errorMessage) {
+    <div class="alert error-alert">{{ errorMessage }}</div>
+  }
+
+  @if (loading) {
+    <div class="loading-state">Loading latest news...</div>
+  } @else {
+    <form class="news-form" (ngSubmit)="saveLatestNews()">
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Section Details</h2>
+            <p>Set the heading displayed above the news articles.</p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="sectionTitle">Section Title <span>*</span></label>
+          <input
+            id="sectionTitle"
+            name="sectionTitle"
+            type="text"
+            [(ngModel)]="sectionTitle"
+            placeholder="Latest News"
+            required
+          />
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>News Articles</h2>
+            <p>Add, edit, or remove articles. Each article needs a title, description, date, and image.</p>
+          </div>
+
+          <button
+            type="button"
+            class="primary-button"
+            (click)="addItem()"
+          >
+            + Add News
+          </button>
+        </div>
+
+        @if (items.length === 0) {
+          <div class="empty-state">
+            <h3>No news articles</h3>
+            <p>Select Add News to create your first article.</p>
+          </div>
+        }
+
+        @for (item of items; track $index; let i = $index) {
+          <article class="news-card">
+            <div class="news-card-header">
+              <div>
+                <span class="item-number">NEWS ARTICLE {{ i + 1 }}</span>
+                <h3>{{ item.title || 'New News Article' }}</h3>
+              </div>
+
+              <button
+                type="button"
+                class="remove-button"
+                (click)="removeItem(i)"
+              >
+                Remove
+              </button>
+            </div>
+
+            <div class="news-fields">
+              <div class="field">
+                <label [for]="'newsId' + i">Article ID</label>
+                <input
+                  [id]="'newsId' + i"
+                  [name]="'newsId' + i"
+                  type="text"
+                  [(ngModel)]="item.id"
+                  placeholder="latest-news-1"
+                />
+              </div>
+
+              <div class="field">
+                <label [for]="'newsSlug' + i">Slug</label>
+                <input
+                  [id]="'newsSlug' + i"
+                  [name]="'newsSlug' + i"
+                  type="text"
+                  [(ngModel)]="item.slug"
+                  placeholder="latest-news-1"
+                />
+              </div>
+
+              <div class="field full-width">
+                <label [for]="'newsTitle' + i">Article Title <span>*</span></label>
+                <input
+                  [id]="'newsTitle' + i"
+                  [name]="'newsTitle' + i"
+                  type="text"
+                  [(ngModel)]="item.title"
+                  placeholder="Enter news title"
+                  required
+                />
+              </div>
+
+              <div class="field">
+                <label [for]="'newsDate' + i">Date <span>*</span></label>
+                <input
+                  [id]="'newsDate' + i"
+                  [name]="'newsDate' + i"
+                  type="text"
+                  [(ngModel)]="item.date"
+                  placeholder="JULY 15, 2026"
+                  required
+                />
+              </div>
+
+              <div class="field">
+                <label [for]="'newsAlt' + i">Image Alt Text</label>
+                <input
+                  [id]="'newsAlt' + i"
+                  [name]="'newsAlt' + i"
+                  type="text"
+                  [(ngModel)]="item.imageAlt"
+                  placeholder="TGSCO news event"
+                />
+              </div>
+
+              <div class="field full-width">
+                <label [for]="'newsDescription' + i">
+                  Description <span>*</span>
+                </label>
+                <textarea
+                  [id]="'newsDescription' + i"
+                  [name]="'newsDescription' + i"
+                  [(ngModel)]="item.description"
+                  rows="4"
+                  placeholder="Enter the news description..."
+                  required
+                ></textarea>
+              </div>
+
+              <div class="field full-width">
+                <label [for]="'newsImage' + i">Article Image <span>*</span></label>
+
+                <div class="image-upload-layout">
+                  <div class="image-preview">
+                    @if (item.imagePreview || item.existingImageUrl) {
+                      <img
+                        [src]="item.imagePreview || item.existingImageUrl"
+                        [alt]="item.imageAlt || item.title"
+                      />
+                    } @else {
+                      <div class="image-placeholder">No image selected</div>
+                    }
+                  </div>
+
+                  <div class="upload-control">
+                    <input
+                      [id]="'newsImage' + i"
+                      [name]="'newsImage' + i"
+                      type="file"
+                      accept="image/*"
+                      (change)="onImageSelected($event, i)"
+                    />
+
+                    <small>Supported image formats. Maximum 5 MB.</small>
+
+                    @if (item.imageFile) {
+                      <span class="selected-file">{{ item.imageFile.name }}</span>
+                    } @else if (item.existingImageUrl) {
+                      <span class="selected-file">
+                        Existing image retained unless replaced.
+                      </span>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        }
+      </section>
+
+      <footer class="form-actions">
+        @if (isEditMode) {
+          <button
+            type="button"
+            class="delete-button"
+            (click)="deleteLatestNews()"
+            [disabled]="saving || deleting"
+          >
+            {{ deleting ? 'Deleting...' : 'Delete Section' }}
+          </button>
+        }
+
+        <div class="action-right">
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="resetForm()"
+            [disabled]="saving || deleting"
+          >
+            Reset
+          </button>
+
+          <button
+            type="submit"
+            class="primary-button save-button"
+            [disabled]="saving || deleting"
+          >
+            {{
+              saving
+                ? 'Saving...'
+                : isEditMode
+                  ? 'Update Latest News'
+                  : 'Create Latest News'
+            }}
+          </button>
+        </div>
+      </footer>
+    </form>
+  }
+</div>

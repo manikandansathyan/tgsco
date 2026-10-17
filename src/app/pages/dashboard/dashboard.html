@@ -1,0 +1,258 @@
+
+<div class="dashboard">
+  <section class="welcome-section">
+    <div>
+      <div class="eyebrow">
+        <span class="eyebrow-dot"></span>
+        ADMINISTRATION OVERVIEW
+      </div>
+      <h1>Good to see you, Administrator</h1>
+      <p>Here's what's happening across your TGSCO platform.</p>
+    </div> 
+
+    <div class="welcome-date">
+      <svg lucideCalendarDays [size]="18"></svg>
+      <span>{{ todayLabel }}</span>
+    </div>
+  </section>
+
+  <section class="summary-grid">
+    @for (card of summaryCards; track card.title) {
+      <a class="summary-card" [routerLink]="card.route">
+        <div class="card-top">
+          <div class="summary-icon" [ngClass]="card.color">
+            @switch (card.title) {
+              @case ('Total Products') {
+                <svg lucidePackage [size]="21"></svg>
+              }
+              @case ('Artisans & Makers') {
+                <svg lucideUsers [size]="21"></svg>
+              }
+              @case ('Published Content') {
+                <svg lucideNewspaper [size]="21"></svg>
+              }
+              @case ('Media Assets') {
+                <svg lucideImage [size]="21"></svg>
+              }
+            }
+          </div>
+          <svg class="card-arrow" lucideArrowUpRight [size]="18"></svg>
+        </div>
+
+        <div class="card-value">{{ card.value }}</div>
+        <h3>{{ card.title }}</h3>
+        <p>{{ card.description }}</p>
+      </a>
+    }
+  </section>
+
+  <section class="dashboard-main-grid">
+    <div class="panel activity-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Content Activity</h2>
+          <p>Weekly publishing overview</p>
+        </div>
+        <span class="panel-badge">
+          <svg lucideActivity [size]="15"></svg>
+          This week
+        </span>
+      </div>
+
+      <div class="chart-legend">
+        <span><i class="legend-dot blogs-dot"></i> Blogs</span>
+        <span><i class="legend-dot news-dot"></i> News & Events</span>
+      </div>
+
+      <div class="activity-chart">
+        <div class="chart-y-labels">
+          <span>10</span>
+          <span>8</span>
+          <span>6</span>
+          <span>4</span>
+          <span>2</span>
+          <span>0</span>
+        </div>
+
+        <div class="chart-content">
+          <div class="chart-grid-lines">
+            @for (line of [0, 1, 2, 3, 4, 5]; track line) {
+              <span></span>
+            }
+          </div>
+
+          <div class="chart-bars">
+            @for (item of activityData; track item.day) {
+              <div class="chart-day">
+                <div class="bar-pair">
+                  <div
+                    class="bar blogs-bar"
+                    [style.height.%]="barHeight(item.blogs)"
+                    [title]="'Blogs: ' + item.blogs"
+                  ></div>
+                  <div
+                    class="bar news-bar"
+                    [style.height.%]="barHeight(item.news)"
+                    [title]="'News: ' + item.news"
+                  ></div>
+                </div>
+                <span class="day-label">{{ item.day }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-footer">
+        <div>
+          <span class="footer-label">Total content entries</span>
+          <strong>{{ activityTotal }}</strong>
+        </div>
+        <div class="chart-footer-note">
+          <svg lucideCheckCircle [size]="16"></svg>
+          <span>Across 7 days</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel quick-actions-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Quick Actions</h2>
+          <p>Common tasks at your fingertips</p>
+        </div>
+      </div>
+
+      <div class="quick-actions">
+        @for (action of quickActions; track action.title) {
+          <a class="quick-action" [routerLink]="action.route">
+            <div class="quick-action-icon">
+              @switch (action.title) {
+                @case ('Add Product') {
+                  <svg lucidePackage [size]="20"></svg>
+                }
+                @case ('Write a Blog') {
+                  <svg lucideFileText [size]="20"></svg>
+                }
+                @case ('Add a Maker') {
+                  <svg lucideUsers [size]="20"></svg>
+                }
+                @case ('Upload Media') {
+                  <svg lucideImage [size]="20"></svg>
+                }
+              }
+            </div>
+
+            <div class="quick-action-text">
+              <h3>{{ action.title }}</h3>
+              <p>{{ action.description }}</p>
+            </div>
+
+            <svg class="quick-action-arrow" lucideArrowRight [size]="17"></svg>
+          </a>
+        }
+      </div>
+
+      <a class="view-all-link" routerLink="/home/hero">
+        Manage homepage content
+        <svg lucideArrowUpRight [size]="16"></svg>
+      </a>
+    </div>
+  </section>
+
+  <section class="panel updates-panel">
+    <div class="panel-header updates-header">
+      <div>
+        <h2>Recent Content Updates</h2>
+        <p>Latest changes across your website content</p>
+      </div>
+      <a class="text-link" routerLink="/home/blog">
+        View content
+        <svg lucideArrowRight [size]="16"></svg>
+      </a>
+    </div>
+
+    <div class="updates-table-wrapper">
+      <table class="updates-table">
+        <thead>
+          <tr>
+            <th>CONTENT</th>
+            <th>CATEGORY</th>
+            <th>LAST UPDATED</th>
+            <th>STATUS</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of recentUpdates; track item.title) {
+            <tr>
+              <td>
+                <div class="content-title-cell">
+                  <div class="content-type-icon" [ngClass]="item.type">
+                    @switch (item.type) {
+                      @case ('collection') {
+                        <svg lucidePackage [size]="17"></svg>
+                      }
+                      @case ('blog') {
+                        <svg lucideFileText [size]="17"></svg>
+                      }
+                      @case ('news') {
+                        <svg lucideCalendarDays [size]="17"></svg>
+                      }
+                      @case ('page') {
+                        <svg lucideNewspaper [size]="17"></svg>
+                      }
+                    }
+                  </div>
+                  <span>{{ item.title }}</span>
+                </div>
+              </td>
+              <td><span class="category-label">{{ item.category }}</span></td>
+              <td>
+                <span class="update-date">
+                  <svg lucideClock [size]="14"></svg>
+                  {{ item.date }}
+                </span>
+              </td>
+              <td>
+                <span class="status-pill" [ngClass]="item.status.toLowerCase()">
+                  <span></span>
+                  {{ item.status }}
+                </span>
+              </td>
+              <td>
+                <a
+                  class="row-action"
+                  [routerLink]="item.route"
+                  [attr.aria-label]="'Manage ' + item.title"
+                >
+                  <svg lucideExternalLink [size]="16"></svg>
+                </a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="updates-mobile">
+      @for (item of recentUpdates; track item.title) {
+        <a class="mobile-update" [routerLink]="item.route">
+          <div class="mobile-update-main">
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.category }} · {{ item.date }}</span>
+          </div>
+          <span class="status-pill" [ngClass]="item.status.toLowerCase()">
+            <span></span>
+            {{ item.status }}
+          </span>
+        </a>
+      }
+    </div>
+  </section>
+
+  <footer class="dashboard-footer">
+    <span>TGSCO Admin Panel</span>
+    <span>Content management overview</span>
+  </footer>
+</div>

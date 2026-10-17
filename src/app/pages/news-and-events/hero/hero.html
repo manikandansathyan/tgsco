@@ -1,0 +1,156 @@
+<div class="hero-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">NEWS AND EVENTS MANAGEMENT</span>
+      <h1>News & Events Hero</h1>
+      <p>Manage the hero heading and banner image displayed on the News & Events page.</p>
+    </div>
+
+    <button
+      type="button"
+      class="secondary-button"
+      (click)="resetForm()"
+      [disabled]="loading || saving || deleting"
+    >
+      Refresh
+    </button>
+  </header>
+
+  @if (message) {
+    <div class="alert success-alert">{{ message }}</div>
+  }
+
+  @if (errorMessage) {
+    <div class="alert error-alert">{{ errorMessage }}</div>
+  }
+
+  @if (loading) {
+    <div class="loading-state">Loading hero content...</div>
+  } @else {
+    <form class="hero-form" (ngSubmit)="saveNewsHero()">
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Hero Content</h2>
+            <p>Configure the title and accessibility text for the banner image.</p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="heroTitle">Hero Title <span>*</span></label>
+          <input
+            id="heroTitle"
+            name="heroTitle"
+            type="text"
+            [(ngModel)]="title"
+            placeholder="NEWS & EVENTS"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="imageAlt">Image Alt Text</label>
+          <input
+            id="imageAlt"
+            name="imageAlt"
+            type="text"
+            [(ngModel)]="imageAlt"
+            placeholder="Describe the hero image"
+          />
+          <small>
+            Alternative text helps screen readers describe the image.
+          </small>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Hero Banner Image</h2>
+            <p>Upload the image used in the News & Events hero section.</p>
+          </div>
+        </div>
+
+        <div class="image-upload-card">
+          <div class="image-preview">
+            @if (imagePreview || existingImageUrl) {
+              <img
+                [src]="imagePreview || existingImageUrl"
+                [alt]="imageAlt || title"
+              />
+            } @else {
+              <div class="image-placeholder">
+                <span class="placeholder-icon">＋</span>
+                <span>No image selected</span>
+              </div>
+            }
+          </div>
+
+          <div class="upload-control">
+            <label for="heroImage">Choose Banner Image</label>
+
+            <input
+              id="heroImage"
+              name="heroImage"
+              type="file"
+              accept="image/*"
+              (change)="onImageSelected($event)"
+            />
+
+            <small>
+              Supported image formats. Maximum file size: 5 MB.
+            </small>
+
+            @if (heroImage) {
+              <span class="selected-file">
+                Selected: {{ heroImage.name }}
+              </span>
+            } @else if (existingImageUrl) {
+              <span class="selected-file">
+                Existing image retained unless replaced.
+              </span>
+            }
+          </div>
+        </div>
+      </section>
+
+      <footer class="form-actions">
+        @if (isEditMode) {
+          <button
+            type="button"
+            class="delete-button"
+            (click)="deleteNewsHero()"
+            [disabled]="saving || deleting"
+          >
+            {{ deleting ? 'Deleting...' : 'Delete Hero' }}
+          </button>
+        }
+
+        <div class="action-right">
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="resetForm()"
+            [disabled]="saving || deleting"
+          >
+            Reset
+          </button>
+
+          <button
+            type="submit"
+            class="primary-button"
+            [disabled]="saving || deleting"
+          >
+            {{
+              saving
+                ? 'Saving...'
+                : isEditMode
+                  ? 'Update Hero'
+                  : 'Create Hero'
+            }}
+          </button>
+        </div>
+      </footer>
+    </form>
+  }
+</div>

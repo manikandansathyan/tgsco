@@ -1,0 +1,185 @@
+
+<div class="journey-page">
+  <header class="page-header">
+    <div class="page-title">
+      <span class="eyebrow">WEBSITE MANAGEMENT</span>
+      <h1>Journey of Weave</h1>
+      <p>Manage the story and stages behind the traditional weaving process.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        *ngIf="isExistingContent"
+        type="button"
+        class="delete-button"
+        [disabled]="isSaving || isDeleting"
+        (click)="deleteJourney()"
+      >
+        {{ isDeleting ? 'Deleting...' : 'Delete Section' }}
+      </button>
+
+      <button
+        type="button"
+        class="save-button"
+        [disabled]="isLoading || isSaving || isDeleting"
+        (click)="saveJourney()"
+      >
+        {{ isSaving ? 'Saving...' : isExistingContent ? 'Save Changes' : 'Create Section' }}
+      </button>
+    </div>
+  </header>
+
+  <div *ngIf="errorMessage" class="alert error-alert" role="alert">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="successMessage" class="alert success-alert" role="status">
+    {{ successMessage }}
+  </div>
+
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading journey content...</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading">
+    <div class="journey-layout">
+      <section class="form-card">
+        <div class="card-heading">
+          <div>
+            <h2>Section Content</h2>
+            <p>Edit the main text displayed in the Journey of Weave section.</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="journey-title">Section Title</label>
+          <input
+            id="journey-title"
+            type="text"
+            [(ngModel)]="title"
+            placeholder="The Journey of a Weave"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="journey-description">Description</label>
+          <textarea
+            id="journey-description"
+            [(ngModel)]="description"
+            rows="6"
+            placeholder="Describe the weaving process..."
+          ></textarea>
+          <span class="field-hint">
+            The main paragraph introducing the weaving journey.
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="journey-highlight">Highlight Text</label>
+          <textarea
+            id="journey-highlight"
+            [(ngModel)]="highlight"
+            rows="3"
+            placeholder="What makes this weaving process special?"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="journey-closing">Closing Text</label>
+          <input
+            id="journey-closing"
+            type="text"
+            [(ngModel)]="closing"
+            placeholder="From Thread to Timeless."
+          />
+        </div>
+      </section>
+
+      <section class="form-card">
+        <div class="card-heading steps-heading">
+          <div>
+            <h2>Weaving Steps</h2>
+            <p>Manage the stages displayed in the weaving journey.</p>
+          </div>
+
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="addStep()"
+          >
+            <span class="plus-icon">+</span>
+            Add Step
+          </button>
+        </div>
+
+        <div class="step-list" *ngIf="steps.length > 0">
+          <article
+            class="step-card"
+            *ngFor="let step of steps; let i = index; trackBy: trackByIndex"
+          >
+            <div class="step-header">
+              <div class="step-number">
+                {{ step.number }}
+              </div>
+
+              <div class="step-heading-text">
+                <h3>{{ step.title || 'New Journey Step' }}</h3>
+                <p>
+                  {{ step.description || 'Add a description for this stage.' }}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                class="remove-button"
+                [disabled]="steps.length <= 1"
+                (click)="removeStep(i)"
+                [attr.aria-label]="'Remove step ' + step.number"
+                title="Remove step"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div class="step-body">
+              <div class="form-group">
+                <label [for]="'step-title-' + i">Step Title</label>
+                <input
+                  [id]="'step-title-' + i"
+                  type="text"
+                  [(ngModel)]="step.title"
+                  [name]="'stepTitle' + i"
+                  placeholder="Enter step title"
+                />
+              </div>
+
+              <div class="form-group">
+                <label [for]="'step-description-' + i">Step Description</label>
+                <textarea
+                  [id]="'step-description-' + i"
+                  [(ngModel)]="step.description"
+                  [name]="'stepDescription' + i"
+                  rows="3"
+                  placeholder="Describe this stage of the weaving process..."
+                ></textarea>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="empty-state" *ngIf="steps.length === 0">
+          <div class="empty-icon">+</div>
+          <p>No journey steps have been added yet.</p>
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="addStep()"
+          >
+            Add Your First Step
+          </button>
+        </div>
+      </section>
+    </div>
+  </ng-container>
+</div>

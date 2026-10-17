@@ -1,0 +1,267 @@
+
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 260px;
+  height: 100%;
+  min-height: 0;
+  background: #ffffff;
+  border-right: 1px solid #e8eaf0;
+  color: #252b3b;
+  overflow: hidden;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 25px 22px 27px;
+  border-bottom: 1px solid #f0f1f5;
+}
+
+.brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  font-size: 23px;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgb(139 38 53 / 15%);
+}
+
+.brand h2 {
+  margin: 0;
+  color: #242a38;
+  font-size: 19px;
+  font-weight: 750;
+  letter-spacing: 0.5px;
+  line-height: 1.4;
+}
+
+.brand p {
+  margin: 3px 0 0;
+  color: #8990a0;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.menu-label {
+  padding: 25px 22px 12px;
+  color: #a0a5b2;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 1.3px;
+}
+
+.navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0 12px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #d9dce5 transparent;
+}
+
+.navigation::-webkit-scrollbar {
+  width: 4px;
+}
+
+.navigation::-webkit-scrollbar-thumb {
+  background: #d9dce5;
+  border-radius: 10px;
+}
+
+.nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 13px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #626b7d;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.4;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.nav-link svg {
+  flex-shrink: 0;
+  color: #858da0;
+  transition: color 160ms ease;
+}
+
+.nav-link span {
+  flex: 1;
+}
+
+.nav-link:hover {
+  background: #f7f3f4;
+  color: #8b2635;
+}
+
+.nav-link:hover svg {
+  color: #8b2635;
+}
+
+.nav-link.active {
+  background: #f8edef;
+  color: #8b2635;
+  font-weight: 650;
+}
+
+.nav-link.active::before {
+  position: absolute;
+  top: 9px;
+  bottom: 9px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: #8b2635;
+  content: "";
+}
+
+.nav-link.active svg {
+  color: #8b2635;
+}
+
+.nav-parent {
+  flex-shrink: 0;
+}
+
+.nav-chevron {
+  margin-left: auto;
+  transition: transform 180ms ease;
+}
+
+.submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0 0 8px 19px;
+  padding: 4px 0 4px 14px;
+  border-left: 1px solid #e9d9dc;
+}
+
+.sub-link {
+  position: relative;
+  display: block;
+  padding: 9px 10px;
+  border-radius: 6px;
+  color: #788092;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.sub-link:hover {
+  background: #faf5f6;
+  color: #8b2635;
+}
+
+.sub-link.active {
+  background: #f8edef;
+  color: #8b2635;
+  font-weight: 650;
+}
+
+.sidebar-bottom {
+  flex-shrink: 0;
+  padding: 12px;
+  border-top: 1px solid #f0f1f5;
+  background: #ffffff;
+}
+
+.sidebar-bottom .nav-link {
+  margin-bottom: 10px;
+}
+
+.sidebar-version {
+  margin: 0;
+  padding: 12px 5px 4px;
+  border-top: 1px solid #f0f1f5;
+  color: #a0a5b2;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.nav-link:focus-visible,
+.sub-link:focus-visible {
+  outline: 2px solid #a34a57;
+  outline-offset: 2px;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 18px 12px;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.sidebar-footer p {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.sidebar-footer strong {
+  color: #7b2434;
+  font-weight: 600;
+}
+
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 260px;
+    box-shadow: 8px 0 24px rgb(25 30 45 / 8%);
+  }
+
+  .brand {
+    padding-top: 20px;
+    padding-bottom: 22px;
+  }
+
+  .menu-label {
+    padding-top: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-link,
+  .nav-link svg,
+  .sub-link,
+  .nav-chevron {
+    transition: none;
+  }
+}

@@ -1,0 +1,194 @@
+
+<div class="blog-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">WEBSITE MANAGEMENT</span>
+      <h1>Blog Management</h1>
+      <p>Manage the articles displayed in the Tales Worth Weaving section.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="delete-button"
+        (click)="deleteBlog()"
+        [disabled]="isDeleting || isSaving || !isExistingContent"
+      >
+        {{ isDeleting ? 'Deleting...' : 'Delete Section' }}
+      </button>
+
+      <button
+        type="button"
+        class="save-button"
+        (click)="saveBlog()"
+        [disabled]="isSaving || isLoading || isDeleting"
+      >
+        {{ isSaving ? 'Saving...' : (isExistingContent ? 'Update Content' : 'Create Content') }}
+      </button>
+    </div>
+  </header>
+
+  <div class="status-message success" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <div class="status-message error" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    Loading blog content...
+  </div>
+
+  <ng-container *ngIf="!isLoading">
+    <section class="content-card">
+      <div class="section-heading">
+        <div>
+          <h2>Section Details</h2>
+          <p>Set the heading displayed above your articles.</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="blogTitle">Section Title</label>
+        <input
+          id="blogTitle"
+          type="text"
+          [(ngModel)]="content.title"
+          placeholder="Tales Worth Weaving"
+        />
+      </div>
+    </section>
+
+    <section class="articles-section">
+      <div class="section-heading">
+        <div>
+          <h2>Articles</h2>
+          <p>Edit article details, links, and featured images.</p>
+        </div>
+
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="addArticle()"
+        >
+          + Add Article
+        </button>
+      </div>
+
+      <article
+        class="article-card"
+        *ngFor="let article of content.articles; let i = index"
+      >
+        <div class="article-header">
+          <div class="article-heading">
+            <span class="article-number">{{ i + 1 }}</span>
+            <div>
+              <h3>{{ article.title || 'New Article' }}</h3>
+              <p>Article details and featured image</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="remove-button"
+            (click)="removeArticle(i)"
+            [disabled]="content.articles.length <= 1"
+          >
+            Remove
+          </button>
+        </div>
+
+        <div class="article-grid">
+          <div class="form-group">
+            <label [for]="'articleDate' + i">Date</label>
+            <input
+              [id]="'articleDate' + i"
+              type="text"
+              [(ngModel)]="article.date"
+              placeholder="January 15, 2026"
+            />
+          </div>
+
+          <div class="form-group">
+            <label [for]="'articleTitle' + i">Article Title</label>
+            <input
+              [id]="'articleTitle' + i"
+              type="text"
+              [(ngModel)]="article.title"
+              placeholder="Enter article title"
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label [for]="'articleDescription' + i">Description</label>
+            <textarea
+              [id]="'articleDescription' + i"
+              rows="3"
+              [(ngModel)]="article.description"
+              placeholder="Enter article description"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label [for]="'articleButton' + i">Button Text</label>
+            <input
+              [id]="'articleButton' + i"
+              type="text"
+              [(ngModel)]="article.buttonText"
+              placeholder="READ MORE"
+            />
+          </div>
+
+          <div class="form-group">
+            <label [for]="'articleUrl' + i">Article URL</label>
+            <input
+              [id]="'articleUrl' + i"
+              type="text"
+              [(ngModel)]="article.url"
+              placeholder="/blog/article-slug"
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label>Featured Image</label>
+
+            <div class="image-preview" *ngIf="article.imageUrl">
+              <img
+                [src]="article.imageUrl"
+                [alt]="article.title || 'Article image'"
+              />
+            </div>
+
+            <div class="image-placeholder" *ngIf="!article.imageUrl">
+              No article image selected
+            </div>
+
+            <input
+              class="file-input"
+              type="file"
+              accept="image/*"
+              [id]="'articleImage' + i"
+              (change)="onImageSelected($event, i)"
+            />
+
+            <small class="file-name">
+              {{ article.imageFile?.name || 'Choose an image for this article' }}
+            </small>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <div class="bottom-actions">
+      <button
+        type="button"
+        class="save-button"
+        (click)="saveBlog()"
+        [disabled]="isSaving || isDeleting"
+      >
+        {{ isSaving ? 'Saving...' : (isExistingContent ? 'Update Blog Content' : 'Create Blog Content') }}
+      </button>
+    </div>
+  </ng-container>
+</div>

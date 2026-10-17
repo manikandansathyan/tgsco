@@ -1,0 +1,314 @@
+<div class="hero-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">WEBSITE MANAGEMENT</span>
+      <h1>Hero Section</h1>
+      <p>Manage your homepage carousel banners.</p>
+    </div>
+
+    <button class="primary-button" type="button" (click)="openCreateModal()" [disabled]="isLoading || isSaving">
+      <span class="plus-icon">+</span>
+      Add New
+    </button>
+  </header>
+
+  @if (errorMessage && !isModalOpen) {
+  <div class="message error-message">{{ errorMessage }}</div>
+  }
+
+  @if (successMessage) {
+  <div class="message success-message">{{ successMessage }}</div>
+  }
+
+  <section class="table-section">
+    <div class="table-heading">
+      <div>
+        <h2>Hero Slides</h2>
+        <p>View and manage your homepage banners.</p>
+      </div>
+
+      <span class="slide-count">
+        {{ slides.length }} {{ slides.length === 1 ? 'slide' : 'slides' }}
+      </span>
+    </div>
+
+    @if (isLoading) {
+    <div class="empty-state">
+      <span class="loading-spinner"></span>
+      <p>Loading hero slides... The server may take up to a minute to wake up.</p>
+    </div>
+    } @else {
+    <div class="table-wrapper">
+      <table class="hero-table">
+        <thead>
+          <tr>
+            <th class="number-column">#</th>
+            <th class="banner-column">Banner</th>
+            <th>Heading</th>
+            <th class="action-column">Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (slide of slides; track $index; let i = $index) {
+          <tr>
+            <td class="number-cell">
+              {{ (i + 1).toString().padStart(2, '0') }}
+            </td>
+
+            <td>
+              <div class="thumbnail-wrapper">
+                @if (slide.imageUrl) {
+                <img class="table-thumbnail" [src]="slide.imageUrl"
+                  [alt]="slide.altText || slide.title || 'Hero banner'" loading="lazy" />
+                } @else {
+                <div class="thumbnail-placeholder">
+                  <span>No image</span>
+                </div>
+                }
+              </div>
+            </td>
+
+            <td>
+              <div class="slide-title">
+                {{ slide.title || 'Untitled slide' }}
+                @if (slide.highlight) {
+                <span class="slide-highlight"> {{ slide.highlight }}</span>
+                }
+              </div>
+
+              <div class="slide-subtitle">
+                {{ slide.description || 'No description' }}
+              </div>
+            </td>
+
+            <td class="action-cell">
+              <button class="icon-button" type="button" title="Preview slide" aria-label="Preview slide"
+                (click)="openPreview(i)">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
+            </td>
+          </tr>
+          } @empty {
+          <tr>
+            <td colspan="4">
+              <div class="empty-state">
+                <h3>No hero slides yet</h3>
+                <p>Click Add New to create your first banner.</p>
+              </div>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </section>
+</div>
+
+@if (isModalOpen && slides[selectedSlideIndex]; as slide) {
+<div class="modal-backdrop" (click)="closeModal()">
+  <section class="hero-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"
+    (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <div>
+        <span class="eyebrow">
+          @if (modalMode === 'create') {
+          NEW BANNER
+          } @else if (modalMode === 'edit') {
+          EDIT BANNER
+          } @else {
+          BANNER DETAILS
+          }
+        </span>
+
+        <h2 id="modal-title">
+          @if (modalMode === 'create') {
+          Create Hero Slide
+          } @else if (modalMode === 'edit') {
+          Edit Hero Slide
+          } @else {
+          Hero Slide Preview
+          }
+        </h2>
+      </div>
+
+      <button class="close-button" type="button" aria-label="Close modal" (click)="closeModal()">
+        &times;
+      </button>
+    </header>
+
+    @if (errorMessage) {
+    <div class="message error-message">{{ errorMessage }}</div>
+    }
+
+    @if (modalMode === 'preview') {
+    <div class="preview-body">
+      <div class="hero-preview">
+        @if (slide.imageUrl) {
+        <img class="preview-background" [src]="slide.imageUrl" [alt]="slide.altText || slide.title" />
+        } @else {
+        <div class="preview-placeholder">
+          <span>No banner image uploaded</span>
+        </div>
+        }
+
+        <div class="preview-overlay"></div>
+
+        <div class="preview-content">
+          <span class="preview-label">{{ slide.eyebrow || 'TGSCO' }}</span>
+          <h3>
+            {{ slide.title || 'Your hero heading' }}
+            @if (slide.highlight) {
+            <span class="preview-highlight">{{ slide.highlight }}</span>
+            }
+          </h3>
+          <p>
+            {{ slide.description || 'Your banner description will appear here.' }}
+          </p>
+
+          @if (slide.buttonLabel) {
+          <span class="preview-button">
+            {{ slide.buttonLabel }}
+          </span>
+          }
+        </div>
+      </div>
+
+      <div class="details-list">
+        <div class="detail-item">
+          <span>Eyebrow</span>
+          <strong>{{ slide.eyebrow || '—' }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Heading</span>
+          <strong>{{ slide.title || '—' }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Highlight</span>
+          <strong>{{ slide.highlight || '—' }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Description</span>
+          <p>{{ slide.description || '—' }}</p>
+        </div>
+
+        <div class="detail-item">
+          <span>Button</span>
+          <strong>
+            {{ slide.buttonLabel || '—' }}
+            @if (slide.buttonUrl) { ({{ slide.buttonUrl }}) }
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Image alt text</span>
+          <strong>{{ slide.altText || '—' }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <footer class="modal-footer">
+      <button class="secondary-button" type="button" (click)="closeModal()">
+        Close
+      </button>
+
+      <button class="primary-button" type="button" (click)="editSelectedSlide()">
+        <span class="button-icon">✎</span>
+        Edit
+      </button>
+
+      <button type="button" class="delete-button" (click)="deleteHeroSection()" [disabled]="isSaving || isLoading">
+        {{ isSaving ? 'Deleting...' : 'Delete Section' }}
+      </button>
+    </footer>
+    } @else {
+    <div class="modal-form">
+      <div class="field">
+        <label for="hero-eyebrow">Eyebrow</label>
+        <input id="hero-eyebrow" type="text" name="heroEyebrow" [(ngModel)]="slide.eyebrow"
+          placeholder="e.g. OFFICIAL TELANGANA GOVERNMENT COOPERATIVE" />
+      </div>
+
+      <div class="two-column">
+        <div class="field">
+          <label for="hero-title">Heading</label>
+          <input id="hero-title" type="text" name="heroTitle" [(ngModel)]="slide.title"
+            placeholder="Enter banner heading" />
+        </div>
+
+        <div class="field">
+          <label for="hero-highlight">Highlighted text</label>
+          <input id="hero-highlight" type="text" name="heroHighlight" [(ngModel)]="slide.highlight"
+            placeholder="e.g. One Weave at a Time." />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="hero-description">Description</label>
+        <textarea id="hero-description" name="heroDescription" [(ngModel)]="slide.description"
+          placeholder="Enter banner description" rows="3"></textarea>
+      </div>
+
+      <div class="two-column">
+        <div class="field">
+          <label for="hero-button-label">Button label</label>
+          <input id="hero-button-label" type="text" name="heroButtonLabel" [(ngModel)]="slide.buttonLabel"
+            placeholder="e.g. Shop Now" />
+        </div>
+
+        <div class="field">
+          <label for="hero-button-url">Button link</label>
+          <input id="hero-button-url" type="text" name="heroButtonUrl" [(ngModel)]="slide.buttonUrl"
+            placeholder="e.g. /shop" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="hero-alt">Image alt text</label>
+        <input id="hero-alt" type="text" name="heroAlt" [(ngModel)]="slide.altText"
+          placeholder="Describe the image for accessibility" />
+      </div>
+
+      <div class="field">
+        <label for="hero-image">Banner Image</label>
+
+        <label class="upload-area" for="hero-image">
+          @if (slide.imageUrl) {
+          <img class="upload-preview" [src]="slide.imageUrl" [alt]="slide.altText || 'Selected banner image'" />
+          <span>Choose a different image</span>
+          } @else {
+          <span class="upload-symbol">↑</span>
+          <strong>Choose an image</strong>
+          <span>Click to browse your files</span>
+          }
+        </label>
+
+        <input id="hero-image" class="file-input" type="file" accept="image/*" (change)="onImageSelected($event)" />
+
+        @if (slide.imageFile) {
+        <p class="file-name">{{ slide.imageFile.name }}</p>
+        }
+      </div>
+    </div>
+
+    <footer class="modal-footer">
+      <button class="secondary-button" type="button" (click)="closeModal()" [disabled]="isSaving">
+        Cancel
+      </button>
+
+      <button class="primary-button" type="button" (click)="saveHeroContent()" [disabled]="isSaving">
+        {{ isSaving ? 'Saving...' : 'Save Changes' }}
+      </button>
+    </footer>
+    }
+  </section>
+</div>
+}

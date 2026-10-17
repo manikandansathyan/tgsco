@@ -1,0 +1,152 @@
+
+<div class="faq-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">CONTACT MANAGEMENT</span>
+      <h1>Frequently Asked Questions</h1>
+      <p>Manage the FAQ title, questions, and answers displayed on your website.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        class="btn btn-secondary"
+        type="button"
+        (click)="loadFaq()"
+        [disabled]="isLoading || isSaving"
+      >
+        Refresh
+      </button>
+
+      <button
+        class="btn btn-danger"
+        type="button"
+        (click)="deleteFaq()"
+        [disabled]="!exists || isDeleting || isSaving"
+      >
+        {{ isDeleting ? 'Deleting...' : 'Delete All' }}
+      </button>
+    </div>
+  </header>
+
+  @if (successMessage) {
+    <div class="alert alert-success">{{ successMessage }}</div>
+  }
+
+  @if (errorMessage) {
+    <div class="alert alert-error">{{ errorMessage }}</div>
+  }
+
+  @if (isLoading) {
+    <div class="loading-state">Loading FAQ content...</div>
+  } @else {
+    <section class="editor-card">
+      <div class="card-heading">
+        <div>
+          <h2>Section Settings</h2>
+          <p>Configure the heading for your FAQ section.</p>
+        </div>
+
+        <span class="status-pill" [class.saved]="exists">
+          {{ exists ? 'Saved content' : 'New content' }}
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="faqTitle">Section Title <span>*</span></label>
+        <input
+          id="faqTitle"
+          type="text"
+          name="faqTitle"
+          [(ngModel)]="title"
+          placeholder="Frequently Asked Questions"
+          required
+        />
+      </div>
+    </section>
+
+    <section class="editor-card">
+      <div class="card-heading faq-heading">
+        <div>
+          <h2>FAQ Items</h2>
+          <p>Add questions and their answers. The order here is the display order.</p>
+        </div>
+
+        <button class="btn btn-secondary" type="button" (click)="addItem()">
+          + Add Question
+        </button>
+      </div>
+
+      @if (items.length === 0) {
+        <div class="empty-state">
+          <h3>No FAQ items yet</h3>
+          <p>Add a question to get started.</p>
+          <button class="btn btn-primary" type="button" (click)="addItem()">
+            Add First Question
+          </button>
+        </div>
+      }
+
+      <div class="faq-list">
+        @for (item of items; track item.id; let i = $index) {
+          <article class="faq-item">
+            <div class="faq-item-header">
+              <div class="item-number">Question {{ i + 1 }}</div>
+
+              <button
+                class="remove-button"
+                type="button"
+                (click)="removeItem(i)"
+                aria-label="Remove question"
+              >
+                Remove
+              </button>
+            </div>
+
+            <div class="form-group">
+              <label [for]="'question-' + i">Question <span>*</span></label>
+              <input
+                [id]="'question-' + i"
+                type="text"
+                [name]="'question-' + i"
+                [(ngModel)]="item.question"
+                (ngModelChange)="updateSlug(item)"
+                placeholder="Enter the question"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label [for]="'answer-' + i">Answer</label>
+              <textarea
+                [id]="'answer-' + i"
+                [name]="'answer-' + i"
+                [(ngModel)]="item.answer"
+                rows="4"
+                placeholder="Enter the answer"
+              ></textarea>
+            </div>
+
+            <div class="slug-preview">
+              <span>ID:</span> {{ item.id }}
+              <span class="slug-separator">·</span>
+              <span>Slug:</span> {{ item.slug || 'Will be generated from the question' }}
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+
+    <footer class="form-footer">
+      <span class="item-count">{{ items.length }} FAQ item(s)</span>
+
+      <button
+        class="btn btn-primary save-button"
+        type="button"
+        (click)="saveFaq()"
+        [disabled]="isSaving || isDeleting"
+      >
+        {{ isSaving ? 'Saving...' : (exists ? 'Update FAQ' : 'Create FAQ') }}
+      </button>
+    </footer>
+  }
+</div>

@@ -1,0 +1,242 @@
+<div class="page-container">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">OUR HERITAGE CONTENT</span>
+      <h1>Sustainability</h1>
+      <p>Manage the sustainability story and imagery displayed on the website.</p>
+    </div>
+
+    <span class="status" [class.status-active]="isEditing">
+      {{ isEditing ? 'Content Published' : 'New Content' }}
+    </span>
+  </header>
+
+  @if (message) {
+    <div
+      class="message"
+      [class.message-success]="messageType === 'success'"
+      [class.message-error]="messageType === 'error'"
+      role="status"
+    >
+      {{ message }}
+    </div>
+  }
+
+  @if (isLoading) {
+    <div class="loading">
+      <span class="spinner"></span>
+      <p>Loading sustainability content...</p>
+    </div>
+  } @else {
+    <form class="content-form" (ngSubmit)="saveSustainability()">
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Section Content</h2>
+            <p>Edit the heading and sustainability description.</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="title">Section Title <span>*</span></label>
+          <input
+            id="title"
+            name="title"
+            [(ngModel)]="title"
+            placeholder="Slow by Tradition, Sustainable by Design"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description <span>*</span></label>
+          <textarea
+            id="description"
+            name="description"
+            [(ngModel)]="description"
+            rows="7"
+            placeholder="Enter the sustainability story..."
+            required
+          ></textarea>
+          <small>
+            Describe the traditional handloom practices and their environmental benefits.
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label for="closingTitle">Closing Title <span>*</span></label>
+          <input
+            id="closingTitle"
+            name="closingTitle"
+            [(ngModel)]="closingTitle"
+            placeholder="Slow fashion, made with intention"
+            required
+          />
+          <small>This heading appears at the end of the section.</small>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Sustainability Image</h2>
+            <p>Upload the image that represents traditional handloom weaving.</p>
+          </div>
+        </div>
+
+        <label class="upload-area" for="sustainabilityImage">
+          <div class="upload-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <path d="m21 15-5-5L5 21"></path>
+            </svg>
+          </div>
+
+          <strong>
+            {{
+              sustainabilityImage
+                ? sustainabilityImage.name
+                : 'Click to upload sustainability image'
+            }}
+          </strong>
+
+          <span>PNG, JPG, JPEG or WebP · Maximum 5 MB</span>
+
+          <input
+            id="sustainabilityImage"
+            type="file"
+            accept="image/*"
+            (change)="onImageSelected($event)"
+          />
+        </label>
+
+        @if (imagePreview || existingImageUrl) {
+          <div class="preview-container">
+            <div class="preview-header">
+              <h3>Image Preview</h3>
+
+              @if (sustainabilityImage) {
+                <button
+                  type="button"
+                  class="text-button"
+                  (click)="removeSelectedImage()"
+                >
+                  Remove selected image
+                </button>
+              }
+            </div>
+
+            <img
+              class="image-preview"
+              [src]="imagePreview || existingImageUrl"
+              [alt]="imageAlt || 'Sustainability image preview'"
+            />
+          </div>
+        }
+
+        <div class="form-group alt-group">
+          <label for="imageAlt">Image Alt Text <span>*</span></label>
+          <input
+            id="imageAlt"
+            name="imageAlt"
+            [(ngModel)]="imageAlt"
+            placeholder="Hands weaving fabric on a traditional loom"
+            required
+          />
+          <small>Describe the image for accessibility and screen readers.</small>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Appearance</h2>
+            <p>Configure the section's background color.</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="backgroundColor">Background Color <span>*</span></label>
+
+          <div class="color-control">
+            <input
+              id="backgroundColorPicker"
+              name="backgroundColorPicker"
+              class="color-picker"
+              type="color"
+              [(ngModel)]="backgroundColor"
+              aria-label="Choose background color"
+            />
+
+            <input
+              id="backgroundColor"
+              name="backgroundColor"
+              class="color-text"
+              [(ngModel)]="backgroundColor"
+              placeholder="#000000"
+              pattern="^#[0-9A-Fa-f]{6}$"
+              required
+            />
+          </div>
+
+          <div
+            class="color-preview"
+            [style.background-color]="backgroundColor"
+          >
+            <span>Background Preview</span>
+            <strong>{{ backgroundColor }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <footer class="form-actions">
+        @if (isEditing) {
+          <button
+            type="button"
+            class="button button-danger-outline"
+            (click)="deleteSustainability()"
+            [disabled]="isSaving || isDeleting"
+          >
+            {{ isDeleting ? 'Deleting...' : 'Delete Content' }}
+          </button>
+        }
+
+        <div class="action-right">
+          <button
+            type="button"
+            class="button button-secondary"
+            (click)="resetForm()"
+            [disabled]="isSaving || isDeleting"
+          >
+            Reset
+          </button>
+
+          <button
+            type="submit"
+            class="button button-primary"
+            [disabled]="isSaving || isDeleting"
+          >
+            {{
+              isSaving
+                ? 'Saving...'
+                : isEditing
+                  ? 'Update Content'
+                  : 'Create Content'
+            }}
+          </button>
+        </div>
+      </footer>
+    </form>
+  }
+</div>

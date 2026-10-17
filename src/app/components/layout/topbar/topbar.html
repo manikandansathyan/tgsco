@@ -1,0 +1,49 @@
+<header class="topbar">
+  <button
+    type="button"
+    class="icon-button mobile-menu"
+    aria-label="Open navigation"
+    (click)="menuClick.emit()"
+  >
+    <svg lucideMenu [size]="21"></svg>
+  </button>
+
+  <div class="search-box">
+    <svg lucideSearch [size]="18"></svg>
+    <input
+      type="search"
+      placeholder="Search anything..."
+      aria-label="Search"
+    />
+    <span class="search-shortcut">Ctrl K</span>
+  </div>
+
+  <div class="topbar-actions">
+    <button type="button" class="icon-button" aria-label="Notifications">
+      <svg lucideBell [size]="20"></svg>
+      <span class="notification-dot"></span>
+    </button>
+
+    <div class="profile">
+      <div class="avatar">A</div>
+
+      <div class="profile-info">
+        <span class="profile-name">Administrator</span>
+        <span class="profile-role">Super Admin</span>
+      </div>
+
+      <svg class="profile-chevron" lucideChevronDown [size]="16"></svg>
+    </div>
+
+    <button
+      type="button"
+      class="logout-button"
+      (click)="logout()"
+      [disabled]="isLoggingOut"
+    >
+      <svg lucideLogOut [size]="17"></svg>
+      <span>{{ isLoggingOut ? 'Logging out...' : 'Logout' }}</span>
+    </button>
+  </div>
+</header>
+

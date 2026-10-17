@@ -1,0 +1,185 @@
+
+<div class="featured-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">WEBSITE MANAGEMENT</span>
+      <h1>Featured Collections</h1>
+      <p>Manage the collection cards displayed on your homepage.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="delete-button"
+        (click)="deleteFeaturedCollections()"
+        [disabled]="isDeleting || isSaving || !isExistingContent"
+      >
+        {{ isDeleting ? 'Deleting...' : 'Delete Section' }}
+      </button>
+
+      <button
+        type="button"
+        class="save-button"
+        (click)="saveFeaturedCollections()"
+        [disabled]="isSaving || isLoading || isDeleting"
+      >
+        {{ isSaving ? 'Saving...' : (isExistingContent ? 'Update Content' : 'Create Content') }}
+      </button>
+    </div>
+  </header>
+
+  <div class="status-message success" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <div class="status-message error" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    Loading Featured Collections...
+  </div>
+
+  <ng-container *ngIf="!isLoading">
+    <section class="content-card">
+      <div class="section-heading">
+        <div>
+          <h2>Section Content</h2>
+          <p>Edit the heading and introduction shown above the collections.</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="sectionTitle">Section Title</label>
+        <input
+          id="sectionTitle"
+          type="text"
+          [(ngModel)]="content.title"
+          placeholder="Enter section title"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="sectionDescription">Section Description</label>
+        <textarea
+          id="sectionDescription"
+          rows="4"
+          [(ngModel)]="content.description"
+          placeholder="Enter section description"
+        ></textarea>
+      </div>
+    </section>
+
+    <section class="collections-section">
+      <div class="section-heading">
+        <div>
+          <h2>Collection Cards</h2>
+          <p>Manage the five featured collections and their images.</p>
+        </div>
+        <span class="item-count">{{ content.items.length }} Collections</span>
+      </div>
+
+      <article
+        class="collection-card"
+        *ngFor="let item of content.items; let i = index"
+      >
+        <div class="collection-card-header">
+          <div class="collection-number">{{ i + 1 }}</div>
+          <div>
+            <h3>Collection {{ i + 1 }}</h3>
+            <p>Update the collection text and images.</p>
+          </div>
+        </div>
+
+        <div class="collection-form">
+          <div class="form-group">
+            <label [for]="'collectionName' + i">Collection Name</label>
+            <input
+              [id]="'collectionName' + i"
+              type="text"
+              [(ngModel)]="item.name"
+              placeholder="Enter collection name"
+            />
+          </div>
+
+          <div class="form-group">
+            <label [for]="'collectionButton' + i">Button Text</label>
+            <input
+              [id]="'collectionButton' + i"
+              type="text"
+              [(ngModel)]="item.buttonText"
+              placeholder="Explore Now"
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label [for]="'collectionDescription' + i">Description</label>
+            <textarea
+              [id]="'collectionDescription' + i"
+              rows="3"
+              [(ngModel)]="item.description"
+              placeholder="Enter collection description"
+            ></textarea>
+          </div>
+
+          <div class="image-upload-group">
+            <label>Main Image</label>
+
+            <div class="image-preview" *ngIf="item.mainImageUrl">
+              <img [src]="item.mainImageUrl" [alt]="item.name + ' main image'" />
+            </div>
+
+            <div class="image-placeholder" *ngIf="!item.mainImageUrl">
+              <span>No main image selected</span>
+            </div>
+
+            <input
+              type="file"
+              accept="image/*"
+              [id]="'mainImage' + i"
+              (change)="onImageSelected($event, i, 'main')"
+            />
+
+            <small>
+              {{ item.mainImageFile?.name || 'Choose a main image' }}
+            </small>
+          </div>
+
+          <div class="image-upload-group">
+            <label>Border Image</label>
+
+            <div class="image-preview border-preview" *ngIf="item.borderImageUrl">
+              <img [src]="item.borderImageUrl" [alt]="item.name + ' border image'" />
+            </div>
+
+            <div class="image-placeholder" *ngIf="!item.borderImageUrl">
+              <span>No border image selected</span>
+            </div>
+
+            <input
+              type="file"
+              accept="image/*"
+              [id]="'borderImage' + i"
+              (change)="onImageSelected($event, i, 'border')"
+            />
+
+            <small>
+              {{ item.borderImageFile?.name || 'Choose a border image' }}
+            </small>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <div class="bottom-actions">
+      <button
+        type="button"
+        class="save-button"
+        (click)="saveFeaturedCollections()"
+        [disabled]="isSaving || isDeleting"
+      >
+        {{ isSaving ? 'Saving...' : (isExistingContent ? 'Update Featured Collections' : 'Create Featured Collections') }}
+      </button>
+    </div>
+  </ng-container>
+</div>

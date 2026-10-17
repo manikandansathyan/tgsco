@@ -1,0 +1,138 @@
+<div class="why-choose-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">WEBSITE MANAGEMENT</span>
+      <h1>Why Choose Us</h1>
+      <p>Manage the promises and values displayed on your homepage.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="delete-button"
+        (click)="deleteWhyChooseUs()"
+        [disabled]="isLoading || isSaving || !isExistingContent"
+      >
+        Delete Section
+      </button>
+
+      <button
+        type="button"
+        class="save-button"
+        (click)="saveWhyChooseUs()"
+        [disabled]="isLoading || isSaving"
+      >
+        {{
+          isSaving
+            ? 'Saving...'
+            : isExistingContent
+              ? 'Save Changes'
+              : 'Create Section'
+        }}
+      </button>
+    </div>
+  </header>
+
+  <div class="alert success-alert" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <div class="alert error-alert" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <span class="spinner"></span>
+    <p>Loading Why Choose Us section...</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading">
+    <section class="form-section">
+      <div class="section-heading">
+        <span class="section-number">01</span>
+        <div>
+          <h2>Section Heading</h2>
+          <p>Set the main heading visitors see on your homepage.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="sectionTitle">Title</label>
+        <input
+          id="sectionTitle"
+          type="text"
+          [(ngModel)]="title"
+          name="sectionTitle"
+          placeholder="More Than a Purchase. A Promise."
+        />
+      </div>
+    </section>
+
+    <section class="cards-section">
+      <div class="section-heading cards-heading">
+        <span class="section-number">02</span>
+        <div>
+          <h2>Value Cards</h2>
+          <p>Edit the three reasons customers can trust TGSCO.</p>
+        </div>
+        <span class="count-badge">{{ cards.length }} Cards</span>
+      </div>
+
+      <article
+        class="value-card"
+        *ngFor="let card of cards; let i = index"
+      >
+        <div class="value-card-header">
+          <div class="card-index">0{{ i + 1 }}</div>
+          <div>
+            <h3>{{ card.title || 'Untitled Card' }}</h3>
+            <p>Value proposition {{ i + 1 }}</p>
+          </div>
+        </div>
+
+        <div class="value-card-body">
+          <div class="field">
+            <label [for]="'cardTitle' + i">Card Title</label>
+            <input
+              [id]="'cardTitle' + i"
+              type="text"
+              [(ngModel)]="card.title"
+              [name]="'cardTitle' + i"
+              placeholder="Enter card title"
+            />
+          </div>
+
+          <div class="field">
+            <label [for]="'cardDescription' + i">Description</label>
+            <textarea
+              [id]="'cardDescription' + i"
+              [(ngModel)]="card.description"
+              [name]="'cardDescription' + i"
+              rows="4"
+              placeholder="Describe this value proposition"
+            ></textarea>
+            <small>
+              {{ card.description.length }} characters
+            </small>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <footer class="form-footer">
+      <div>
+        <h3>Ready to publish?</h3>
+        <p>Save your changes to update the homepage content.</p>
+      </div>
+
+      <button
+        type="button"
+        class="save-button"
+        (click)="saveWhyChooseUs()" 
+        [disabled]="isSaving"
+      >
+        {{ isSaving ? 'Saving...' : 'Save Section' }}
+      </button>
+    </footer>
+  </ng-container>
+</div>

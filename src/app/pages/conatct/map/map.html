@@ -1,0 +1,372 @@
+
+<div class="regional-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">CONTACT MANAGEMENT</span>
+      <h1>Regional Map</h1>
+      <p>Manage the regional map, office locations, and contact details.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-outline"
+        (click)="loadRegionalMap()"
+        [disabled]="isLoading || isSaving"
+      >
+        Refresh
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-danger-outline"
+        (click)="deleteRegionalMap()"
+        [disabled]="isDeleting || isSaving || !isEditMode"
+      >
+        {{ isDeleting ? 'Deleting...' : 'Delete Content' }}
+      </button>
+    </div>
+  </header>
+
+  @if (successMessage) {
+    <div class="alert alert-success">{{ successMessage }}</div>
+  }
+
+  @if (errorMessage) {
+    <div class="alert alert-error">{{ errorMessage }}</div>
+  }
+
+  @if (isLoading) {
+    <div class="loading-panel">
+      <span class="spinner"></span>
+      <p>Loading Regional Map...</p>
+    </div>
+  } @else {
+    <section class="editor-card">
+      <div class="section-heading">
+        <div>
+          <h2>Page Settings</h2>
+          <p>Configure the heading and navigation labels.</p>
+        </div>
+
+        <span class="status-pill" [class.status-existing]="isEditMode">
+          {{ isEditMode ? 'Existing content' : 'New content' }}
+        </span>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="eyebrow">Eyebrow</label>
+          <input
+            id="eyebrow"
+            [(ngModel)]="eyebrow"
+            placeholder="regional Map"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="title">Page Title</label>
+          <input
+            id="title"
+            [(ngModel)]="title"
+            placeholder="Regional Map"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="previousLabel">Previous Button Label</label>
+          <input
+            id="previousLabel"
+            [(ngModel)]="navigation.previousLabel"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="nextLabel">Next Button Label</label>
+          <input
+            id="nextLabel"
+            [(ngModel)]="navigation.nextLabel"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="counterFormat">Counter Format</label>
+          <input
+            id="counterFormat"
+            [(ngModel)]="navigation.counterFormat"
+            placeholder="01 / 03"
+          />
+        </div>
+      </div>
+    </section>
+
+    <section class="editor-card">
+      <div class="section-heading">
+        <div>
+          <h2>Telangana Map Image</h2>
+          <p>Upload the main regional map image.</p>
+        </div>
+      </div>
+
+      <div class="main-map-layout">
+        <div class="map-preview">
+          @if (mapImagePreview) {
+            <img [src]="mapImagePreview" [alt]="mapImageAlt" />
+          } @else {
+            <div class="image-placeholder">
+              <span class="placeholder-symbol">＋</span>
+              <span>No map image selected</span>
+            </div>
+          }
+        </div>
+
+        <div class="map-image-fields">
+          <label class="upload-button">
+            {{ mapImageFile ? 'Choose Another Image' : 'Choose Map Image' }}
+            <input
+              type="file"
+              accept="image/*"
+              (change)="onMapImageSelected($event)"
+            />
+          </label>
+
+          <p class="field-hint">Image files only. Maximum 5 MB.</p>
+
+          @if (mapImageFile) {
+            <p class="selected-file">{{ mapImageFile.name }}</p>
+          }
+
+          <div class="form-group">
+            <label for="mapImageAlt">Map Image Alt Text</label>
+            <input
+              id="mapImageAlt"
+              [(ngModel)]="mapImageAlt"
+              placeholder="Describe the map image"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="offices-heading">
+      <div>
+        <h2>Regional Offices</h2>
+        <p>Edit office information and upload individual map images.</p>
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="addOffice()"
+      >
+        + Add Office
+      </button>
+    </div>
+
+    @for (office of offices; track $index; let i = $index) {
+      <section class="editor-card office-card">
+        <div class="office-header">
+          <div class="office-heading">
+            <span class="office-number">{{ (i + 1).toString().padStart(2, '0') }}</span>
+            <div>
+              <h3>{{ office.officeName || 'Regional Office' }}</h3>
+              <p>{{ office.id || 'Enter an office ID' }}</p>
+            </div>
+          </div>
+
+          <div class="office-actions">
+            <button
+              type="button"
+              class="btn btn-outline btn-small"
+              (click)="loadOffice(i)"
+              [disabled]="isSaving || !office.id.trim()"
+            >
+              Fetch Office
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-danger-outline btn-small"
+              (click)="removeOffice(i)"
+              [disabled]="isSaving"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+
+        <div class="office-content">
+          <div class="office-image-section">
+            <h4>Office Map Image</h4>
+
+            <div class="office-image-preview">
+              @if (office.previewUrl) {
+                <img [src]="office.previewUrl" [alt]="office.mapImageAlt" />
+              } @else {
+                <div class="image-placeholder">
+                  <span class="placeholder-symbol">＋</span>
+                  <span>No office image selected</span>
+                </div>
+              }
+            </div>
+
+            <label class="upload-button">
+              {{ office.imageFile ? 'Change Image' : 'Choose Office Image' }}
+              <input
+                type="file"
+                accept="image/*"
+                (change)="onOfficeImageSelected($event, i)"
+              />
+            </label>
+
+            <p class="field-hint">Maximum file size: 5 MB.</p>
+
+            @if (office.imageFile) {
+              <p class="selected-file">{{ office.imageFile.name }}</p>
+            }
+
+            <div class="form-group">
+              <label [for]="'officeImageAlt' + i">Image Alt Text</label>
+              <input
+                [id]="'officeImageAlt' + i"
+                [(ngModel)]="office.mapImageAlt"
+                [name]="'officeImageAlt' + i"
+                placeholder="Describe this image"
+              />
+            </div>
+          </div>
+
+          <div class="office-fields">
+            <div class="form-grid">
+              <div class="form-group">
+                <label [for]="'officeId' + i">Office ID</label>
+                <input
+                  [id]="'officeId' + i"
+                  [(ngModel)]="office.id"
+                  [name]="'officeId' + i"
+                  placeholder="hyderabad-head-office"
+                />
+              </div>
+
+              <div class="form-group">
+                <label [for]="'officeSlug' + i">Slug</label>
+                <input
+                  [id]="'officeSlug' + i"
+                  [(ngModel)]="office.slug"
+                  [name]="'officeSlug' + i"
+                  placeholder="hyderabad-head-office"
+                />
+              </div>
+
+              <div class="form-group">
+                <label [for]="'mapLabel' + i">Map Label</label>
+                <input
+                  [id]="'mapLabel' + i"
+                  [(ngModel)]="office.mapLabel"
+                  [name]="'mapLabel' + i"
+                />
+              </div>
+
+              <div class="form-group">
+                <label [for]="'officeName' + i">Office Name</label>
+                <input
+                  [id]="'officeName' + i"
+                  [(ngModel)]="office.officeName"
+                  [name]="'officeName' + i"
+                />
+              </div>
+
+              <div class="form-group full-width">
+                <label [for]="'address' + i">Address</label>
+                <textarea
+                  [id]="'address' + i"
+                  [(ngModel)]="office.address"
+                  [name]="'address' + i"
+                  rows="2"
+                ></textarea>
+              </div>
+
+              <div class="form-group">
+                <label [for]="'phone' + i">Phone</label>
+                <input
+                  [id]="'phone' + i"
+                  [(ngModel)]="office.phone"
+                  [name]="'phone' + i"
+                />
+              </div>
+
+              <div class="form-group">
+                <label [for]="'email' + i">Email</label>
+                <input
+                  [id]="'email' + i"
+                  type="email"
+                  [(ngModel)]="office.email"
+                  [name]="'email' + i"
+                />
+              </div>
+
+              <div class="form-group full-width">
+                <label [for]="'hours' + i">Working Hours</label>
+                <input
+                  [id]="'hours' + i"
+                  [(ngModel)]="office.hours"
+                  [name]="'hours' + i"
+                />
+              </div>
+
+              <div class="form-group">
+                <label [for]="'directionsLabel' + i">Directions Label</label>
+                <input
+                  [id]="'directionsLabel' + i"
+                  [(ngModel)]="office.directionsLabel"
+                  [name]="'directionsLabel' + i"
+                />
+              </div>
+
+              <div class="form-group">
+                <label [for]="'directionsUrl' + i">Directions URL</label>
+                <input
+                  [id]="'directionsUrl' + i"
+                  type="url"
+                  [(ngModel)]="office.directionsUrl"
+                  [name]="'directionsUrl' + i"
+                  placeholder="https://maps.google.com/..."
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    }
+
+    <footer class="form-footer">
+      <p>Save your changes to update the regional map content.</p>
+
+      <div class="footer-actions">
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="resetForm()"
+          [disabled]="isSaving || isDeleting"
+        >
+          Reset
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="saveRegionalMap()"
+          [disabled]="isSaving || isDeleting"
+        >
+          {{
+            isSaving
+              ? 'Saving...'
+              : isEditMode
+                ? 'Update Regional Map'
+                : 'Create Regional Map'
+          }}
+        </button>
+      </div>
+    </footer>
+  }
+</div>

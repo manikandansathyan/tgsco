@@ -1,0 +1,226 @@
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">
+      <img src="/logo.png" alt="TGSCO Logo" />
+    </div>
+    <div>
+      <h2>TGSCO</h2>
+      <p>Admin Panel</p>
+    </div>
+  </div>
+
+  <div class="menu-label">MAIN MENU</div>
+
+  <nav class="navigation">
+    <a routerLink="/dashboard" routerLinkActive="active" class="nav-link" (click)="closeMenu.emit()">
+      <svg lucideLayoutDashboard [size]="19"></svg>
+      <span>Dashboard</span>
+    </a>
+
+    <button type="button" class="nav-link nav-parent" (click)="toggleHomepage()">
+      <svg lucidePanelsTopLeft [size]="19"></svg>
+      <span>Homepage Content</span>
+      <svg class="nav-chevron" lucideChevronDown [size]="16"></svg>
+    </button>
+
+    @if (isHomepageOpen) {
+    <div class="submenu">
+      <a routerLink="/home/hero" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Hero Section</a>
+      <a routerLink="/home/story" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Our Story</a>
+      <a routerLink="/home/state-techniques" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">State
+        Techniques</a>
+      <a routerLink="/home/journey-of-weave" routerLinkActive="active" class="sub-link"
+        (click)="closeMenu.emit()">Journey of the Weave</a>
+      <a routerLink="/home/meet-the-makers" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Meet
+        the Makers</a>
+      <a routerLink="/home/why-choose-us" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Why
+        Choose Us</a>
+      <a routerLink="/home/featured-collections" routerLinkActive="active" class="sub-link"
+        (click)="closeMenu.emit()">Featured Collections</a>
+      <a routerLink="/home/government-initiatives" routerLinkActive="active" class="sub-link"
+        (click)="closeMenu.emit()">Government Initiatives</a>
+      <a routerLink="/home/blog" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Blog</a>
+      <a routerLink="/home/news-events" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">News &amp;
+        Events</a>
+      <a routerLink="/home/footer" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Footer
+        Content</a>
+    </div>
+    }
+
+    <button type="button" class="nav-link nav-parent" (click)="toggleAboutPage()">
+      <svg lucidePanelsTopLeft [size]="19"></svg>
+      <span>About Content</span>
+      <svg class="nav-chevron" lucideChevronDown [size]="16"></svg>
+    </button>
+
+    @if (isAboutpageOpen) {
+    <div class="submenu">
+      <a routerLink="/about/hero" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">About Hero</a>
+      <a routerLink="/about/story" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Who We Are</a>
+      <a routerLink="/about/milestones" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Milestones
+        Along The Way</a>
+      <a routerLink="/about/vision" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Our Vison</a>
+      <a routerLink="/about/mission" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Our
+        MIssion</a>
+      <a routerLink="/about/purpose" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Our
+        Purpose</a>
+    </div>
+    }
+
+    <button type="button" class="nav-link nav-parent" (click)="toggleSchemePage()">
+      <svg lucidePanelsTopLeft [size]="19"></svg>
+      <span>Scheme Content</span>
+      <svg class="nav-chevron" lucideChevronDown [size]="16"></svg>
+    </button>
+
+    @if (isSchemepageOpen) {
+    <div class="submenu">
+      <a routerLink="/scheme/schemes" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Schemes</a>
+      <a routerLink="/scheme/support" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Suporting
+        the Weavers</a>
+      <a routerLink="/scheme/govt-schemes" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Current
+        Government Schemes</a>
+    </div>
+    }
+
+    <button type="button" class="nav-link nav-parent" (click)="toggleHeritagePage()">
+      <svg lucidePanelsTopLeft [size]="19"></svg>
+      <span>Our Heritage Content</span>
+      <svg lucideChevronDown [size]="16"></svg>
+    </button>
+
+    @if (isHeritageOpen) {
+    <div class="submenu">
+      <a routerLink="/heritage/hero" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">
+        Heritage Hero
+      </a>
+
+      <a routerLink="/heritage/chain-of-craft" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">
+        Chain of Craft
+      </a>
+
+      <a routerLink="/heritage/numbers-that-tell-a-story" routerLinkActive="active" class="sub-link"
+        (click)="closeMenu.emit()">
+        Numbers That Tell a Story
+      </a>
+
+      <a routerLink="/heritage/sustainability" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">
+        Sustainability
+      </a>
+
+      <a routerLink="/heritage/people-guiding-our-mission" routerLinkActive="active" class="sub-link"
+        (click)="closeMenu.emit()">
+        The People Guiding Our Mission
+      </a>
+
+      <a routerLink="/heritage/honoured-for-heritage" routerLinkActive="active" class="sub-link"
+        (click)="closeMenu.emit()">
+        Honoured for Heritage
+      </a>
+    </div>
+    }
+
+    <button type="button" class="nav-link nav-parent" (click)="toggleNewsAndEventsPage()">
+      <svg lucidePanelsTopLeft [size]="19"></svg>
+      <span>News and Event Content</span>
+      <svg lucideChevronDown [size]="16"></svg>
+    </button>
+
+    @if (isNewsAndEventsOpen) {
+    <div class="submenu">
+
+      <a routerLink="/news-and-events/hero" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">
+        News and Events Hero
+      </a>
+
+      <a routerLink="/news-and-events/latest-news" routerLinkActive="active" class="sub-link"
+        (click)="closeMenu.emit()">
+        Latest News
+      </a>
+
+      <a routerLink="/news-and-events/exhibitions" routerLinkActive="active" class="sub-link"
+        (click)="closeMenu.emit()">
+        Exhibitions
+      </a>
+
+      <a routerLink="/news-and-events/calender" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">
+        Events Calendar
+      </a>
+
+      <a routerLink="/news-and-events/press" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">
+        Press Releases
+      </a>
+
+      <a routerLink="/news-and-events/threads" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">
+        Threads of Triumph
+      </a>
+
+      <a routerLink="/news-and-events/media" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">
+        Media Gallery
+      </a>
+    </div>
+    }
+
+    <button type="button" class="nav-link nav-parent" (click)="toggleContactPage()">
+      <svg lucidePanelsTopLeft [size]="19"></svg>
+      <span>Contact Content</span>
+      <svg lucideChevronDown [size]="16"></svg>
+    </button>
+
+    @if (isContactOpen) {
+
+    <div class="submenu">
+
+      <a routerLink="/contact/contact-hero" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">
+        Contact Hero
+      </a>
+
+      <a routerLink="/contact/contact-inquiries" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">
+        Contact Inquiries
+      </a>
+
+      <a routerLink="/contact/faq" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">
+        FAQ
+      </a>
+
+      <a routerLink="/contact/map" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">
+        Map
+      </a>
+
+      <a routerLink="/contact/message" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">
+        Message
+      </a>
+
+    </div>
+  }
+    <button type="button" class="nav-link nav-parent" (click)="toggleVideoPage()">
+      <svg lucidePanelsTopLeft [size]="19"></svg>
+      <span>Video Content</span>
+      <svg lucideChevronDown [size]="16"></svg>
+    </button>
+
+    @if (isVideoOpen) {
+
+    <div class="submenu">
+
+      <a routerLink="/video/add-video" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">
+       Add Video
+      </a>
+
+    </div>
+
+    }
+
+  </nav>
+
+  <div class="sidebar-bottom">
+    <a routerLink="/settings" routerLinkActive="active" class="nav-link" (click)="closeMenu.emit()">
+      <svg lucideSettings [size]="19"></svg>
+      <span>Settings</span>
+    </a>
+
+    <div class="sidebar-footer">
+      <p>Developed by <strong>Qmark Technolabs</strong></p>
+    </div>
+  </div>
+</aside>

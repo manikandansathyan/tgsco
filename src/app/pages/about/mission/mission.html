@@ -1,0 +1,182 @@
+
+<div class="mission-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">ABOUT PAGE MANAGEMENT</span>
+      <h1>Our Mission</h1>
+      <p>Manage the mission statement, cards, and images displayed on the About page.</p>
+    </div>
+  </header>
+
+  <div class="message success-message" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <div class="message error-message" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    Loading mission content...
+  </div>
+
+  <ng-container *ngIf="!isLoading">
+    <section class="form-section">
+      <div class="section-heading">
+        <div>
+          <h2>Section Details</h2>
+          <p>Update the heading displayed above the mission cards.</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="missionTitle">Section Title</label>
+        <input
+          id="missionTitle"
+          type="text"
+          [(ngModel)]="title"
+          placeholder="Enter mission title"
+        />
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="section-heading">
+        <div>
+          <h2>Mission Cards</h2>
+          <p>Edit the icon identifier and text for each mission.</p>
+        </div>
+
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="addCard()"
+        >
+          + Add Card
+        </button>
+      </div>
+
+      <div class="cards-list">
+        <article class="mission-card" *ngFor="let card of cards; let i = index">
+          <div class="card-heading">
+            <span class="card-number">Card {{ i + 1 }}</span>
+
+            <button
+              type="button"
+              class="remove-button"
+              (click)="removeCard(i)"
+            >
+              Remove
+            </button>
+          </div>
+
+          <div class="form-group">
+            <label [for]="'missionIcon' + i">Icon Identifier</label>
+            <input
+              [id]="'missionIcon' + i"
+              type="text"
+              [(ngModel)]="card.icon"
+              [name]="'missionIcon' + i"
+              placeholder="Example: shield"
+            />
+            <small>Examples: shield, megaphone, fairness, accessibility, sustainability.</small>
+          </div>
+
+          <div class="form-group">
+            <label [for]="'missionText' + i">Mission Text</label>
+            <textarea
+              [id]="'missionText' + i"
+              [(ngModel)]="card.text"
+              [name]="'missionText' + i"
+              rows="3"
+              placeholder="Enter mission description"
+            ></textarea>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="section-heading">
+        <div>
+          <h2>Mission Images</h2>
+          <p>Upload the primary and secondary images for this section.</p>
+        </div>
+      </div>
+
+      <div class="image-grid">
+        <div class="image-upload-card">
+          <label class="image-label">Primary Mission Image</label>
+
+          <div class="image-preview" *ngIf="missionImagePreview">
+            <img [src]="missionImagePreview" alt="Primary mission preview" />
+          </div>
+
+          <div class="empty-image" *ngIf="!missionImagePreview">
+            No primary image selected
+          </div>
+
+          <label class="upload-button">
+            Choose Primary Image
+            <input
+              type="file"
+              accept="image/*"
+              (change)="onMissionImageSelected($event)"
+              hidden
+            />
+          </label>
+
+          <small>Upload a new image to replace the current one.</small>
+        </div>
+
+        <div class="image-upload-card">
+          <label class="image-label">Secondary Mission Image</label>
+
+          <div class="image-preview" *ngIf="missionSecondaryImagePreview">
+            <img
+              [src]="missionSecondaryImagePreview"
+              alt="Secondary mission preview"
+            />
+          </div>
+
+          <div class="empty-image" *ngIf="!missionSecondaryImagePreview">
+            No secondary image selected
+          </div>
+
+          <label class="upload-button">
+            Choose Secondary Image
+            <input
+              type="file"
+              accept="image/*"
+              (change)="onMissionSecondaryImageSelected($event)"
+              hidden
+            />
+          </label>
+
+          <small>Upload a new image to replace the current one.</small>
+        </div>
+      </div>
+    </section>
+
+    <footer class="form-actions">
+      <button
+        type="button"
+        class="delete-button"
+        *ngIf="isExistingContent"
+        [disabled]="isSaving"
+        (click)="deleteMission()"
+      >
+        Delete Content
+      </button>
+
+      <button
+        type="button"
+        class="save-button"
+        [disabled]="isSaving"
+        (click)="saveMission()"
+      >
+        {{ isSaving ? 'Saving...' : (isExistingContent ? 'Update Mission' : 'Save Mission') }}
+      </button>
+    </footer>
+  </ng-container>
+</div>

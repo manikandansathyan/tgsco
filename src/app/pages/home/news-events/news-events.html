@@ -1,0 +1,217 @@
+<div class="news-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">WEBSITE MANAGEMENT</span>
+      <h1>News & Events</h1>
+      <p>Manage the news, announcements, exhibitions, and events displayed on your homepage.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="delete-button"
+        (click)="deleteNewsEvents()"
+        [disabled]="isSaving || isLoading || !isExistingContent"
+      >
+        Delete Section
+      </button>
+
+      <button
+        type="button"
+        class="save-button"
+        (click)="saveNewsEvents()"
+        [disabled]="isSaving || isLoading"
+      >
+        {{ isSaving ? 'Saving...' : 'Save Changes' }}
+      </button>
+    </div>
+  </header>
+
+  <div class="message success-message" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <div class="message error-message" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    Loading News & Events content...
+  </div>
+
+  <ng-container *ngIf="!isLoading">
+    <section class="form-section">
+      <div class="section-heading">
+        <div>
+          <h2>Section Content</h2>
+          <p>Configure the heading and the button shown below the cards.</p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label for="sectionTitle">Section Title</label>
+          <input
+            id="sectionTitle"
+            type="text"
+            [(ngModel)]="title"
+            placeholder="Enter section title"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="buttonLabel">View All Button Label</label>
+          <input
+            id="buttonLabel"
+            type="text"
+            [(ngModel)]="button.label"
+            placeholder="View All News & Events"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="buttonUrl">View All Button URL</label>
+          <input
+            id="buttonUrl"
+            type="text"
+            [(ngModel)]="button.url"
+            placeholder="/news-events"
+          />
+        </div>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="section-heading cards-heading">
+        <div>
+          <h2>News & Event Cards</h2>
+          <p>Edit each card and upload its image.</p>
+        </div>
+
+        <button type="button" class="add-button" (click)="addCard()">
+          + Add Card
+        </button>
+      </div>
+
+      <div class="cards-list">
+        <article class="news-card-editor" *ngFor="let card of cards; let i = index">
+          <div class="card-top">
+            <div>
+              <span class="card-number">CARD {{ i + 1 }}</span>
+              <h3>{{ card.title || 'New News & Event' }}</h3>
+            </div>
+
+            <button
+              type="button"
+              class="remove-button"
+              (click)="removeCard(i)"
+              [disabled]="cards.length <= 1"
+            >
+              Remove
+            </button>
+          </div>
+
+          <div class="card-content">
+            <div class="image-upload">
+              <div class="image-preview">
+                <img
+                  *ngIf="card.imagePreview"
+                  [src]="card.imagePreview"
+                  [alt]="card.title || 'News and event image'"
+                />
+
+                <div class="image-placeholder" *ngIf="!card.imagePreview">
+                  <span class="image-icon">＋</span>
+                  <span>No image selected</span>
+                </div>
+              </div>
+
+              <label class="upload-button">
+                Choose Image
+                <input
+                  type="file"
+                  accept="image/*"
+                  (change)="onImageSelected($event, i)"
+                />
+              </label>
+
+              <p class="upload-hint">
+                {{ card.imageFile?.name || 'Upload an image for this card.' }}
+              </p>
+            </div>
+
+            <div class="form-grid card-fields">
+              <div class="form-group">
+                <label [for]="'category-' + i">Category</label>
+                <input
+                  [id]="'category-' + i"
+                  type="text"
+                  [(ngModel)]="card.category"
+                  [name]="'category-' + i"
+                  placeholder="EXHIBITION"
+                />
+              </div>
+
+              <div class="form-group">
+                <label [for]="'cardButton-' + i">Button Text</label>
+                <input
+                  [id]="'cardButton-' + i"
+                  type="text"
+                  [(ngModel)]="card.buttonText"
+                  [name]="'cardButton-' + i"
+                  placeholder="READ MORE"
+                />
+              </div>
+
+              <div class="form-group full-width">
+                <label [for]="'cardTitle-' + i">Card Title</label>
+                <input
+                  [id]="'cardTitle-' + i"
+                  type="text"
+                  [(ngModel)]="card.title"
+                  [name]="'cardTitle-' + i"
+                  placeholder="Enter card title"
+                />
+              </div>
+
+              <div class="form-group full-width">
+                <label [for]="'description-' + i">Description</label>
+                <textarea
+                  [id]="'description-' + i"
+                  [(ngModel)]="card.description"
+                  [name]="'description-' + i"
+                  rows="3"
+                  placeholder="Enter a short description"
+                ></textarea>
+              </div>
+
+              <div class="form-group full-width">
+                <label [for]="'url-' + i">Card URL</label>
+                <input
+                  [id]="'url-' + i"
+                  type="text"
+                  [(ngModel)]="card.url"
+                  [name]="'url-' + i"
+                  placeholder="/news-events/example"
+                />
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <div class="bottom-actions">
+      <span>{{ cards.length }} card(s)</span>
+
+      <button
+        type="button"
+        class="save-button"
+        (click)="saveNewsEvents()"
+        [disabled]="isSaving"
+      >
+        {{ isSaving ? 'Saving...' : 'Save News & Events' }}
+      </button>
+    </div>
+  </ng-container>
+</div>

@@ -1,0 +1,239 @@
+
+<div class="page-container">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">ABOUT PAGE MANAGEMENT</span>
+      <h1>Milestones Along the Way</h1>
+      <p>Manage the history and key milestones of TGSCO.</p>
+    </div>
+
+    <button
+      type="button"
+      class="button button-secondary"
+      (click)="loadMilestones()"
+      [disabled]="isLoading || isSaving"
+    >
+      Refresh
+    </button>
+  </header>
+
+  <div *ngIf="isLoading" class="status-message loading-message">
+    Loading milestones...
+  </div>
+
+  <div *ngIf="successMessage" class="status-message success-message">
+    {{ successMessage }}
+  </div>
+
+  <div *ngIf="errorMessage" class="status-message error-message">
+    {{ errorMessage }}
+  </div>
+
+  <form
+    *ngIf="!isLoading"
+    class="content-form"
+    (ngSubmit)="saveMilestones()"
+  >
+    <section class="form-section">
+      <div class="section-heading">
+        <div>
+          <h2>Section Information</h2>
+          <p>Set the main heading and introduction.</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="title">Section Title</label>
+        <input
+          id="title"
+          name="title"
+          type="text"
+          [(ngModel)]="content.title"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="description">Section Description</label>
+        <textarea
+          id="description"
+          name="description"
+          rows="4"
+          [(ngModel)]="content.description"
+          required
+        ></textarea>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="section-heading">
+        <div>
+          <h2>Milestone Cards</h2>
+          <p>Edit the timeline items, add new milestones, or change their order.</p>
+        </div>
+
+        <button
+          type="button"
+          class="button button-primary"
+          (click)="addMilestone()"
+        >
+          + Add Milestone
+        </button>
+      </div>
+
+      <div
+        class="milestone-card"
+        *ngFor="let item of content.milestones; let i = index"
+      >
+        <div class="milestone-card-header">
+          <div class="milestone-number">{{ item.number || '—' }}</div>
+
+          <div class="milestone-heading">
+            <h3>Milestone {{ i + 1 }}</h3>
+            <span>Timeline item</span>
+          </div>
+
+          <div class="card-actions">
+            <button
+              type="button"
+              class="icon-button"
+              title="Move up"
+              aria-label="Move milestone up"
+              (click)="moveMilestone(i, -1)"
+              [disabled]="i === 0"
+            >
+              ↑
+            </button>
+
+            <button
+              type="button"
+              class="icon-button"
+              title="Move down"
+              aria-label="Move milestone down"
+              (click)="moveMilestone(i, 1)"
+              [disabled]="i === content.milestones.length - 1"
+            >
+              ↓
+            </button>
+
+            <button
+              type="button"
+              class="remove-button"
+              (click)="removeMilestone(i)"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+
+        <div class="milestone-fields">
+          <div class="form-group number-field">
+            <label [for]="'number-' + i">Number</label>
+            <input
+              [id]="'number-' + i"
+              [name]="'number-' + i"
+              type="text"
+              [(ngModel)]="item.number"
+              placeholder="01"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label [for]="'milestone-title-' + i">Title</label>
+            <input
+              [id]="'milestone-title-' + i"
+              [name]="'milestone-title-' + i"
+              type="text"
+              [(ngModel)]="item.title"
+              placeholder="Enter milestone title"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label [for]="'milestone-description-' + i">
+            Description
+          </label>
+          <textarea
+            [id]="'milestone-description-' + i"
+            [name]="'milestone-description-' + i"
+            [(ngModel)]="item.description"
+            rows="3"
+            placeholder="Describe this milestone"
+            required
+          ></textarea>
+        </div>
+      </div>
+
+      <div *ngIf="content.milestones.length === 0" class="empty-state">
+        <p>No milestones added yet.</p>
+        <button
+          type="button"
+          class="button button-secondary"
+          (click)="addMilestone()"
+        >
+          Add your first milestone
+        </button>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="section-heading">
+        <div>
+          <h2>Footer Text</h2>
+          <p>Set the closing message displayed below the timeline.</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="footerText">Footer Text</label>
+        <textarea
+          id="footerText"
+          name="footerText"
+          rows="3"
+          [(ngModel)]="content.footerText"
+          placeholder="Enter footer text"
+        ></textarea>
+      </div>
+    </section>
+
+    <footer class="form-footer">
+      <button
+        *ngIf="isExistingContent"
+        type="button"
+        class="button button-danger"
+        (click)="deleteMilestones()"
+        [disabled]="isSaving || isDeleting"
+      >
+        {{ isDeleting ? 'Deleting...' : 'Delete Content' }}
+      </button>
+
+      <div class="footer-actions">
+        <button
+          type="button"
+          class="button button-secondary"
+          (click)="resetForm()"
+          [disabled]="isSaving || isDeleting"
+        >
+          Reset Form
+        </button>
+
+        <button
+          type="submit"
+          class="button button-primary"
+          [disabled]="isSaving || isDeleting"
+        >
+          {{
+            isSaving
+              ? 'Saving...'
+              : isExistingContent
+                ? 'Update Content'
+                : 'Create Content'
+          }}
+        </button>
+      </div>
+    </footer>
+  </form>
+</div>

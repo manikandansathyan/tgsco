@@ -1,0 +1,207 @@
+
+<div class="initiatives-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">WEBSITE MANAGEMENT</span>
+      <h1>Government Initiatives</h1>
+      <p>Manage government schemes and initiatives displayed on your website.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="delete-button"
+        (click)="deleteGovernmentInitiatives()"
+        [disabled]="isDeleting || isSaving || !isExistingContent"
+      >
+        {{ isDeleting ? 'Deleting...' : 'Delete Section' }}
+      </button>
+
+      <button
+        type="button"
+        class="save-button"
+        (click)="saveGovernmentInitiatives()"
+        [disabled]="isSaving || isLoading || isDeleting"
+      >
+        {{ isSaving ? 'Saving...' : (isExistingContent ? 'Update Content' : 'Create Content') }}
+      </button>
+    </div>
+  </header>
+
+  <div class="status-message success" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <div class="status-message error" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    Loading Government Initiatives...
+  </div>
+
+  <ng-container *ngIf="!isLoading">
+    <section class="content-card">
+      <div class="section-heading">
+        <div>
+          <h2>Section Content</h2>
+          <p>Edit the main heading and introduction.</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="initiativeTitle">Title</label>
+        <input
+          id="initiativeTitle"
+          type="text"
+          [(ngModel)]="content.title"
+          placeholder="Enter section title"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="initiativeDescription">Description</label>
+        <textarea
+          id="initiativeDescription"
+          rows="5"
+          [(ngModel)]="content.description"
+          placeholder="Enter section description"
+        ></textarea>
+      </div>
+    </section>
+
+    <section class="content-card">
+      <div class="section-heading">
+        <div>
+          <h2>Initiative Image</h2>
+          <p>Upload the image associated with this section.</p>
+        </div>
+      </div>
+
+      <div class="image-upload-group">
+        <div class="image-preview" *ngIf="initiativeImageUrl">
+          <img
+            [src]="initiativeImageUrl"
+            alt="Government initiatives preview"
+          />
+        </div>
+
+        <div class="image-placeholder" *ngIf="!initiativeImageUrl">
+          <span>No initiative image selected</span>
+        </div>
+
+        <label for="initiativeImageFile" class="file-label">
+          Choose Image
+        </label>
+
+        <input
+          id="initiativeImageFile"
+          type="file"
+          accept="image/*"
+          (change)="onInitiativeImageSelected($event)"
+        />
+
+        <small>
+          {{ initiativeImageFile?.name || 'Select an image to upload' }}
+        </small>
+      </div>
+    </section>
+
+    <section class="content-card">
+      <div class="section-heading">
+        <div>
+          <h2>Government Schemes</h2>
+          <p>Add or remove the initiatives shown on the page.</p>
+        </div>
+
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="addInitiative()"
+        >
+          + Add Initiative
+        </button>
+      </div>
+
+      <div
+        class="initiative-row"
+        *ngFor="let initiative of content.initiatives; let i = index"
+      >
+        <div class="initiative-number">{{ i + 1 }}</div>
+
+        <div class="form-group initiative-input">
+          <label [for]="'initiative' + i">
+            Initiative {{ i + 1 }}
+          </label>
+
+          <input
+            [id]="'initiative' + i"
+            type="text"
+            [(ngModel)]="content.initiatives[i]"
+            placeholder="Enter initiative name"
+          />
+        </div>
+
+        <button
+          type="button"
+          class="remove-button"
+          (click)="removeInitiative(i)"
+          [disabled]="content.initiatives.length <= 1"
+          aria-label="Remove initiative"
+        >
+          Remove
+        </button>
+      </div>
+    </section>
+
+    <section class="content-card">
+      <div class="section-heading">
+        <div>
+          <h2>Call-to-Action Button</h2>
+          <p>Configure the button that links visitors to the schemes page.</p>
+        </div>
+      </div>
+
+      <div class="button-fields">
+        <div class="form-group">
+          <label for="buttonLabel">Button Label</label>
+          <input
+            id="buttonLabel"
+            type="text"
+            [(ngModel)]="content.button.label"
+            placeholder="Explore Schemes"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="buttonUrl">Button URL</label>
+          <input
+            id="buttonUrl"
+            type="text"
+            [(ngModel)]="content.button.url"
+            placeholder="/initiatives"
+          />
+        </div>
+      </div>
+
+      <div class="button-preview">
+        <span>Button Preview</span>
+        <button type="button" class="preview-button" disabled>
+          {{ content.button.label || 'Button Label' }}
+        </button>
+        <small>Destination: {{ content.button.url || 'Not set' }}</small>
+      </div>
+    </section>
+
+    <div class="bottom-actions">
+      <button
+        type="button"
+        class="save-button"
+        (click)="saveGovernmentInitiatives()"
+        [disabled]="isSaving || isDeleting"
+      >
+        {{ isSaving ? 'Saving...' : (isExistingContent ? 'Update Government Initiatives' : 'Create Government Initiatives') }}
+      </button>
+    </div>
+  </ng-container>
+</div>

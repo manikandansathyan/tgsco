@@ -1,0 +1,241 @@
+
+<div class="threads-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">NEWS AND EVENTS</span>
+      <h1>Threads of Triumph</h1>
+      <p>Manage featured weavers, descriptions, and images.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-outline"
+        (click)="loadThreads()"
+        [disabled]="isLoading || isSaving"
+      >
+        Refresh
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-danger-outline"
+        (click)="deleteThreads()"
+        [disabled]="isDeleting || isSaving || !isEditMode"
+      >
+        {{ isDeleting ? 'Deleting...' : 'Delete Section' }}
+      </button>
+    </div>
+  </header>
+
+  @if (successMessage) {
+    <div class="alert alert-success">{{ successMessage }}</div>
+  }
+
+  @if (errorMessage) {
+    <div class="alert alert-error">{{ errorMessage }}</div>
+  }
+
+  @if (isLoading) {
+    <div class="loading-panel">
+      <span class="spinner"></span>
+      <p>Loading Threads of Triumph...</p>
+    </div>
+  } @else {
+    <section class="editor-card">
+      <div class="section-heading">
+        <div>
+          <h2>Section Settings</h2>
+          <p>Configure the heading and navigation labels.</p>
+        </div>
+        <span class="status-pill" [class.status-existing]="isEditMode">
+          {{ isEditMode ? 'Existing content' : 'New content' }}
+        </span>
+      </div>
+
+      <div class="settings-grid">
+        <div class="form-group full-width">
+          <label for="sectionTitle">Section Title</label>
+          <input
+            id="sectionTitle"
+            type="text"
+            [(ngModel)]="sectionTitle"
+            placeholder="Threads of Triumph"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="previousLabel">Previous Button Label</label>
+          <input
+            id="previousLabel"
+            type="text"
+            [(ngModel)]="previousLabel"
+            placeholder="Previous"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="nextLabel">Next Button Label</label>
+          <input
+            id="nextLabel"
+            type="text"
+            [(ngModel)]="nextLabel"
+            placeholder="Next"
+          />
+        </div>
+      </div>
+    </section>
+
+    <div class="items-heading">
+      <div>
+        <h2>Featured Weavers</h2>
+        <p>Edit each weaver's content and main image.</p>
+      </div>
+
+      <span class="item-count">{{ items.length }} / 4 items</span>
+    </div>
+
+    <div class="weaver-list">
+      @for (item of items; track item.id; let i = $index) {
+        <section class="editor-card weaver-card">
+          <div class="weaver-header">
+            <div class="weaver-title">
+              <span class="item-number">{{ i + 1 }}</span>
+              <div>
+                <h3>Featured Weaver {{ i + 1 }}</h3>
+                <p>{{ item.id }}</p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-small btn-outline"
+              (click)="loadFeaturedWeaver(i)"
+              [disabled]="isSaving"
+            >
+              Fetch Item
+            </button>
+          </div>
+
+          <div class="weaver-layout">
+            <div class="image-column">
+              <div class="image-preview">
+                @if (item.previewUrl) {
+                  <img
+                    [src]="item.previewUrl"
+                    [alt]="item.mainImageAlt || item.subheading"
+                  />
+                } @else {
+                  <div class="image-placeholder">
+                    <span class="image-placeholder-icon">＋</span>
+                    <span>No image selected</span>
+                  </div>
+                }
+              </div>
+
+              <label class="upload-button">
+                <span>Choose Image</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  (change)="onImageSelected($event, i)"
+                />
+              </label>
+
+              <p class="field-hint">Image formats supported. Maximum 5 MB.</p>
+
+              @if (item.mainImageFile) {
+                <p class="selected-file">
+                  {{ item.mainImageFile.name }}
+                </p>
+              }
+            </div>
+
+            <div class="weaver-fields">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label [for]="'weaver-id-' + i">Item ID</label>
+                  <input
+                    [id]="'weaver-id-' + i"
+                    type="text"
+                    [(ngModel)]="item.id"
+                    [name]="'weaverId' + i"
+                    placeholder="featured-weaver-1"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label [for]="'weaver-slug-' + i">Slug</label>
+                  <input
+                    [id]="'weaver-slug-' + i"
+                    type="text"
+                    [(ngModel)]="item.slug"
+                    [name]="'weaverSlug' + i"
+                    placeholder="featured-weaver-1"
+                  />
+                </div>
+
+                <div class="form-group full-width">
+                  <label [for]="'weaver-subheading-' + i">Subheading</label>
+                  <input
+                    [id]="'weaver-subheading-' + i"
+                    type="text"
+                    [(ngModel)]="item.subheading"
+                    [name]="'weaverSubheading' + i"
+                    placeholder="FEATURES ON INDIVIDUAL WEAVERS"
+                  />
+                </div>
+
+                <div class="form-group full-width">
+                  <label [for]="'weaver-description-' + i">Description</label>
+                  <textarea
+                    [id]="'weaver-description-' + i"
+                    [(ngModel)]="item.description"
+                    [name]="'weaverDescription' + i"
+                    rows="5"
+                    placeholder="Enter the weaver's story..."
+                  ></textarea>
+                </div>
+
+                <div class="form-group full-width">
+                  <label [for]="'weaver-alt-' + i">Image Alt Text</label>
+                  <input
+                    [id]="'weaver-alt-' + i"
+                    type="text"
+                    [(ngModel)]="item.mainImageAlt"
+                    [name]="'weaverAlt' + i"
+                    placeholder="Describe the image"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      }
+    </div>
+
+    <footer class="form-footer">
+      <p>Changes are applied when you save the section.</p>
+
+      <div class="footer-actions">
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="resetForm()"
+          [disabled]="isSaving"
+        >
+          Reset
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="saveThreads()"
+          [disabled]="isSaving || isDeleting"
+        >
+          {{ isSaving ? 'Saving...' : isEditMode ? 'Update Content' : 'Create Content' }}
+        </button>
+      </div>
+    </footer>
+  }
+</div>

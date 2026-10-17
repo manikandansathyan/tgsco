@@ -1,0 +1,253 @@
+<div class="page-container">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">OUR HERITAGE CONTENT</span>
+      <h1>Numbers That Tell a Story</h1>
+      <p>Manage the statistics that highlight TGSCO's impact on the handloom community.</p>
+    </div>
+
+    <span class="status" [class.status-active]="isEditing">
+      {{ isEditing ? 'Content Published' : 'New Content' }}
+    </span>
+  </header>
+
+  @if (message) {
+    <div
+      class="message"
+      [class.message-success]="messageType === 'success'"
+      [class.message-error]="messageType === 'error'"
+      role="status"
+    >
+      {{ message }}
+    </div>
+  }
+
+  @if (isLoading) {
+    <div class="loading">
+      <span class="spinner"></span>
+      <p>Loading statistics...</p>
+    </div>
+  } @else {
+    <form class="content-form" (ngSubmit)="saveHeritageNumbers()">
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Section Settings</h2>
+            <p>Configure the section title and background appearance.</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="sectionTitle">Section Title <span>*</span></label>
+          <input
+            id="sectionTitle"
+            name="title"
+            [(ngModel)]="title"
+            placeholder="Numbers That Tell a Story"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="backgroundColor">Background Color <span>*</span></label>
+
+          <div class="color-control">
+            <input
+              id="backgroundColorPicker"
+              name="backgroundColorPicker"
+              class="color-picker"
+              type="color"
+              [(ngModel)]="backgroundColor"
+              aria-label="Choose background color"
+            />
+
+            <input
+              id="backgroundColor"
+              name="backgroundColor"
+              class="color-text"
+              [(ngModel)]="backgroundColor"
+              placeholder="#000000"
+              pattern="^#[0-9A-Fa-f]{6}$"
+              required
+            />
+          </div>
+
+          <small>Choose the background color for the statistics section.</small>
+
+          <div
+            class="color-preview"
+            [style.background-color]="backgroundColor"
+          >
+            <span>Background Preview</span>
+            <strong>{{ backgroundColor }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Decorative Icon</h2>
+            <p>Upload the image used to decorate the statistics section.</p>
+          </div>
+        </div>
+
+        <label class="upload-area" for="decorativeIcon">
+          <div class="upload-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <path d="m21 15-5-5L5 21"></path>
+            </svg>
+          </div>
+
+          <strong>
+            {{
+              decorativeIcon
+                ? decorativeIcon.name
+                : 'Click to upload decorative icon'
+            }}
+          </strong>
+
+          <span>PNG, JPG, JPEG or WebP · Maximum 5 MB</span>
+
+          <input
+            id="decorativeIcon"
+            type="file"
+            accept="image/*"
+            (change)="onIconSelected($event)"
+          />
+        </label>
+
+        @if (iconPreview || existingIconUrl) {
+          <div class="preview-container">
+            <div class="preview-header">
+              <h3>Icon Preview</h3>
+
+              @if (decorativeIcon) {
+                <button
+                  type="button"
+                  class="text-button"
+                  (click)="removeSelectedIcon()"
+                >
+                  Remove selected icon
+                </button>
+              }
+            </div>
+
+            <img
+              class="icon-preview"
+              [src]="iconPreview || existingIconUrl"
+              alt="Decorative icon preview"
+            />
+          </div>
+        }
+      </section>
+
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Heritage Metrics</h2>
+            <p>Edit the five statistics displayed on the website.</p>
+          </div>
+
+          <span class="metric-count">{{ metrics.length }} Metrics</span>
+        </div>
+
+        <div class="metrics-list">
+          @for (metric of metrics; track $index; let i = $index) {
+            <article class="metric-card">
+              <div class="metric-header">
+                <div class="metric-number">
+                  {{ (i + 1).toString().padStart(2, '0') }}
+                </div>
+
+                <div>
+                  <h3>{{ metric.label || 'Metric ' + (i + 1) }}</h3>
+                  <p>Statistic {{ i + 1 }}</p>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label [for]="'metricLabel' + i">
+                  Metric Label <span>*</span>
+                </label>
+
+                <input
+                  [id]="'metricLabel' + i"
+                  [name]="'metricLabel' + i"
+                  [(ngModel)]="metric.label"
+                  placeholder="e.g. WEAVER FAMILIES"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label [for]="'metricDescription' + i">
+                  Description <span>*</span>
+                </label>
+
+                <textarea
+                  [id]="'metricDescription' + i"
+                  [name]="'metricDescription' + i"
+                  [(ngModel)]="metric.description"
+                  rows="3"
+                  placeholder="Describe this statistic"
+                  required
+                ></textarea>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+
+      <footer class="form-actions">
+        @if (isEditing) {
+          <button
+            type="button"
+            class="button button-danger-outline"
+            (click)="deleteHeritageNumbers()"
+            [disabled]="isSaving || isDeleting"
+          >
+            {{ isDeleting ? 'Deleting...' : 'Delete Content' }}
+          </button>
+        }
+
+        <div class="action-right">
+          <button
+            type="button"
+            class="button button-secondary"
+            (click)="resetForm()"
+            [disabled]="isSaving || isDeleting"
+          >
+            Reset
+          </button>
+
+          <button
+            type="submit"
+            class="button button-primary"
+            [disabled]="isSaving || isDeleting"
+          >
+            {{
+              isSaving
+                ? 'Saving...'
+                : isEditing
+                  ? 'Update Content'
+                  : 'Create Content'
+            }}
+          </button>
+        </div>
+      </footer>
+    </form>
+  }
+</div>

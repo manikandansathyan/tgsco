@@ -1,0 +1,206 @@
+<div class="techniques-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">WEBSITE MANAGEMENT</span>
+      <h1>State Techniques</h1>
+      <p>Manage Telangana's traditional handloom techniques and their images.</p>
+    </div>
+
+    <div class="header-actions">
+      <button *ngIf="isExistingContent" type="button" class="delete-button" (click)="deleteTechniques()"
+        [disabled]="isLoading || isSaving">
+        Delete Section
+      </button>
+      <!--
+      <button
+        type="button"
+        class="save-button"
+        (click)="saveTechniques()"
+        [disabled]="isLoading || isSaving"
+      >
+        {{
+          isSaving
+            ? 'Saving...'
+            : isExistingContent
+              ? 'Save Changes'
+              : 'Create Section'
+        }}
+      </button> -->
+    </div>
+  </header>
+
+  <div class="alert error-alert" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="alert success-alert" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <span class="spinner"></span>
+    <p>Loading State Techniques...</p>
+  </div>
+
+  <form class="techniques-layout" *ngIf="!isLoading" (ngSubmit)="saveTechniques()">
+    <section class="form-card">
+      <div class="card-heading">
+        <div>
+          <h2>Section Content</h2>
+          <p>Configure the main heading and background image.</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="techniquesTitle">Section Title</label>
+        <input id="techniquesTitle" type="text" name="title" [(ngModel)]="title"
+          placeholder="One State, A Thousand Techniques" required />
+      </div>
+
+      <div class="form-group">
+        <label for="backgroundImageAlt">Background Image Alt Text</label>
+        <input id="backgroundImageAlt" type="text" name="backgroundImageAlt" [(ngModel)]="backgroundImageAlt"
+          placeholder="Historic Telangana gateway" />
+      </div>
+
+      <div class="form-group">
+        <label for="backgroundImage">Background Image</label>
+
+        <div class="image-preview background-preview" *ngIf="backgroundImageUrl; else emptyBackground">
+          <img [src]="backgroundImageUrl" alt="Techniques background preview" />
+        </div>
+
+        <ng-template #emptyBackground>
+          <div class="image-placeholder">
+            <span class="upload-icon">↑</span>
+            <p>No background image selected</p>
+          </div>
+        </ng-template>
+
+        <input id="backgroundImage" type="file" accept="image/*" (change)="onBackgroundImageSelected($event)" />
+
+        <span class="field-hint">
+          Choose a background image for the techniques section.
+        </span>
+      </div>
+    </section>
+
+    <section class="form-card">
+      <div class="card-heading techniques-heading">
+        <div>
+          <h2>Traditional Techniques</h2>
+          <p>Manage each technique, its description, and images.</p>
+        </div>
+
+        <button type="button" class="secondary-button" (click)="addTechnique()">
+          + Add Technique
+        </button>
+      </div>
+
+      <div class="technique-editor" *ngFor="let item of items; let i = index; trackBy: trackByIndex">
+
+        <div class="technique-editor-header">
+          <div class="technique-number">
+            {{ (i + 1).toString().padStart(2, '0') }}
+          </div>
+
+          <div class="technique-heading-text">
+            <h3>{{ item.name || 'New Technique' }}</h3>
+            <p>{{ item.description || 'Technique details and images' }}</p>
+          </div>
+
+          <button
+  type="button"
+  class="expand-button"
+  [class.expanded]="item.isExpanded"
+  (click)="toggleTechnique(i)"
+  [attr.aria-expanded]="item.isExpanded"
+  [attr.aria-label]="item.isExpanded ? 'Collapse details' : 'Expand details'">
+  <span class="expand-label">{{ item.isExpanded ? '' : '' }}</span>
+  <span class="chevron" aria-hidden="true"></span>
+</button>
+
+          <button type="button" class="remove-button" (click)="removeTechnique(i)"
+            [attr.aria-label]="'Remove technique ' + (i + 1)" title="Remove technique">
+            ×
+          </button>
+        </div>
+
+        <div class="technique-editor-body" *ngIf="item.isExpanded">
+
+          <div class="form-group">
+            <label [for]="'techniqueName' + i">Technique Name</label>
+            <input [id]="'techniqueName' + i" type="text" [name]="'techniqueName' + i" [(ngModel)]="item.name"
+              placeholder="Pochampally Ikat" required />
+          </div>
+
+          <div class="form-group">
+            <label [for]="'techniqueDescription' + i">Description</label>
+            <textarea [id]="'techniqueDescription' + i" [name]="'techniqueDescription' + i"
+              [(ngModel)]="item.description" rows="3" placeholder="Describe this traditional technique"
+              required></textarea>
+            <span class="field-hint">
+              {{ item.description.length }} characters
+            </span>
+          </div>
+
+          <div class="image-grid">
+            <div class="image-field">
+              <label [for]="'mainImage' + i">Main Image</label>
+
+              <div class="image-preview" *ngIf="item.mainImageUrl; else emptyMainImage">
+                <img [src]="item.mainImageUrl" [alt]="item.name + ' main image'" />
+              </div>
+
+              <ng-template #emptyMainImage>
+                <div class="image-placeholder compact-placeholder">
+                  <span class="upload-icon">↑</span>
+                  <p>No main image</p>
+                </div>
+              </ng-template>
+
+              <input [id]="'mainImage' + i" type="file" accept="image/*"
+                (change)="onTechniqueImageSelected($event, i, 'main')" />
+            </div>
+
+            <div class="image-field">
+              <label [for]="'borderImage' + i">Border Image</label>
+
+              <div class="image-preview" *ngIf="item.borderImageUrl; else emptyBorderImage">
+                <img [src]="item.borderImageUrl" [alt]="item.name + ' border image'" />
+              </div>
+
+              <ng-template #emptyBorderImage>
+                <div class="image-placeholder compact-placeholder">
+                  <span class="upload-icon">↑</span>
+                  <p>No border image</p>
+                </div>
+              </ng-template>
+
+              <input [id]="'borderImage' + i" type="file" accept="image/*"
+                (change)="onTechniqueImageSelected($event, i, 'border')" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="empty-state" *ngIf="items.length === 0">
+        <p>No techniques added yet.</p>
+        <button type="button" class="secondary-button" (click)="addTechnique()">
+          + Add First Technique
+        </button>
+      </div>
+    </section>
+
+    <div class="form-footer">
+      <span class="footer-hint">
+        {{ items.length }} technique{{ items.length === 1 ? '' : 's' }}
+      </span>
+
+      <button type="submit" class="save-button" [disabled]="isSaving">
+        {{ isSaving ? 'Saving...' : 'Save Changes' }}
+      </button>
+    </div>
+  </form>
+</div>

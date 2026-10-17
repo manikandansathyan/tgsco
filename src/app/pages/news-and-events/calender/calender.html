@@ -1,0 +1,318 @@
+<div class="calendar-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">NEWS AND EVENTS MANAGEMENT</span>
+      <h1>Events Calendar</h1>
+      <p>Manage upcoming events, dates, descriptions, and event images.</p>
+    </div>
+
+    <button
+      type="button"
+      class="secondary-button"
+      (click)="resetForm()"
+      [disabled]="loading || saving || deleting"
+    >
+      Refresh
+    </button>
+  </header>
+
+  @if (message) {
+    <div class="alert success-alert">{{ message }}</div>
+  }
+
+  @if (errorMessage) {
+    <div class="alert error-alert">{{ errorMessage }}</div>
+  }
+
+  @if (loading) {
+    <div class="loading-state">Loading events calendar...</div>
+  } @else {
+    <form class="calendar-form" (ngSubmit)="saveEventsCalendar()">
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Section Details</h2>
+            <p>Configure the heading displayed on the website.</p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="sectionTitle">Section Title <span>*</span></label>
+          <input
+            id="sectionTitle"
+            name="sectionTitle"
+            type="text"
+            [(ngModel)]="sectionTitle"
+            placeholder="Events Calendar"
+            required
+          />
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Calendar Icon</h2>
+            <p>Upload or replace the decorative calendar icon.</p>
+          </div>
+        </div>
+
+        <div class="image-upload-layout">
+          <div class="icon-preview">
+            @if (calendarIconPreview || existingCalendarIconUrl) {
+              <img
+                [src]="calendarIconPreview || existingCalendarIconUrl"
+                alt="Calendar icon preview"
+              />
+            } @else {
+              <div class="image-placeholder">No icon selected</div>
+            }
+          </div>
+
+          <div class="upload-control">
+            <input
+              id="calendarIcon"
+              name="calendarIcon"
+              type="file"
+              accept="image/*"
+              (change)="onCalendarIconSelected($event)"
+            />
+
+            <small>Supported image formats. Maximum size: 5 MB.</small>
+
+            @if (calendarIconFile) {
+              <span class="selected-file">
+                {{ calendarIconFile.name }}
+              </span>
+            } @else if (existingCalendarIconUrl) {
+              <span class="selected-file">
+                Existing icon retained unless replaced.
+              </span>
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Calendar Events</h2>
+            <p>
+              Edit the date, event title, description, and image for each event.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="primary-button"
+            (click)="addItem()"
+          >
+            + Add Event
+          </button>
+        </div>
+
+        @if (items.length === 0) {
+          <div class="empty-state">
+            <h3>No events added</h3>
+            <p>Add an event to begin building the calendar.</p>
+          </div>
+        }
+
+        @for (item of items; track $index; let i = $index) {
+          <article class="event-card">
+            <div class="event-card-header">
+              <div>
+                <span class="item-number">EVENT {{ i + 1 }}</span>
+                <h3>{{ item.title || 'New Event' }}</h3>
+              </div>
+
+              <button
+                type="button"
+                class="remove-button"
+                (click)="removeItem(i)"
+              >
+                Remove
+              </button>
+            </div>
+
+            <div class="date-banner">
+              <div class="date-day">
+                {{ item.day || 'MON' }}
+              </div>
+              <div class="date-number">
+                {{ item.date || '00' }}
+              </div>
+              <div class="date-description">
+                <strong>{{ item.title || 'Event title' }}</strong>
+                <span>{{ item.description || 'Event description preview' }}</span>
+              </div>
+            </div>
+
+            <div class="fields-grid">
+              <div class="field">
+                <label [for]="'eventId' + i">Event ID</label>
+                <input
+                  [id]="'eventId' + i"
+                  [name]="'eventId' + i"
+                  type="text"
+                  [(ngModel)]="item.id"
+                  placeholder="jun-23"
+                />
+              </div>
+
+              <div class="field">
+                <label [for]="'eventSlug' + i">Slug</label>
+                <input
+                  [id]="'eventSlug' + i"
+                  [name]="'eventSlug' + i"
+                  type="text"
+                  [(ngModel)]="item.slug"
+                  placeholder="jun-23"
+                />
+              </div>
+
+              <div class="field">
+                <label [for]="'eventDay' + i">Day / Month Label <span>*</span></label>
+                <input
+                  [id]="'eventDay' + i"
+                  [name]="'eventDay' + i"
+                  type="text"
+                  [(ngModel)]="item.day"
+                  placeholder="JUN"
+                  maxlength="12"
+                  required
+                />
+              </div>
+
+              <div class="field">
+                <label [for]="'eventDate' + i">Date <span>*</span></label>
+                <input
+                  [id]="'eventDate' + i"
+                  [name]="'eventDate' + i"
+                  type="text"
+                  [(ngModel)]="item.date"
+                  placeholder="23"
+                  required
+                />
+              </div>
+
+              <div class="field full-width">
+                <label [for]="'eventTitle' + i">Event Title <span>*</span></label>
+                <input
+                  [id]="'eventTitle' + i"
+                  [name]="'eventTitle' + i"
+                  type="text"
+                  [(ngModel)]="item.title"
+                  placeholder="EVENT"
+                  required
+                />
+              </div>
+
+              <div class="field full-width">
+                <label [for]="'eventDescription' + i">
+                  Description <span>*</span>
+                </label>
+                <textarea
+                  [id]="'eventDescription' + i"
+                  [name]="'eventDescription' + i"
+                  [(ngModel)]="item.description"
+                  rows="5"
+                  placeholder="Enter event details..."
+                  required
+                ></textarea>
+              </div>
+
+              <div class="field full-width">
+                <label [for]="'eventAlt' + i">Image Alt Text</label>
+                <input
+                  [id]="'eventAlt' + i"
+                  [name]="'eventAlt' + i"
+                  type="text"
+                  [(ngModel)]="item.imageAlt"
+                  placeholder="Handloom event and exhibition"
+                />
+              </div>
+
+              <div class="field full-width">
+                <label [for]="'eventImage' + i">Event Image <span>*</span></label>
+
+                <div class="image-upload-layout">
+                  <div class="image-preview">
+                    @if (item.imagePreview || item.existingImageUrl) {
+                      <img
+                        [src]="item.imagePreview || item.existingImageUrl"
+                        [alt]="item.imageAlt || item.title"
+                      />
+                    } @else {
+                      <div class="image-placeholder">No image selected</div>
+                    }
+                  </div>
+
+                  <div class="upload-control">
+                    <input
+                      [id]="'eventImage' + i"
+                      [name]="'eventImage' + i"
+                      type="file"
+                      accept="image/*"
+                      (change)="onImageSelected($event, i)"
+                    />
+
+                    <small>Supported image formats. Maximum size: 5 MB.</small>
+
+                    @if (item.imageFile) {
+                      <span class="selected-file">
+                        {{ item.imageFile.name }}
+                      </span>
+                    } @else if (item.existingImageUrl) {
+                      <span class="selected-file">
+                        Existing image retained unless replaced.
+                      </span>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        }
+      </section>
+
+      <footer class="form-actions">
+        @if (isEditMode) {
+          <button
+            type="button"
+            class="delete-button"
+            (click)="deleteEventsCalendar()"
+            [disabled]="saving || deleting"
+          >
+            {{ deleting ? 'Deleting...' : 'Delete Section' }}
+          </button>
+        }
+
+        <div class="action-right">
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="resetForm()"
+            [disabled]="saving || deleting"
+          >
+            Reset
+          </button>
+
+          <button
+            type="submit"
+            class="primary-button save-button"
+            [disabled]="saving || deleting"
+          >
+            {{
+              saving
+                ? 'Saving...'
+                : isEditMode
+                  ? 'Update Events Calendar'
+                  : 'Create Events Calendar'
+            }}
+          </button>
+        </div>
+      </footer>
+    </form>
+  }
+</div>

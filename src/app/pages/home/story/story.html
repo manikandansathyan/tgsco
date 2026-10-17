@@ -1,0 +1,224 @@
+
+<div class="story-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">WEBSITE MANAGEMENT</span>
+      <h1>Our Story</h1>
+      <p>Manage the story, image, call-to-action, and statistics displayed on your website.</p>
+    </div>
+
+
+<div class="header-actions">
+
+  <button
+    *ngIf="isExistingContent"
+    type="button"
+    class="delete-button"
+    (click)="deleteOurStory()"
+    [disabled]="isLoading || isSaving"
+  >
+    Delete Section
+  </button>
+
+  <button
+    type="button"
+    class="save-button"
+    (click)="saveOurStory()"
+    [disabled]="isLoading || isSaving || (isExistingContent && modalMode !== 'edit')"
+  >
+    {{ isSaving ? 'Saving...' : (isExistingContent ? 'Save Changes' : 'Create Section') }}
+  </button>
+</div>
+
+  </header>
+
+  <div class="alert error-alert" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="alert success-alert" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <span class="spinner"></span>
+    <p>Loading Our Story content...</p>
+  </div>
+
+  <form
+    class="story-layout"
+    *ngIf="!isLoading"
+    (ngSubmit)="saveOurStory()"
+  >
+    <section class="form-card">
+      <div class="card-heading">
+        <div>
+          <h2>Story Content</h2>
+          <p>Update the main heading and description.</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="storyTitle">Title</label>
+        <input
+          id="storyTitle"
+          type="text"
+          name="title"
+          [(ngModel)]="title"
+          placeholder="Enter story title"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="storyDescription">Description</label>
+        <textarea
+          id="storyDescription"
+          name="description"
+          [(ngModel)]="description"
+          rows="7"
+          placeholder="Enter the Our Story description"
+          required
+        ></textarea>
+        <span class="field-hint">{{ description.length }} characters</span>
+      </div>
+
+      <div class="form-divider"></div>
+
+      <div class="card-heading">
+        <div>
+          <h2>Call to Action</h2>
+          <p>Configure the button shown in the story section.</p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="buttonLabel">Button Label</label>
+          <input
+            id="buttonLabel"
+            type="text"
+            name="buttonLabel"
+            [(ngModel)]="buttonLabel"
+            placeholder="Learn More About TGSCO"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="buttonUrl">Button URL</label>
+          <input
+            id="buttonUrl"
+            type="text"
+            name="buttonUrl"
+            [(ngModel)]="buttonUrl"
+            placeholder="/about"
+          />
+        </div>
+      </div>
+    </section>
+
+    <section class="form-card">
+      <div class="card-heading">
+        <div>
+          <h2>Story Image</h2>
+          <p>Upload the image displayed alongside the story.</p>
+        </div>
+      </div>
+
+      <div class="image-preview" *ngIf="imageUrl; else emptyImage">
+        <img [src]="imageUrl" alt="Our Story image preview" />
+      </div>
+
+      <ng-template #emptyImage>
+        <div class="image-placeholder">
+          <span class="upload-icon">↑</span>
+          <p>No story image selected</p>
+        </div>
+      </ng-template>
+
+      <div class="form-group">
+        <label for="storyImage">Upload Image</label>
+        <input
+          id="storyImage"
+          type="file"
+          accept="image/*"
+          (change)="onImageSelected($event)"
+        />
+        <span class="field-hint">Choose an image file for the story section.</span>
+      </div>
+
+      <div class="form-group">
+        <label for="imageAlt">Image Alt Text</label>
+        <input
+          id="imageAlt"
+          type="text"
+          name="imageAlt"
+          [(ngModel)]="imageAlt"
+          placeholder="Describe the story image"
+        />
+      </div>
+    </section>
+
+    <section class="form-card stats-card">
+      <div class="card-heading stats-heading">
+        <div>
+          <h2>Statistics</h2>
+          <p>Manage the statistics displayed below the story.</p>
+        </div>
+
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="addStat()"
+          [disabled]="stats.length >= 6"
+        >
+          + Add Statistic
+        </button>
+      </div>
+
+      <div class="stat-editor" *ngFor="let stat of stats; let i = index">
+        <div class="stat-number">0{{ i + 1 }}</div>
+
+        <div class="stat-fields">
+          <div class="form-group">
+            <label [for]="'statValue' + i">Value</label>
+            <input
+              [id]="'statValue' + i"
+              type="text"
+              [name]="'statValue' + i"
+              [(ngModel)]="stat.value"
+              placeholder="00,000+"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label [for]="'statLabel' + i">Label</label>
+            <input
+              [id]="'statLabel' + i"
+              type="text"
+              [name]="'statLabel' + i"
+              [(ngModel)]="stat.label"
+              placeholder="Active Master Artisans"
+              required
+            />
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="remove-button"
+          (click)="removeStat(i)"
+          aria-label="Remove statistic"
+          title="Remove statistic"
+        >
+          ×
+        </button>
+      </div>
+
+      <p class="empty-stats" *ngIf="stats.length === 0">
+        No statistics added yet.
+      </p>
+    </section>
+  </form>
+</div>

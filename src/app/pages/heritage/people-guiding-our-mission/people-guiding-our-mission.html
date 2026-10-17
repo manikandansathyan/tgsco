@@ -1,0 +1,309 @@
+<div class="page-container">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">OUR HERITAGE CONTENT</span>
+      <h1>People Guiding Our Mission</h1>
+      <p>Manage the people featured in your heritage section.</p>
+    </div>
+
+    <span class="status" [class.status-active]="isEditing">
+      {{ isEditing ? 'Content Published' : 'New Content' }}
+    </span>
+  </header>
+
+  @if (message) {
+    <div
+      class="message"
+      [class.message-success]="messageType === 'success'"
+      [class.message-error]="messageType === 'error'"
+      role="status"
+    >
+      {{ message }}
+    </div>
+  }
+
+  @if (isLoading) {
+    <div class="loading">
+      <span class="spinner"></span>
+      <p>Loading mission guides...</p>
+    </div>
+  } @else {
+    <form class="content-form" (ngSubmit)="saveContent()">
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Section Details</h2>
+            <p>Set the heading shown above the people profiles.</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="title">Section Title <span>*</span></label>
+          <input
+            id="title"
+            name="title"
+            [(ngModel)]="title"
+            placeholder="The People Guiding Our Mission"
+            required
+          />
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="section-heading people-heading">
+          <div>
+            <h2>People Profiles</h2>
+            <p>Manage each person's name, role, profile image, and alt text.</p>
+          </div>
+
+          <button
+            type="button"
+            class="button button-secondary add-button"
+            (click)="addPerson()"
+            [disabled]="isSaving || isDeleting"
+          >
+            <span class="plus">+</span>
+            Add Person
+          </button>
+        </div>
+
+        <div class="people-list">
+          @for (person of people; track $index; let i = $index) {
+            <article class="person-card">
+              <div class="person-card-header">
+                <div class="person-number">{{ i + 1 }}</div>
+
+                <div class="person-card-title">
+                  <h3>{{ person.name || 'New Person' }}</h3>
+                  <p>Profile information</p>
+                </div>
+
+                <button
+                  type="button"
+                  class="text-button remove-button"
+                  (click)="removePerson(i)"
+                  [disabled]="isSaving || isDeleting"
+                >
+                  Remove
+                </button>
+              </div>
+
+              <div class="person-layout">
+                <div class="person-image-column">
+                  <div class="profile-preview">
+                    @if (person.imagePreview || person.imageUrl) {
+                      <img
+                        [src]="person.imagePreview || person.imageUrl"
+                        [alt]="person.imageAlt || person.name"
+                      />
+                    } @else {
+                      <div class="image-placeholder">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="35"
+                          height="35"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <circle cx="12" cy="8" r="4"></circle>
+                          <path d="M5 21a7 7 0 0 1 14 0"></path>
+                        </svg>
+                        <span>No image</span>
+                      </div>
+                    }
+                  </div>
+
+                  <label class="upload-button" [for]="'personImage' + i">
+                    {{ person.selectedImage ? 'Change Image' : 'Upload Image' }}
+                  </label>
+
+                  <input
+                    class="file-input"
+                    [id]="'personImage' + i"
+                    type="file"
+                    accept="image/*"
+                    (change)="onPersonImageSelected($event, i)"
+                  />
+
+                  @if (person.selectedImage) {
+                    <button
+                      type="button"
+                      class="text-button clear-image-button"
+                      (click)="removePersonImage(i)"
+                    >
+                      Remove selected image
+                    </button>
+                  }
+
+                  <small>Image limit: 5 MB</small>
+                </div>
+
+                <div class="person-fields">
+                  <div class="form-group">
+                    <label [for]="'personName' + i">
+                      Name <span>*</span>
+                    </label>
+                    <input
+                      [id]="'personName' + i"
+                      [name]="'personName' + i"
+                      [(ngModel)]="person.name"
+                      placeholder="Enter person's name"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label [for]="'personRole' + i">
+                      Role <span>*</span>
+                    </label>
+                    <input
+                      [id]="'personRole' + i"
+                      [name]="'personRole' + i"
+                      [(ngModel)]="person.role"
+                      placeholder="e.g. Director"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label [for]="'personAlt' + i">
+                      Image Alt Text <span>*</span>
+                    </label>
+                    <input
+                      [id]="'personAlt' + i"
+                      [name]="'personAlt' + i"
+                      [(ngModel)]="person.imageAlt"
+                      placeholder="Describe the profile image"
+                      required
+                    />
+                    <small>
+                      Used by screen readers to describe the image.
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </article>
+          } @empty {
+            <div class="empty-state">
+              <h3>No people added</h3>
+              <p>Add a person to begin building this section.</p>
+              <button
+                type="button"
+                class="button button-primary"
+                (click)="addPerson()"
+              >
+                Add First Person
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Decorative Icon</h2>
+            <p>Upload the decorative image used by this section.</p>
+          </div>
+        </div>
+
+        <label class="icon-upload-area" for="decorativeIcon">
+          @if (decorativeIconPreview || existingDecorativeIconUrl) {
+            <img
+              class="decorative-preview"
+              [src]="decorativeIconPreview || existingDecorativeIconUrl"
+              alt="Decorative icon preview"
+            />
+          } @else {
+            <div class="upload-icon">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M12 16V4"></path>
+                <path d="m7 9 5-5 5 5"></path>
+                <path d="M20 16.5v3A1.5 1.5 0 0 1 18.5 21h-13A1.5 1.5 0 0 1 4 19.5v-3"></path>
+              </svg>
+            </div>
+          }
+
+          <strong>
+            {{
+              decorativeIcon
+                ? decorativeIcon.name
+                : 'Click to upload decorative icon'
+            }}
+          </strong>
+          <span>PNG, JPG, JPEG or WebP · Maximum 5 MB</span>
+
+          <input
+            id="decorativeIcon"
+            class="file-input"
+            type="file"
+            accept="image/*"
+            (change)="onDecorativeIconSelected($event)"
+          />
+        </label>
+
+        @if (decorativeIcon) {
+          <button
+            type="button"
+            class="text-button clear-icon-button"
+            (click)="removeDecorativeIcon()"
+          >
+            Remove selected icon
+          </button>
+        }
+      </section>
+
+      <footer class="form-actions">
+        @if (isEditing) {
+          <button
+            type="button"
+            class="button button-danger-outline"
+            (click)="deleteContent()"
+            [disabled]="isSaving || isDeleting"
+          >
+            {{ isDeleting ? 'Deleting...' : 'Delete Content' }}
+          </button>
+        }
+
+        <div class="action-right">
+          <button
+            type="button"
+            class="button button-secondary"
+            (click)="resetForm()"
+            [disabled]="isSaving || isDeleting"
+          >
+            Reset
+          </button>
+
+          <button
+            type="submit"
+            class="button button-primary"
+            [disabled]="isSaving || isDeleting"
+          >
+            {{
+              isSaving
+                ? 'Saving...'
+                : isEditing
+                  ? 'Update Content'
+                  : 'Create Content'
+            }}
+          </button>
+        </div>
+      </footer>
+    </form>
+  }
+</div>

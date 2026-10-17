@@ -1,0 +1,289 @@
+
+<div class="page-container">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">ABOUT PAGE MANAGEMENT</span>
+      <h1>Who We Are</h1>
+      <p>Manage the introduction, story, images and video displayed on the About page.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="button button-secondary"
+        (click)="loadWhoWeAre()"
+        [disabled]="isLoading || isSaving"
+      >
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <div *ngIf="isLoading" class="status-message loading-message">
+    Loading Who We Are content...
+  </div>
+
+  <div *ngIf="successMessage" class="status-message success-message">
+    {{ successMessage }}
+  </div>
+
+  <div *ngIf="errorMessage" class="status-message error-message">
+    {{ errorMessage }}
+  </div>
+
+  <form
+    *ngIf="!isLoading"
+    class="content-form"
+    (ngSubmit)="saveWhoWeAre()"
+  >
+    <section class="form-section">
+      <div class="section-heading">
+        <div>
+          <h2>Basic Information</h2>
+          <p>Set the heading and supporting content.</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="title">Section Title</label>
+        <input
+          id="title"
+          name="title"
+          type="text"
+          [(ngModel)]="content.title"
+          placeholder="Who We Are"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <div class="label-row">
+          <label>Paragraphs</label>
+          <button
+            type="button"
+            class="text-button"
+            (click)="addParagraph()"
+          >
+            + Add paragraph
+          </button>
+        </div>
+
+        <div
+          class="paragraph-item"
+          *ngFor="let paragraph of content.paragraphs; let i = index"
+        >
+          <div class="paragraph-header">
+            <label [for]="'paragraph-' + i">
+              Paragraph {{ i + 1 }}
+            </label>
+
+            <button
+              type="button"
+              class="remove-button"
+              (click)="removeParagraph(i)"
+              [disabled]="content.paragraphs.length <= 1"
+            >
+              Remove
+            </button>
+          </div>
+
+          <textarea
+            [id]="'paragraph-' + i"
+            [name]="'paragraph-' + i"
+            [(ngModel)]="content.paragraphs[i]"
+            rows="4"
+            placeholder="Enter paragraph content"
+            required
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="quote">Highlighted Quote</label>
+        <textarea
+          id="quote"
+          name="quote"
+          [(ngModel)]="content.quote"
+          rows="3"
+          placeholder="Enter the highlighted quote"
+        ></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="supportingText">Supporting Text</label>
+        <textarea
+          id="supportingText"
+          name="supportingText"
+          [(ngModel)]="content.supportingText"
+          rows="3"
+          placeholder="Enter supporting text"
+        ></textarea>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="section-heading">
+        <div>
+          <h2>Primary Image</h2>
+          <p>Upload the image used in the Who We Are section.</p>
+        </div>
+      </div>
+
+      <div class="image-upload-layout">
+        <div class="image-preview">
+          <img
+            *ngIf="primaryImagePreview; else imagePlaceholder"
+            [src]="primaryImagePreview"
+            alt="Who We Are preview"
+          />
+
+          <ng-template #imagePlaceholder>
+            <div class="empty-image">
+              <span>Image preview</span>
+            </div>
+          </ng-template>
+        </div>
+
+        <div class="upload-controls">
+          <label for="primaryImage">Choose Image</label>
+          <input
+            id="primaryImage"
+            name="primaryImage"
+            type="file"
+            accept="image/*"
+            (change)="onPrimaryImageSelected($event)"
+          />
+
+          <p class="field-help">
+            Choose an image file. The existing image is retained if no new image is selected.
+          </p>
+
+          <button
+            *ngIf="primaryImage"
+            type="button"
+            class="button button-secondary"
+            (click)="clearSelectedImage()"
+          >
+            Cancel image change
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="section-heading">
+        <div>
+          <h2>Video Settings</h2>
+          <p>Configure the video shown in this section.</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="videoUrl">Video URL</label>
+        <input
+          id="videoUrl"
+          name="videoUrl"
+          type="url"
+          [(ngModel)]="content.videoUrl"
+          placeholder="https://example.com/video.mp4"
+        />
+        <p class="field-help">
+          Enter a direct video URL supported by the website.
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label for="videoAlt">Video Alt Text</label>
+        <input
+          id="videoAlt"
+          name="videoAlt"
+          type="text"
+          [(ngModel)]="content.videoAlt"
+          placeholder="Describe the video"
+        />
+      </div>
+
+      <div class="video-preview" *ngIf="content.videoUrl">
+        <h3>Video Preview</h3>
+        <video
+          controls
+          preload="metadata"
+          [src]="content.videoUrl"
+          [attr.aria-label]="content.videoAlt || content.title"
+        >
+          Your browser does not support the video element.
+        </video>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="section-heading">
+        <div>
+          <h2>Button Settings</h2>
+          <p>Configure the call-to-action button.</p>
+        </div>
+      </div>
+
+      <div class="two-column-grid">
+        <div class="form-group">
+          <label for="buttonLabel">Button Label</label>
+          <input
+            id="buttonLabel"
+            name="buttonLabel"
+            type="text"
+            [(ngModel)]="content.button.label"
+            placeholder="Learn More"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="buttonUrl">Button URL</label>
+          <input
+            id="buttonUrl"
+            name="buttonUrl"
+            type="text"
+            [(ngModel)]="content.button.url"
+            placeholder="/about"
+          />
+        </div>
+      </div>
+    </section>
+
+    <footer class="form-footer">
+      <button
+        type="button"
+        class="button button-danger"
+        *ngIf="isExistingContent"
+        (click)="deleteWhoWeAre()"
+        [disabled]="isSaving || isDeleting"
+      >
+        {{ isDeleting ? 'Deleting...' : 'Delete Content' }}
+      </button>
+
+      <div class="footer-actions">
+        <button
+          type="button"
+          class="button button-secondary"
+          (click)="resetForm()"
+          [disabled]="isSaving || isDeleting"
+        >
+          Reset Form
+        </button>
+
+        <button
+          type="submit"
+          class="button button-primary"
+          [disabled]="isSaving || isDeleting"
+        >
+          {{
+            isSaving
+              ? 'Saving...'
+              : isExistingContent
+                ? 'Update Content'
+                : 'Create Content'
+          }}
+        </button>
+      </div>
+    </footer>
+  </form>
+</div>

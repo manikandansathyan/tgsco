@@ -1,0 +1,263 @@
+
+<div class="contact-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">CONTACT MANAGEMENT</span>
+      <h1>Contact Hero</h1>
+      <p>Manage the contact page heading, contact information, and hero image.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-outline"
+        (click)="loadContactHero()"
+        [disabled]="isLoading || isSaving"
+      >
+        Refresh
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-danger-outline"
+        (click)="deleteContactHero()"
+        [disabled]="isDeleting || isSaving || !isEditMode"
+      >
+        {{ isDeleting ? 'Deleting...' : 'Delete Content' }}
+      </button>
+    </div>
+  </header>
+
+  @if (successMessage) {
+    <div class="alert alert-success">{{ successMessage }}</div>
+  }
+
+  @if (errorMessage) {
+    <div class="alert alert-error">{{ errorMessage }}</div>
+  }
+
+  @if (isLoading) {
+    <div class="loading-panel">
+      <span class="spinner"></span>
+      <p>Loading Contact Hero...</p>
+    </div>
+  } @else {
+    <section class="editor-card">
+      <div class="section-heading">
+        <div>
+          <h2>Hero Content</h2>
+          <p>Update the main text displayed on the Contact page.</p>
+        </div>
+
+        <span class="status-pill" [class.status-existing]="isEditMode">
+          {{ isEditMode ? 'Existing content' : 'New content' }}
+        </span>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="title">Title</label>
+          <input
+            id="title"
+            type="text"
+            [(ngModel)]="title"
+            placeholder="CONTACT"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="breadcrumb">Breadcrumb</label>
+          <input
+            id="breadcrumb"
+            type="text"
+            [(ngModel)]="breadcrumb"
+            placeholder="Home / Contact us"
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="intro">Intro Text</label>
+          <textarea
+            id="intro"
+            [(ngModel)]="intro"
+            rows="4"
+            placeholder="Enter the contact introduction..."
+          ></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="editor-card">
+      <div class="section-heading">
+        <div>
+          <h2>Contact Details</h2>
+          <p>Configure the phone, email, and office address displayed on the page.</p>
+        </div>
+      </div>
+
+      <div class="contact-details-grid">
+        <div class="contact-detail-card">
+          <div class="detail-heading">
+            <span class="detail-number">01</span>
+            <h3>Phone</h3>
+          </div>
+
+          <div class="form-group">
+            <label for="phoneLabel">Label</label>
+            <input id="phoneLabel" [(ngModel)]="phoneLabel" />
+          </div>
+
+          <div class="form-group">
+            <label for="phoneValue">Phone Number</label>
+            <input
+              id="phoneValue"
+              type="text"
+              [(ngModel)]="phoneValue"
+              placeholder="+91 40 2323 XXXX"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="phoneIcon">Icon Identifier</label>
+            <input id="phoneIcon" [(ngModel)]="phoneIcon" />
+          </div>
+        </div>
+
+        <div class="contact-detail-card">
+          <div class="detail-heading">
+            <span class="detail-number">02</span>
+            <h3>Email</h3>
+          </div>
+
+          <div class="form-group">
+            <label for="emailLabel">Label</label>
+            <input id="emailLabel" [(ngModel)]="emailLabel" />
+          </div>
+
+          <div class="form-group">
+            <label for="emailValue">Email Address</label>
+            <input
+              id="emailValue"
+              type="email"
+              [(ngModel)]="emailValue"
+              placeholder="info@example.gov.in"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="emailIcon">Icon Identifier</label>
+            <input id="emailIcon" [(ngModel)]="emailIcon" />
+          </div>
+        </div>
+
+        <div class="contact-detail-card">
+          <div class="detail-heading">
+            <span class="detail-number">03</span>
+            <h3>Office Address</h3>
+          </div>
+
+          <div class="form-group">
+            <label for="addressLabel">Label</label>
+            <input id="addressLabel" [(ngModel)]="addressLabel" />
+          </div>
+
+          <div class="form-group">
+            <label for="addressValue">Address</label>
+            <textarea
+              id="addressValue"
+              [(ngModel)]="addressValue"
+              rows="3"
+              placeholder="Enter office address..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="addressIcon">Icon Identifier</label>
+            <input id="addressIcon" [(ngModel)]="addressIcon" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="editor-card">
+      <div class="section-heading">
+        <div>
+          <h2>Hero Image</h2>
+          <p>Upload the image displayed in the Contact page hero section.</p>
+        </div>
+      </div>
+
+      <div class="image-editor">
+        <div class="image-preview">
+          @if (previewUrl) {
+            <img [src]="previewUrl" [alt]="imageAlt" />
+          } @else {
+            <div class="image-placeholder">
+              <span class="placeholder-symbol">＋</span>
+              <span>No hero image selected</span>
+            </div>
+          }
+        </div>
+
+        <div class="image-controls">
+          <label class="upload-button">
+            {{ selectedImage ? 'Choose Another Image' : 'Choose Hero Image' }}
+            <input
+              type="file"
+              accept="image/*"
+              (change)="onImageSelected($event)"
+            />
+          </label>
+
+          <p class="field-hint">
+            Select an image file. Maximum file size: 5 MB.
+          </p>
+
+          @if (selectedImage) {
+            <p class="selected-file">{{ selectedImage.name }}</p>
+          }
+
+          <div class="form-group">
+            <label for="imageAlt">Image Alt Text</label>
+            <input
+              id="imageAlt"
+              type="text"
+              [(ngModel)]="imageAlt"
+              placeholder="Describe the hero image"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="form-footer">
+      <p>Review your changes before saving.</p>
+
+      <div class="footer-actions">
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="resetForm()"
+          [disabled]="isSaving"
+        >
+          Reset
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="saveContactHero()"
+          [disabled]="isSaving || isDeleting"
+        >
+          {{
+            isSaving
+              ? 'Saving...'
+              : isEditMode
+                ? 'Update Contact Hero'
+                : 'Create Contact Hero'
+          }}
+        </button>
+      </div>
+    </footer>
+  }
+</div>

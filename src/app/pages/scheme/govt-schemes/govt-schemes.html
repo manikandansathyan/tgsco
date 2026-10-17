@@ -1,0 +1,344 @@
+
+<div class="govt-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">WEBSITE MANAGEMENT</span>
+      <h1>Current Government Schemes</h1>
+      <p>Manage government scheme information, eligibility, benefits, documents, and images.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="resetForm()"
+        [disabled]="isLoading || isSaving || isDeleting"
+      >
+        Reset
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="saveCurrentSchemes()"
+        [disabled]="isLoading || isSaving || isDeleting"
+      >
+        <span *ngIf="isSaving" class="spinner"></span>
+        {{ isSaving ? 'Saving...' : isEditing ? 'Update Content' : 'Create Content' }}
+      </button>
+    </div>
+  </header>
+
+  <div
+    *ngIf="message"
+    class="alert"
+    [class.alert-success]="messageType === 'success'"
+    [class.alert-error]="messageType === 'error'"
+    role="status"
+  >
+    <span>{{ message }}</span>
+    <button
+      type="button"
+      class="alert-close"
+      aria-label="Dismiss message"
+      (click)="message = ''"
+    >
+      &times;
+    </button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-state">
+    <span class="spinner spinner-dark"></span>
+    <p>Loading government schemes...</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading">
+    <section class="editor-card page-settings">
+      <div class="card-heading">
+        <div>
+          <h2>Page Settings</h2>
+          <p>Configure the page heading and main image.</p>
+        </div>
+        <span class="status-pill" [class.status-existing]="isEditing">
+          {{ isEditing ? 'Existing Content' : 'New Content' }}
+        </span>
+      </div>
+
+      <div class="settings-grid">
+        <div class="form-group">
+          <label for="pageTitle">Page Title <span class="required">*</span></label>
+          <input
+            id="pageTitle"
+            type="text"
+            name="pageTitle"
+            [(ngModel)]="pageTitle"
+            maxlength="200"
+            placeholder="Current Government Schemes"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="imageAlt">Main Image Alt Text</label>
+          <input
+            id="imageAlt"
+            type="text"
+            name="imageAlt"
+            [(ngModel)]="imageAlt"
+            maxlength="300"
+            placeholder="Describe the main image"
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="schemeImage">
+            Main Scheme Image
+            <span class="required" *ngIf="!isEditing">*</span>
+            <span class="optional" *ngIf="isEditing">(Optional)</span>
+          </label>
+
+          <label for="schemeImage" class="upload-area">
+            <span class="upload-icon">↑</span>
+            <strong>
+              {{ schemeImage ? 'Choose another image' : 'Upload main scheme image' }}
+            </strong>
+            <span>PNG, JPG, JPEG or WebP · Maximum 5 MB</span>
+          </label>
+
+          <input
+            id="schemeImage"
+            class="file-input"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            (change)="onMainImageSelected($event)"
+          />
+
+          <div
+            class="main-image-preview"
+            *ngIf="schemeImagePreview || existingSchemeImage"
+          >
+            <img
+              [src]="schemeImagePreview || existingSchemeImage"
+              [alt]="imageAlt || pageTitle"
+            />
+            <div>
+              <strong>{{ schemeImage?.name || 'Current main image' }}</strong>
+              <span>{{ schemeImage ? 'New image selected' : 'Saved image' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="schemes-heading">
+      <div>
+        <h2>Individual Schemes</h2>
+        <p>Manage each scheme and its detailed information.</p>
+      </div>
+
+      <button type="button" class="btn btn-primary" (click)="addScheme()">
+        <span class="add-icon">+</span>
+        Add Scheme
+      </button>
+    </div>
+
+    <div *ngIf="schemes.length === 0" class="empty-state">
+      <span class="empty-icon">▧</span>
+      <h3>No schemes added</h3>
+      <p>Add a scheme to start managing government scheme details.</p>
+      <button type="button" class="btn btn-primary" (click)="addScheme()">
+        Add Your First Scheme
+      </button>
+    </div>
+
+    <div class="scheme-list">
+      <section
+        class="editor-card scheme-card"
+        *ngFor="let scheme of schemes; let i = index"
+      >
+        <div class="card-heading scheme-card-heading">
+          <div class="scheme-number">{{ (i + 1).toString().padStart(2, '0') }}</div>
+
+          <div class="scheme-heading-text">
+            <h2>{{ scheme.title || 'New Scheme' }}</h2>
+            <p>{{ scheme.slug || 'Add a unique URL slug' }}</p>
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-danger-outline"
+            (click)="removeScheme(i)"
+          >
+            Remove
+          </button>
+        </div>
+
+        <div class="scheme-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label [for]="'scheme-title-' + i">
+                Scheme Title <span class="required">*</span>
+              </label>
+              <input
+                [id]="'scheme-title-' + i"
+                type="text"
+                [(ngModel)]="scheme.title"
+                [name]="'schemeTitle' + i"
+                placeholder="e.g. Chenetha Lakshmi Scheme"
+                maxlength="200"
+              />
+            </div>
+
+            <div class="form-group">
+              <label [for]="'scheme-slug-' + i">
+                URL Slug <span class="required">*</span>
+              </label>
+              <input
+                [id]="'scheme-slug-' + i"
+                type="text"
+                [(ngModel)]="scheme.slug"
+                [name]="'schemeSlug' + i"
+                placeholder="e.g. chenetha-lakshmi-scheme"
+                maxlength="200"
+              />
+            </div>
+
+            <div class="form-group">
+              <label [for]="'scheme-category-' + i">Category</label>
+              <input
+                [id]="'scheme-category-' + i"
+                type="text"
+                [(ngModel)]="scheme.category"
+                [name]="'schemeCategory' + i"
+                placeholder="Scheme"
+                maxlength="100"
+              />
+            </div>
+
+            <div class="form-group">
+              <label [for]="'detail-field-' + i">
+                Detail Image Field <span class="required">*</span>
+              </label>
+              <input
+                [id]="'detail-field-' + i"
+                type="text"
+                [(ngModel)]="scheme.detailImageField"
+                [name]="'detailImageField' + i"
+                placeholder="e.g. chenethaLakshmiDetailImage"
+              />
+              <small>Must match the backend's expected multipart field name.</small>
+            </div>
+
+            <div class="form-group full-width">
+              <label [for]="'scheme-description-' + i">Description</label>
+              <textarea
+                [id]="'scheme-description-' + i"
+                [(ngModel)]="scheme.description"
+                [name]="'schemeDescription' + i"
+                rows="4"
+                maxlength="5000"
+                placeholder="Describe the scheme and its benefits..."
+              ></textarea>
+            </div>
+
+            <div class="form-group full-width">
+              <label [for]="'detail-alt-' + i">Detail Image Alt Text</label>
+              <input
+                [id]="'detail-alt-' + i"
+                type="text"
+                [(ngModel)]="scheme.detailImageAlt"
+                [name]="'detailAlt' + i"
+                placeholder="Describe the scheme detail image"
+                maxlength="300"
+              />
+            </div>
+
+            <div class="form-group full-width">
+              <label [for]="'detail-image-' + i">Scheme Detail Image</label>
+
+              <label [for]="'detail-image-' + i" class="upload-area compact-upload">
+                <span class="upload-icon">↑</span>
+                <strong>
+                  {{
+                    scheme.detailImageFile
+                      ? 'Choose another image'
+                      : 'Upload detail image'
+                  }}
+                </strong>
+                <span>PNG, JPG, JPEG or WebP · Maximum 5 MB</span>
+              </label>
+
+              <input
+                [id]="'detail-image-' + i"
+                class="file-input"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                (change)="onDetailImageSelected($event, i)"
+              />
+
+              <div
+                class="main-image-preview"
+                *ngIf="scheme.detailImagePreview || scheme.detailImageUrl"
+              >
+                <img
+                  [src]="scheme.detailImagePreview || scheme.detailImageUrl"
+                  [alt]="scheme.detailImageAlt || scheme.title"
+                />
+                <div>
+                  <strong>
+                    {{ scheme.detailImageFile?.name || 'Current detail image' }}
+                  </strong>
+                  <span>
+                    {{ scheme.detailImageFile ? 'New image selected' : 'Saved image' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label [for]="'detail-json-' + i">
+                Eligibility, Benefits, Application and Documents (JSON)
+              </label>
+
+              <textarea
+                [id]="'detail-json-' + i"
+                [(ngModel)]="detailJson[i]"
+                [name]="'detailJson' + i"
+                rows="18"
+                spellcheck="false"
+                class="json-editor"
+              ></textarea>
+
+              <small>
+                Edit the nested JSON fields here. Keep valid JSON and preserve the
+                expected keys: whoCanApply, schemeBenefits, howToApply, and
+                documentsRequired.
+              </small>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="bottom-actions">
+      <button
+        *ngIf="isEditing"
+        type="button"
+        class="btn btn-danger-outline"
+        (click)="deleteCurrentSchemes()"
+        [disabled]="isSaving || isDeleting"
+      >
+        {{ isDeleting ? 'Deleting...' : 'Delete All Scheme Content' }}
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="saveCurrentSchemes()"
+        [disabled]="isSaving || isDeleting"
+      >
+        <span *ngIf="isSaving" class="spinner"></span>
+        {{ isSaving ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Schemes' }}
+      </button>
+    </div>
+  </ng-container>
+</div>

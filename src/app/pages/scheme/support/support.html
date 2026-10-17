@@ -1,0 +1,247 @@
+
+<div class="support-page">
+  <header class="page-header">
+    <div class="header-content">
+      <span class="eyebrow-label">WEBSITE MANAGEMENT</span>
+      <h1>Supporting the Weavers</h1>
+      <p>Manage the content that introduces support and welfare initiatives for handloom weavers.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="resetForm()"
+        [disabled]="isLoading || isSaving || isDeleting"
+      >
+        Reset
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="saveSupportingWeavers()"
+        [disabled]="isLoading || isSaving || isDeleting"
+      >
+        <span *ngIf="isSaving" class="spinner"></span>
+        {{ isSaving ? 'Saving...' : isEditing ? 'Update Content' : 'Create Content' }}
+      </button>
+    </div>
+  </header>
+
+  <div
+    *ngIf="message"
+    class="alert"
+    [class.alert-success]="messageType === 'success'"
+    [class.alert-error]="messageType === 'error'"
+    role="status"
+  >
+    <span>{{ message }}</span>
+
+    <button
+      type="button"
+      class="alert-close"
+      aria-label="Dismiss message"
+      (click)="message = ''"
+    >
+      &times;
+    </button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-state">
+    <span class="spinner spinner-dark"></span>
+    <p>Loading Supporting the Weavers content...</p>
+  </div>
+
+  <div *ngIf="!isLoading" class="content-grid">
+    <section class="editor-card">
+      <div class="card-heading">
+        <div>
+          <h2>Section Content</h2>
+          <p>Edit the heading, description, and image used on this page.</p>
+        </div>
+
+        <span class="status-pill" [class.status-existing]="isEditing">
+          {{ isEditing ? 'Existing Content' : 'New Content' }}
+        </span>
+      </div>
+
+      <div class="form-content">
+        <div class="form-group">
+          <label for="eyebrow">Eyebrow Text <span class="required">*</span></label>
+
+          <input
+            id="eyebrow"
+            type="text"
+            name="eyebrow"
+            [(ngModel)]="eyebrow"
+            placeholder="e.g. Schemes"
+            maxlength="100"
+            required
+          />
+
+          <small>The small label displayed above the main heading.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="title">Section Title <span class="required">*</span></label>
+
+          <input
+            id="title"
+            type="text"
+            name="title"
+            [(ngModel)]="title"
+            placeholder="Enter the section title"
+            maxlength="250"
+            required
+          />
+
+          <small>The main heading introducing support for weavers.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description <span class="required">*</span></label>
+
+          <textarea
+            id="description"
+            name="description"
+            [(ngModel)]="description"
+            placeholder="Enter the section description"
+            rows="7"
+            maxlength="3000"
+            required
+          ></textarea>
+
+          <div class="field-footer">
+            <small>Explain the available support and welfare initiatives.</small>
+            <small>{{ description.length }} / 3000</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="imageAlt">Image Alt Text</label>
+
+          <input
+            id="imageAlt"
+            type="text"
+            name="imageAlt"
+            [(ngModel)]="imageAlt"
+            placeholder="Describe the image for accessibility"
+            maxlength="300"
+          />
+
+          <small>Provide a meaningful description for screen readers.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="supportingImage">
+            Supporting Image
+            <span class="required" *ngIf="!isEditing">*</span>
+            <span class="optional" *ngIf="isEditing">(Optional)</span>
+          </label>
+
+          <label for="supportingImage" class="upload-area">
+            <span class="upload-icon">↑</span>
+            <strong>
+              {{ selectedImage ? 'Choose another image' : 'Click to upload an image' }}
+            </strong>
+            <span>PNG, JPG, JPEG or WebP · Maximum 5 MB</span>
+          </label>
+
+          <input
+            id="supportingImage"
+            class="file-input"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            (change)="onImageSelected($event)"
+          />
+
+          <small *ngIf="selectedImage" class="selected-file">
+            Selected: {{ selectedImage.name }}
+          </small>
+        </div>
+
+        <div class="form-footer">
+          <p>Save your changes to publish the updated content through the API.</p>
+
+          <button
+            *ngIf="isEditing"
+            type="button"
+            class="btn btn-danger-outline"
+            (click)="deleteSupportingWeavers()"
+            [disabled]="isSaving || isDeleting"
+          >
+            {{ isDeleting ? 'Deleting...' : 'Delete Content' }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="preview-card">
+      <div class="card-heading">
+        <div>
+          <h2>Live Preview</h2>
+          <p>Preview the content and image before saving.</p>
+        </div>
+      </div>
+
+      <div class="preview-content">
+        <div class="preview-eyebrow">{{ eyebrow || 'Schemes' }}</div>
+
+        <h2 class="preview-heading">
+          {{ title || 'Supporting the Weavers Who Sustain Our Heritage' }}
+        </h2>
+
+        <p class="preview-description">
+          {{ description || 'Your section description will appear here.' }}
+        </p>
+
+        <div class="image-preview">
+          <img
+            *ngIf="imagePreview || existingImage; else emptyPreview"
+            [src]="imagePreview || existingImage"
+            [alt]="imageAlt || title"
+          />
+
+          <ng-template #emptyPreview>
+            <div class="empty-preview">
+              <span class="empty-icon">▧</span>
+              <strong>No image selected</strong>
+              <p>Upload an image to preview it here.</p>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+
+      <div class="preview-details">
+        <div>
+          <span>API section</span>
+          <strong>Supporting the Weavers</strong>
+        </div>
+
+        <div>
+          <span>Image field</span>
+          <strong>supportingImage</strong>
+        </div>
+
+        <div>
+          <span>Content status</span>
+          <strong>{{ isEditing ? 'Existing content' : 'Not yet created' }}</strong>
+        </div>
+
+        <div>
+          <span>Image status</span>
+          <strong>
+            {{
+              selectedImage
+                ? 'New image selected'
+                : existingImage
+                  ? 'Current image'
+                  : 'No image'
+            }}
+          </strong>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

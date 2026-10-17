@@ -1,0 +1,264 @@
+<div class="makers-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">WEBSITE MANAGEMENT</span>
+      <h1>Meet the Makers</h1>
+      <p>Manage artisan profiles, stories, images, and section navigation.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="delete-button"
+        (click)="deleteMakers()"
+        [disabled]="isSaving || isLoading || !isExistingContent"
+      >
+        Delete Section
+      </button>
+
+      <button
+        type="button"
+        class="save-button"
+        (click)="saveMakers()"
+        [disabled]="isSaving || isLoading"
+      >
+        {{ isSaving ? 'Saving...' : isExistingContent ? 'Save Changes' : 'Create Section' }}
+      </button>
+    </div>
+  </header>
+
+  <div class="alert success-alert" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <div class="alert error-alert" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <span class="spinner"></span>
+    <p>Loading makers section...</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading">
+    <section class="form-section section-heading">
+      <div class="section-title">
+        <span class="section-number">01</span>
+        <div>
+          <h2>Section Details</h2>
+          <p>Configure the heading shown on the homepage.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="sectionTitle">Section Title</label>
+        <input
+          id="sectionTitle"
+          type="text"
+          [(ngModel)]="title"
+          placeholder="Meet the Makers"
+        />
+      </div>
+    </section>
+
+    <section class="makers-section">
+      <div class="section-title makers-heading">
+        <span class="section-number">02</span>
+        <div>
+          <h2>Maker Profiles</h2>
+          <p>Edit the five artisan profiles displayed on the website.</p>
+        </div>
+        <span class="count-badge">{{ makers.length }} Makers</span>
+      </div>
+
+      <article
+        class="maker-card"
+        *ngFor="let maker of makers; let i = index; trackBy: trackByMaker"
+      >
+        <div class="maker-card-header">
+          <div class="maker-index">0{{ i + 1 }}</div>
+          <div class="maker-heading-text">
+            <h3>{{ maker.name || 'New Maker' }}</h3>
+            <p>{{ maker.role || 'Maker profile' }}</p>
+          </div>
+
+          <button
+            type="button"
+            class="details-button"
+            (click)="loadMakerDetails(i)"
+            [disabled]="isSaving"
+            title="Load this maker's details from the API"
+          >
+            Refresh Details
+          </button>
+        </div>
+
+        <div class="maker-card-body">
+          <div class="image-column">
+            <label class="image-label">Maker Photo</label>
+
+            <div class="image-preview">
+              <img
+                *ngIf="maker.imageUrl"
+                [src]="maker.imageUrl"
+                [alt]="maker.imageAlt || maker.name"
+              />
+
+              <div class="image-placeholder" *ngIf="!maker.imageUrl">
+                <span class="image-icon">+</span>
+                <span>No image selected</span>
+              </div>
+            </div>
+
+            <label class="upload-button">
+              <span>Choose Image</span>
+              <input
+                type="file"
+                accept="image/*"
+                (change)="onImageSelected($event, i)"
+              />
+            </label>
+
+            <p class="file-name" *ngIf="maker.imageFile">
+              {{ maker.imageFile.name }}
+            </p>
+
+            <button
+              type="button"
+              class="remove-image-button"
+              *ngIf="maker.imageFile"
+              (click)="removeSelectedImage(i)"
+            >
+              Remove selected image
+            </button>
+
+            <p class="image-help">
+              Select an image to upload for this maker.
+            </p>
+          </div>
+
+          <div class="maker-fields">
+            <div class="fields-grid">
+              <div class="field">
+                <label [for]="'makerName' + i">Maker Name</label>
+                <input
+                  [id]="'makerName' + i"
+                  type="text"
+                  [(ngModel)]="maker.name"
+                  [name]="'makerName' + i"
+                  placeholder="Enter maker name"
+                />
+              </div>
+
+              <div class="field">
+                <label [for]="'makerSlug' + i">Slug / ID</label>
+                <input
+                  [id]="'makerSlug' + i"
+                  type="text"
+                  [(ngModel)]="maker.slug"
+                  [name]="'makerSlug' + i"
+                  placeholder="maker-slug"
+                />
+              </div>
+
+              <div class="field full-width">
+                <label [for]="'makerRole' + i">Role and Experience</label>
+                <input
+                  [id]="'makerRole' + i"
+                  type="text"
+                  [(ngModel)]="maker.role"
+                  [name]="'makerRole' + i"
+                  placeholder="Master Weaver - 40+ Years Experience"
+                />
+              </div>
+
+              <div class="field full-width">
+                <label [for]="'makerQuote' + i">Maker Quote</label>
+                <textarea
+                  [id]="'makerQuote' + i"
+                  [(ngModel)]="maker.quote"
+                  [name]="'makerQuote' + i"
+                  rows="4"
+                  placeholder="Enter the maker's story or quote"
+                ></textarea>
+              </div>
+
+              <div class="field full-width">
+                <label [for]="'makerAlt' + i">Image Alt Text</label>
+                <input
+                  [id]="'makerAlt' + i"
+                  type="text"
+                  [(ngModel)]="maker.imageAlt"
+                  [name]="'makerAlt' + i"
+                  placeholder="Describe the image"
+                />
+              </div>
+            </div>
+
+            <div class="image-status">
+              <span class="status-dot"></span>
+              <span>{{ maker.imageFile ? 'New image selected' : maker.imageUrl ? 'Current image loaded' : 'No image loaded' }}</span>
+              <span class="image-field-name">{{ maker.imageField }}</span>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="form-section navigation-section">
+      <div class="section-title">
+        <span class="section-number">03</span>
+        <div>
+          <h2>Carousel Navigation</h2>
+          <p>Set the labels and counter displayed alongside maker profiles.</p>
+        </div>
+      </div>
+
+      <div class="fields-grid">
+        <div class="field">
+          <label for="previousLabel">Previous Label</label>
+          <input
+            id="previousLabel"
+            type="text"
+            [(ngModel)]="previousLabel"
+            placeholder="Previous"
+          />
+        </div>
+
+        <div class="field">
+          <label for="nextLabel">Next Label</label>
+          <input
+            id="nextLabel"
+            type="text"
+            [(ngModel)]="nextLabel"
+            placeholder="Next"
+          />
+        </div>
+
+        <div class="field">
+          <label for="counterFormat">Counter Format</label>
+          <input
+            id="counterFormat"
+            type="text"
+            [(ngModel)]="counterFormat"
+            placeholder="01 / 05"
+          />
+          <small>Example: 01 / 05</small>
+        </div>
+      </div>
+    </section>
+
+    <footer class="form-footer">
+      <p>Remember to save your changes before leaving this page.</p>
+
+      <button
+        type="button"
+        class="save-button"
+        (click)="saveMakers()"
+        [disabled]="isSaving"
+      >
+        {{ isSaving ? 'Saving...' : 'Save Makers Section' }}
+      </button>
+    </footer>
+  </ng-container>
+</div>

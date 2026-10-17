@@ -1,0 +1,183 @@
+
+<div class="inquiries-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">CONTACT MANAGEMENT</span>
+      <h1>Contact Inquiries</h1>
+      <p>View contact messages submitted by visitors to the TGSCO website.</p>
+    </div>
+
+    <button
+      class="btn btn-secondary"
+      type="button"
+      (click)="loadInquiries()"
+      [disabled]="isLoading"
+    >
+      {{ isLoading ? 'Refreshing...' : 'Refresh Inquiries' }}
+    </button>
+  </header>
+
+  @if (successMessage) {
+    <div class="alert alert-success">{{ successMessage }}</div>
+  }
+
+  @if (errorMessage) {
+    <div class="alert alert-error">{{ errorMessage }}</div>
+  }
+
+  <section class="stats-card">
+    <div class="stats-icon">
+      <span>✉</span>
+    </div>
+    <div>
+      <p>Total Inquiries</p>
+      <h2>{{ inquiries.length }}</h2>
+    </div>
+  </section>
+
+  <section class="content-card">
+    <div class="section-heading">
+      <div>
+        <h2>Received Messages</h2>
+        <p>Contact form submissions from your website.</p>
+      </div>
+      <span class="count-badge">{{ inquiries.length }} total</span>
+    </div>
+
+    @if (isLoading) {
+      <div class="state-message">Loading contact inquiries...</div>
+    } @else if (inquiries.length === 0) {
+      <div class="state-message">
+        <h3>No inquiries found</h3>
+        <p>New contact form submissions will appear here.</p>
+      </div>
+    } @else {
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>CONTACT</th>
+              <th>PHONE</th>
+              <th>MESSAGE</th>
+              <th>SUBMITTED</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (inquiry of inquiries; track trackInquiry($index, inquiry)) {
+              <tr>
+                <td>
+                  <div class="contact-person">{{ inquiry.name || '—' }}</div>
+                  <a
+                    class="email-link"
+                    [href]="'mailto:' + inquiry.email"
+                  >
+                    {{ inquiry.email || '—' }}
+                  </a>
+                </td>
+
+                <td>
+                  @if (inquiry.phone) {
+                    <a class="phone-link" [href]="'tel:' + inquiry.phone">
+                      {{ inquiry.phone }}
+                    </a>
+                  } @else {
+                    —
+                  }
+                </td>
+
+                <td>
+                  <div class="message-text">
+                    {{ inquiry.message || 'No message provided' }}
+                  </div>
+                </td>
+
+                <td class="date-cell">{{ getInquiryDate(inquiry) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <section class="content-card form-card">
+    <div class="section-heading">
+      <div>
+        <h2>Submit a Test Inquiry</h2>
+        <p>Use this form to test the public contact inquiry endpoint.</p>
+      </div>
+    </div>
+
+    <form (ngSubmit)="submitInquiry()" #inquiryForm="ngForm">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="name">Full Name <span>*</span></label>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            [(ngModel)]="form.name"
+            placeholder="Enter full name"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address <span>*</span></label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            [(ngModel)]="form.email"
+            placeholder="name@example.com"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Phone Number <span>*</span></label>
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            [(ngModel)]="form.phone"
+            placeholder="+91 90000 00000"
+            required
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="message">Message <span>*</span></label>
+          <textarea
+            id="message"
+            name="message"
+            [(ngModel)]="form.message"
+            rows="5"
+            placeholder="Enter the inquiry message"
+            required
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button
+          class="btn btn-secondary"
+          type="button"
+          (click)="form = { name: '', email: '', phone: '', message: '' }"
+          [disabled]="isSubmitting"
+        >
+          Clear Form
+        </button>
+
+        <button
+          class="btn btn-primary"
+          type="submit"
+          [disabled]="isSubmitting || inquiryForm.invalid"
+        >
+          {{ isSubmitting ? 'Submitting...' : 'Submit Inquiry' }}
+        </button>
+      </div>
+    </form>
+  </section>
+</div>

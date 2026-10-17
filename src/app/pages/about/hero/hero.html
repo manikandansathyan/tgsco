@@ -1,0 +1,123 @@
+<div class="hero-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">ABOUT PAGE MANAGEMENT</span>
+      <h1>About Hero</h1>
+      <p>Manage the hero title and image displayed on your About page.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="delete-button"
+        (click)="deleteAboutHero()"
+        [disabled]="isSaving || isLoading || !isExistingContent"
+      >
+        Delete
+      </button>
+
+      <button
+        type="button"
+        class="save-button"
+        (click)="saveAboutHero()"
+        [disabled]="isSaving || isLoading"
+      >
+        {{ isSaving ? 'Saving...' : 'Save Changes' }}
+      </button>
+    </div>
+  </header>
+
+  <div class="message success-message" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <div class="message error-message" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    Loading About Hero content...
+  </div>
+
+  <ng-container *ngIf="!isLoading">
+    <section class="form-section">
+      <div class="section-heading">
+        <h2>Hero Content</h2>
+        <p>Update the main heading and accessible image description.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="heroTitle">Hero Title</label>
+        <input
+          id="heroTitle"
+          type="text"
+          [(ngModel)]="title"
+          placeholder="ABOUT TGSCO"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="imageAlt">Image Alt Text</label>
+        <input
+          id="imageAlt"
+          type="text"
+          [(ngModel)]="imageAlt"
+          placeholder="Describe the hero image"
+        />
+        <small>
+          This description helps screen readers explain the image.
+        </small>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="section-heading">
+        <h2>Hero Image</h2>
+        <p>Upload the image displayed in the About Hero section.</p>
+      </div>
+
+      <div class="image-preview">
+        <img
+          *ngIf="imagePreview"
+          [src]="imagePreview"
+          [alt]="imageAlt || 'About hero image preview'"
+        />
+
+        <div class="image-placeholder" *ngIf="!imagePreview">
+          <span class="placeholder-icon">＋</span>
+          <span>No hero image selected</span>
+        </div>
+      </div>
+
+      <div class="upload-area">
+        <label for="heroImage" class="upload-button">
+          Choose Image
+        </label>
+
+        <input
+          id="heroImage"
+          type="file"
+          accept="image/*"
+          (change)="onImageSelected($event)"
+        />
+
+        <p>
+          {{ heroImage?.name || 'Select an image from your computer.' }}
+        </p>
+      </div>
+    </section>
+
+    <div class="bottom-actions">
+      <span>About page / Hero section</span>
+
+      <button
+        type="button"
+        class="save-button"
+        (click)="saveAboutHero()"
+        [disabled]="isSaving"
+      >
+        {{ isSaving ? 'Saving...' : 'Save Changes' }}
+      </button>
+    </div>
+  </ng-container>
+</div>

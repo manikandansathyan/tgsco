@@ -1,0 +1,162 @@
+
+<div class="page-container">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">ABOUT PAGE MANAGEMENT</span>
+      <h1>Our Vision</h1>
+      <p>Manage the vision statement and image displayed on the About page.</p>
+    </div>
+
+    <button
+      type="button"
+      class="button button-secondary"
+      (click)="loadVision()"
+      [disabled]="isLoading || isSaving || isDeleting"
+    >
+      Refresh
+    </button>
+  </header>
+
+  <div *ngIf="isLoading" class="status-message loading-message">
+    Loading vision content...
+  </div>
+
+  <div *ngIf="successMessage" class="status-message success-message">
+    {{ successMessage }}
+  </div>
+
+  <div *ngIf="errorMessage" class="status-message error-message">
+    {{ errorMessage }}
+  </div>
+
+  <form
+    *ngIf="!isLoading"
+    class="content-form"
+    (ngSubmit)="saveVision()"
+  >
+    <section class="form-section">
+      <div class="section-heading">
+        <div>
+          <h2>Vision Statement</h2>
+          <p>Edit the label and the main vision statement.</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="label">Section Label</label>
+        <input
+          id="label"
+          name="label"
+          type="text"
+          [(ngModel)]="content.label"
+          placeholder="OUR VISION"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="statement">Vision Statement</label>
+        <textarea
+          id="statement"
+          name="statement"
+          rows="6"
+          [(ngModel)]="content.statement"
+          placeholder="Enter your vision statement"
+          required
+        ></textarea>
+
+        <p class="field-help">
+          This statement communicates TGSCO's long-term vision and goals.
+        </p>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="section-heading">
+        <div>
+          <h2>Vision Image</h2>
+          <p>Upload or replace the image associated with the vision section.</p>
+        </div>
+      </div>
+
+      <div class="image-upload-layout">
+        <div class="image-preview">
+          <img
+            *ngIf="visionImagePreview; else imagePlaceholder"
+            [src]="visionImagePreview"
+            alt="Our Vision image preview"
+          />
+
+          <ng-template #imagePlaceholder>
+            <div class="empty-image">
+              <span>No image selected</span>
+            </div>
+          </ng-template>
+        </div>
+
+        <div class="upload-controls">
+          <label for="visionImage">Choose Image</label>
+
+          <input
+            id="visionImage"
+            name="visionImage"
+            type="file"
+            accept="image/*"
+            (change)="onVisionImageSelected($event)"
+          />
+
+          <p class="field-help">
+            Select an image file. If you leave this empty, the existing image
+            will remain unchanged when updating.
+          </p>
+
+          <button
+            *ngIf="visionImage"
+            type="button"
+            class="button button-secondary"
+            (click)="cancelImageChange()"
+          >
+            Cancel Image Change
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="form-footer">
+      <button
+        *ngIf="isExistingContent"
+        type="button"
+        class="button button-danger"
+        (click)="deleteVision()"
+        [disabled]="isSaving || isDeleting"
+      >
+        {{ isDeleting ? 'Deleting...' : 'Delete Content' }}
+      </button>
+
+      <div class="footer-actions">
+        <button
+          type="button"
+          class="button button-secondary"
+          (click)="resetForm()"
+          [disabled]="isSaving || isDeleting"
+        >
+          Reset Form
+        </button>
+
+        <button
+          type="submit"
+          class="button button-primary"
+          [disabled]="isSaving || isDeleting"
+        >
+          {{
+            isSaving
+              ? 'Saving...'
+              : isExistingContent
+                ? 'Update Content'
+                : 'Create Content'
+          }}
+        </button>
+      </div>
+    </footer>
+  </form>
+</div>

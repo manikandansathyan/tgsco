@@ -1,0 +1,155 @@
+
+<div class="purpose-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">ABOUT PAGE MANAGEMENT</span>
+      <h1>Our Purpose</h1>
+      <p>Manage the purpose statement, key points, and section image.</p>
+    </div>
+  </header>
+
+  <div class="message success-message" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <div class="message error-message" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    Loading purpose content...
+  </div>
+
+  <ng-container *ngIf="!isLoading">
+    <section class="form-section">
+      <div class="section-heading">
+        <h2>Section Details</h2>
+        <p>Configure the label and main purpose statement.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="purposeLabel">Section Label</label>
+        <input
+          id="purposeLabel"
+          name="purposeLabel"
+          type="text"
+          [(ngModel)]="label"
+          placeholder="Our Purpose"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="purposeTitle">Purpose Statement</label>
+        <textarea
+          id="purposeTitle"
+          name="purposeTitle"
+          [(ngModel)]="title"
+          rows="5"
+          placeholder="Enter the main purpose statement"
+        ></textarea>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="section-heading">
+        <div>
+          <h2>Purpose Points</h2>
+          <p>Add, edit, or remove the statements explaining TGSCO's purpose.</p>
+        </div>
+
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="addPoint()"
+        >
+          + Add Point
+        </button>
+      </div>
+
+      <div class="points-list">
+        <article
+          class="point-card"
+          *ngFor="let point of points; let i = index"
+        >
+          <div class="point-heading">
+            <span class="point-number">Point {{ i + 1 }}</span>
+
+            <button
+              type="button"
+              class="remove-button"
+              (click)="removePoint(i)"
+            >
+              Remove
+            </button>
+          </div>
+
+          <div class="form-group">
+            <label [for]="'purposePoint' + i">Statement</label>
+            <textarea
+              [id]="'purposePoint' + i"
+              [name]="'purposePoint' + i"
+              [(ngModel)]="points[i]"
+              rows="3"
+              placeholder="Enter a purpose point"
+            ></textarea>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="section-heading">
+        <h2>Purpose Image</h2>
+        <p>Upload the image displayed alongside the purpose content.</p>
+      </div>
+
+      <div class="image-upload-card">
+        <div class="image-preview" *ngIf="purposeImagePreview">
+          <img
+            [src]="purposeImagePreview"
+            alt="Purpose section preview"
+          />
+        </div>
+
+        <div class="empty-image" *ngIf="!purposeImagePreview">
+          No purpose image selected
+        </div>
+
+        <label class="upload-button">
+          Choose Image
+          <input
+            type="file"
+            accept="image/*"
+            (change)="onPurposeImageSelected($event)"
+            hidden
+          />
+        </label>
+
+        <small>
+          Choose an image file to upload. Leave unchanged to keep the current image.
+        </small>
+      </div>
+    </section>
+
+    <footer class="form-actions">
+      <button
+        type="button"
+        class="delete-button"
+        *ngIf="isExistingContent"
+        [disabled]="isSaving"
+        (click)="deletePurpose()"
+      >
+        Delete Content
+      </button>
+
+      <button
+        type="button"
+        class="save-button"
+        [disabled]="isSaving"
+        (click)="savePurpose()"
+      >
+        {{ isSaving ? 'Saving...' : (isExistingContent ? 'Update Purpose' : 'Save Purpose') }}
+      </button>
+    </footer>
+  </ng-container>
+</div>

@@ -1,0 +1,306 @@
+<div class="press-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">NEWS AND EVENTS MANAGEMENT</span>
+      <h1>Press Releases</h1>
+      <p>Manage official statements, announcements, and press release cards.</p>
+    </div>
+
+    <button
+      type="button"
+      class="secondary-button"
+      (click)="resetForm()"
+      [disabled]="loading || saving || deleting"
+    >
+      Refresh
+    </button>
+  </header>
+
+  @if (message) {
+    <div class="alert success-alert">{{ message }}</div>
+  }
+
+  @if (errorMessage) {
+    <div class="alert error-alert">{{ errorMessage }}</div>
+  }
+
+  @if (loading) {
+    <div class="loading-state">Loading press releases...</div>
+  } @else {
+    <form class="press-form" (ngSubmit)="savePressReleases()">
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Section Details</h2>
+            <p>Set the main heading for the press releases section.</p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="sectionTitle">Section Title <span>*</span></label>
+          <input
+            id="sectionTitle"
+            name="sectionTitle"
+            type="text"
+            [(ngModel)]="sectionTitle"
+            placeholder="Press Releases"
+            required
+          />
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Slider Icon</h2>
+            <p>Upload or replace the decorative slider icon.</p>
+          </div>
+        </div>
+
+        <div class="image-upload-layout">
+          <div class="icon-preview">
+            @if (sliderIconPreview || existingSliderIconUrl) {
+              <img
+                [src]="sliderIconPreview || existingSliderIconUrl"
+                alt="Slider icon preview"
+              />
+            } @else {
+              <div class="image-placeholder">No icon selected</div>
+            }
+          </div>
+
+          <div class="upload-control">
+            <input
+              id="sliderIcon"
+              name="sliderIcon"
+              type="file"
+              accept="image/*"
+              (change)="onSliderIconSelected($event)"
+            />
+
+            <small>Image formats only. Maximum size: 5 MB.</small>
+
+            @if (sliderIconFile) {
+              <span class="selected-file">{{ sliderIconFile.name }}</span>
+            } @else if (existingSliderIconUrl) {
+              <span class="selected-file">
+                Existing icon retained unless replaced.
+              </span>
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <h2>Press Release Cards</h2>
+            <p>
+              Edit each card's title, description, image, and accessibility text.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="primary-button"
+            (click)="addItem()"
+          >
+            + Add Press Release
+          </button>
+        </div>
+
+        @if (items.length === 0) {
+          <div class="empty-state">
+            <h3>No press releases added</h3>
+            <p>Add a press release card to get started.</p>
+          </div>
+        }
+
+        @for (item of items; track $index; let i = $index) {
+          <article class="press-card">
+            <div class="card-heading">
+              <div>
+                <span class="item-number">PRESS RELEASE {{ i + 1 }}</span>
+                <h3>{{ item.title || 'New Press Release' }}</h3>
+              </div>
+
+              <button
+                type="button"
+                class="remove-button"
+                (click)="removeItem(i)"
+              >
+                Remove
+              </button>
+            </div>
+
+            <div class="release-preview">
+              <div class="release-preview-image">
+                @if (item.imagePreview || item.existingImageUrl) {
+                  <img
+                    [src]="item.imagePreview || item.existingImageUrl"
+                    [alt]="item.imageAlt || item.title"
+                  />
+                } @else {
+                  <div class="image-placeholder">Image preview</div>
+                }
+              </div>
+
+              <div class="release-preview-content">
+                <span>PRESS RELEASE</span>
+                <h4>{{ item.title || 'Press release title' }}</h4>
+                <p>
+                  {{
+                    item.description ||
+                      'Your press release description will appear here.'
+                  }}
+                </p>
+              </div>
+            </div>
+
+            <div class="fields-grid">
+              <div class="field">
+                <label [for]="'pressId' + i">ID</label>
+                <input
+                  [id]="'pressId' + i"
+                  [name]="'pressId' + i"
+                  type="text"
+                  [(ngModel)]="item.id"
+                  placeholder="press-release-1"
+                />
+              </div>
+
+              <div class="field">
+                <label [for]="'pressSlug' + i">Slug</label>
+                <input
+                  [id]="'pressSlug' + i"
+                  [name]="'pressSlug' + i"
+                  type="text"
+                  [(ngModel)]="item.slug"
+                  placeholder="press-release-1"
+                />
+              </div>
+
+              <div class="field full-width">
+                <label [for]="'pressTitle' + i">
+                  Card Title <span>*</span>
+                </label>
+                <input
+                  [id]="'pressTitle' + i"
+                  [name]="'pressTitle' + i"
+                  type="text"
+                  [(ngModel)]="item.title"
+                  placeholder="OFFICIAL STATEMENTS AND ANNOUNCEMENTS FROM TGSCO."
+                  required
+                />
+              </div>
+
+              <div class="field full-width">
+                <label [for]="'pressDescription' + i">
+                  Description <span>*</span>
+                </label>
+                <textarea
+                  [id]="'pressDescription' + i"
+                  [name]="'pressDescription' + i"
+                  [(ngModel)]="item.description"
+                  rows="5"
+                  placeholder="Enter the press release description..."
+                  required
+                ></textarea>
+              </div>
+
+              <div class="field full-width">
+                <label [for]="'pressAlt' + i">Image Alt Text</label>
+                <input
+                  [id]="'pressAlt' + i"
+                  [name]="'pressAlt' + i"
+                  type="text"
+                  [(ngModel)]="item.imageAlt"
+                  placeholder="Official TGSCO press release"
+                />
+              </div>
+
+              <div class="field full-width">
+                <label [for]="'pressImage' + i">
+                  Press Release Image <span>*</span>
+                </label>
+
+                <div class="image-upload-layout">
+                  <div class="image-preview">
+                    @if (item.imagePreview || item.existingImageUrl) {
+                      <img
+                        [src]="item.imagePreview || item.existingImageUrl"
+                        [alt]="item.imageAlt || item.title"
+                      />
+                    } @else {
+                      <div class="image-placeholder">No image selected</div>
+                    }
+                  </div>
+
+                  <div class="upload-control">
+                    <input
+                      [id]="'pressImage' + i"
+                      [name]="'pressImage' + i"
+                      type="file"
+                      accept="image/*"
+                      (change)="onImageSelected($event, i)"
+                    />
+
+                    <small>Image formats only. Maximum size: 5 MB.</small>
+
+                    @if (item.imageFile) {
+                      <span class="selected-file">
+                        {{ item.imageFile.name }}
+                      </span>
+                    } @else if (item.existingImageUrl) {
+                      <span class="selected-file">
+                        Existing image retained unless replaced.
+                      </span>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        }
+      </section>
+
+      <footer class="form-actions">
+        @if (isEditMode) {
+          <button
+            type="button"
+            class="delete-button"
+            (click)="deletePressReleases()"
+            [disabled]="saving || deleting"
+          >
+            {{ deleting ? 'Deleting...' : 'Delete Section' }}
+          </button>
+        }
+
+        <div class="action-right">
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="resetForm()"
+            [disabled]="saving || deleting"
+          >
+            Reset
+          </button>
+
+          <button
+            type="submit"
+            class="primary-button save-button"
+            [disabled]="saving || deleting"
+          >
+            {{
+              saving
+                ? 'Saving...'
+                : isEditMode
+                  ? 'Update Press Releases'
+                  : 'Create Press Releases'
+            }}
+          </button>
+        </div>
+      </footer>
+    </form>
+  }
+</div>

@@ -1,0 +1,202 @@
+
+<div class="video-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">MEDIA MANAGEMENT</span>
+      <h1>Video Content</h1>
+      <p>Upload and manage video files used across the TGSCO website.</p>
+    </div>
+
+    <span class="page-badge">
+      <span class="status-dot"></span>
+      Video Library
+    </span>
+  </header>
+
+  @if (successMessage) {
+    <div class="alert alert-success">
+      <span class="alert-icon">✓</span>
+      {{ successMessage }}
+    </div>
+  }
+
+  @if (errorMessage) {
+    <div class="alert alert-error">
+      <span class="alert-icon">!</span>
+      {{ errorMessage }}
+    </div>
+  }
+
+  <div class="video-layout">
+    <section class="content-card upload-card">
+      <div class="card-heading">
+        <div class="heading-icon upload-icon">↑</div>
+        <div>
+          <h2>Upload a Video</h2>
+          <p>Select a video file from your computer.</p>
+        </div>
+      </div>
+
+      <label class="upload-area" for="videoFile">
+        <div class="upload-symbol">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+            <path d="m10 9 5 3-5 3z"></path>
+          </svg>
+        </div>
+
+        <h3>{{ selectedVideo ? selectedVideo.name : 'Choose a video file' }}</h3>
+
+        <p>
+          {{
+            selectedVideo
+              ? formatFileSize(selectedVideo.size)
+              : 'Click to browse files on your computer'
+          }}
+        </p>
+
+        <span class="browse-button">
+          {{ selectedVideo ? 'Change Video' : 'Browse Files' }}
+        </span>
+
+        <input
+          id="videoFile"
+          type="file"
+          accept="video/*"
+          (change)="onVideoSelected($event)"
+        />
+      </label>
+
+      @if (selectedVideo) {
+        <div class="selected-file">
+          <div class="file-icon">MP4</div>
+
+          <div class="file-details">
+            <strong>{{ selectedVideo.name }}</strong>
+            <span>{{ formatFileSize(selectedVideo.size) }}</span>
+          </div>
+
+          <button
+            type="button"
+            class="icon-button"
+            (click)="selectedVideo = null"
+            aria-label="Remove selected video"
+          >
+            ×
+          </button>
+        </div>
+      }
+
+      <div class="upload-note">
+        <span class="info-icon">i</span>
+        <p>
+          The selected file will be uploaded to the media storage service.
+          The server determines the final storage key.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-primary upload-button"
+        (click)="uploadVideo()"
+        [disabled]="!selectedVideo || isUploading || isDeleting"
+      >
+        @if (isUploading) {
+          <span class="spinner"></span>
+          Uploading...
+        } @else {
+          <span>↑</span>
+          Upload Video
+        }
+      </button>
+    </section>
+
+    <section class="content-card delete-card">
+      <div class="card-heading">
+        <div class="heading-icon delete-icon">⌫</div>
+        <div>
+          <h2>Delete a Video</h2>
+          <p>Remove a video using its storage key.</p>
+        </div>
+      </div>
+
+      <div class="warning-box">
+        <strong>Permanent action</strong>
+        <p>
+          Deleting a video may remove it from any website section that uses
+          the same storage key.
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label for="videoKey">Video Storage Key</label>
+
+        <input
+          id="videoKey"
+          name="videoKey"
+          type="text"
+          [(ngModel)]="videoKey"
+          placeholder="videos/your-uploaded-key.mp4"
+          autocomplete="off"
+        />
+
+        <span class="field-hint">
+          Enter the exact key returned by your video upload API.
+        </span>
+      </div>
+
+      @if (uploadedKey) {
+        <div class="uploaded-key">
+          <span class="key-label">Last uploaded video key</span>
+          <code>{{ uploadedKey }}</code>
+
+          <button
+            class="copy-button"
+            type="button"
+            (click)="copyVideoKey()"
+          >
+            Copy key
+          </button>
+        </div>
+      }
+
+      <button
+        type="button"
+        class="btn btn-danger delete-button"
+        (click)="deleteVideo()"
+        [disabled]="!videoKey.trim() || isDeleting || isUploading"
+      >
+        @if (isDeleting) {
+          <span class="spinner"></span>
+          Deleting...
+        } @else {
+          Delete Video
+        }
+      </button>
+    </section>
+  </div>
+
+  <section class="help-card">
+    <div class="help-icon">i</div>
+    <div>
+      <h3>How video management works</h3>
+      <p>
+        Uploading sends the file to the server as multipart form data.
+        Deleting requires the exact storage key, for example
+        <code>videos/example.mp4</code>. This page does not display a complete
+        video library because a listing endpoint was not included in the API
+        details provided.
+      </p>
+    </div>
+  </section>
+</div>
