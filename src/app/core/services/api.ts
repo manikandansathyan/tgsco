@@ -478,13 +478,13 @@ export class Api {
 
   getPublicGovernmentInitiativesAPI() {
     return this.http.get(
-      `${this.baseURL}/home-content/government-initiatives`
+      `${this.baseURL}/scheme-content/current-schemes/items/chenetha-lakshmi-scheme`
     );
   }
 
   getGovernmentInitiativesAPI() {
     return this.http.get(
-      `${this.baseURL}/home-content/government-initiatives`,
+      `${this.baseURL}/scheme-content/current-schemes`,
       this.appendToken()
     );
   }
@@ -498,11 +498,11 @@ export class Api {
     formData.append('content', JSON.stringify(content));
 
     if (initiativeImage) {
-      formData.append('initiativeImage', initiativeImage);
+      formData.append('schemes[0].image', initiativeImage);
     }
 
     return this.http.post(
-      `${this.baseURL}/home-content/government-initiatives`,
+      `${this.baseURL}/scheme-content/current-schemes`,
       formData,
       this.appendToken()
     );
@@ -517,11 +517,11 @@ export class Api {
     formData.append('content', JSON.stringify(content));
 
     if (initiativeImage) {
-      formData.append('initiativeImage', initiativeImage);
+      formData.append('schemes[0].image', initiativeImage);
     }
 
     return this.http.patch(
-      `${this.baseURL}/home-content/government-initiatives`,
+      `${this.baseURL}/scheme-content/current-schemes`,
       formData,
       this.appendToken()
     );
@@ -529,7 +529,7 @@ export class Api {
 
   deleteGovernmentInitiativesAPI() {
     return this.http.delete(
-      `${this.baseURL}/home-content/government-initiatives`,
+      `${this.baseURL}/scheme-content/current-schemes`,
       this.appendToken()
     );
   }
@@ -1642,6 +1642,7 @@ export class Api {
       this.appendToken()
     );
   }
+
 
   getEventsCalendar() {
     return this.http.get(

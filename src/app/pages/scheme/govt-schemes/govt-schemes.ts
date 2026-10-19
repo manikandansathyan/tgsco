@@ -311,121 +311,115 @@ export class GovtSchemes implements OnInit, OnDestroy {
     return true;
   }
 
-  saveCurrentSchemes(): void {
-    if (!this.pageTitle.trim()) {
-      this.showMessage('Please enter the page title.', 'error');
+saveCurrentSchemes(): void {
+  if (!this.pageTitle.trim()) {
+    this.showMessage('Please enter the page title.', 'error');
+    return;
+  }
+
+  if (!this.schemes.length) {
+    this.showMessage('Add at least one scheme before saving.', 'error');
+    return;
+  }
+
+  for (let index = 0; index < this.schemes.length; index++) {
+    const scheme = this.schemes[index];
+
+    if (!scheme.title.trim() || !scheme.slug.trim()) {
+      this.showMessage(
+        `Enter a title and slug for scheme ${index + 1}.`,
+        'error'
+      );
       return;
     }
+  }
 
-    if (!this.schemes.length) {
-      this.showMessage('Add at least one scheme before saving.', 'error');
-      return;
-    }
+  if (!this.applyDetailJson()) {
+    return;
+  }
 
-    for (let index = 0; index < this.schemes.length; index++) {
-      const scheme = this.schemes[index];
+  const detailImages: Record<string, File> = {};
 
-      if (!scheme.title.trim() || !scheme.slug.trim()) {
-        this.showMessage(
-          `Enter a title and slug for scheme ${index + 1}.`,
-          'error'
-        );
-        return;
-      }
+  const content = {
+    title: this.pageTitle.trim(),
+    schemes: this.schemes.map((scheme, index) => {
+      const imageField = `schemes[${index}].image`;
 
-      if (!scheme.detailImageField.trim()) {
-        this.showMessage(
-          `Enter the detail image field for scheme ${index + 1}.`,
-          'error'
-        );
-        return;
-      }
-    }
-
-    if (!this.isEditing && !this.schemeImage) {
-      this.showMessage('Please select the main scheme image.', 'error');
-      return;
-    }
-
-    if (!this.applyDetailJson()) return;
-
-    const content = {
-      title: this.pageTitle.trim(),
-      schemes: this.schemes.map((scheme) => {
-        const {
-          detailImageUrl,
-          detailImageFile,
-          detailImagePreview,
-          ...payload
-        } = scheme;
-
-        return payload;
-      }),
-      imageField: 'schemeImage',
-      imageAlt: this.imageAlt.trim(),
-    };
-
-    const detailImages: Record<string, File> = {};
-
-    for (const scheme of this.schemes) {
       if (scheme.detailImageFile) {
-        detailImages[scheme.detailImageField] = scheme.detailImageFile;
+        detailImages[imageField] = scheme.detailImageFile;
       }
-    }
 
-    this.isSaving = true;
-    this.message = '';
+      return {
+        title: scheme.title.trim(),
+        slug: scheme.slug.trim(),
+        category: scheme.category,
+        description: scheme.description,
+        imageField,
+        imageAlt: scheme.detailImageAlt,
+        whoCanApply: scheme.whoCanApply,
+        schemeBenefits: scheme.schemeBenefits,
+        howToApply: scheme.howToApply,
+        documentsRequired: scheme.documentsRequired,
+        ...(scheme as any).membershipBenefits
+          ? { membershipBenefits: (scheme as any).membershipBenefits }
+          : {},
+      };
+    }),
+  };
 
-    const request = this.isEditing
-      ? this.api.updateCurrentSchemes(
-          content,
-          this.schemeImage ?? undefined,
-          detailImages
-        )
-      : this.api.createCurrentSchemes(
-          content,
-          this.schemeImage ?? undefined,
-          detailImages
-        );
+  this.isSaving = true;
+  this.message = '';
 
-    request
-      .pipe(
-        timeout(60000),
-        finalize(() => {
-          this.isSaving = false;
-          this.cdr.markForCheck();
-        })
+  const request = this.isEditing
+    ? this.api.updateCurrentSchemes(
+        content,
+        undefined,
+        detailImages
       )
-      .subscribe({
-        next: (response: any) => {
-          if (response?.success === false || response?.error) {
-            this.showMessage(
-              response?.message ?? 'Unable to save government schemes.',
-              'error'
-            );
-            return;
-          }
+    : this.api.createCurrentSchemes(
+        content,
+        undefined,
+        detailImages
+      );
 
+  request
+    .pipe(
+      timeout(60000),
+      finalize(() => {
+        this.isSaving = false;
+        this.cdr.markForCheck();
+      })
+    )
+    .subscribe({
+      next: (response: any) => {
+        if (response?.success === false || response?.error) {
           this.showMessage(
-            this.isEditing
-              ? 'Government schemes updated successfully.'
-              : 'Government schemes created successfully.',
-            'success'
-          );
-
-          this.schemeImage = null;
-          this.clearPreviews();
-          this.loadCurrentSchemes();
-        },
-        error: (error) => {
-          console.error('Failed to save government schemes:', error);
-          this.showMessage(
-            error?.error?.message ?? 'Failed to save government schemes.',
+            response?.message ?? 'Unable to save government schemes.',
             'error'
           );
-        },
-      });
-  }
+          return;
+        }
+
+        this.showMessage(
+          this.isEditing
+            ? 'Government schemes updated successfully.'
+            : 'Government schemes created successfully.',
+          'success'
+        );
+
+        this.schemeImage = null;
+        this.loadCurrentSchemes();
+      },
+      error: (error) => {
+        console.error('Failed to save government schemes:', error);
+
+        this.showMessage(
+          error?.error?.message ?? 'Failed to save government schemes.',
+          'error'
+        );
+      },
+    });
+}
 
   deleteCurrentSchemes(): void {
     if (!this.isEditing) {

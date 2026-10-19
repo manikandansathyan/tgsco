@@ -8,6 +8,7 @@ interface ExhibitionItem {
   slug: string;
   label: string;
   imageAlt: string;
+  hoverText: string;
   imageFile: File | null;
   imagePreview: string;
   existingImageUrl: string;
@@ -81,17 +82,18 @@ export class Exhibitions implements OnInit, OnDestroy {
     );
   }
 
-  private createEmptyItem(index: number): ExhibitionItem {
-    return {
-      id: `exhibition-${index + 1}`,
-      slug: `exhibition-${index + 1}`,
-      label: '',
-      imageAlt: '',
-      imageFile: null,
-      imagePreview: '',
-      existingImageUrl: '',
-    };
-  }
+ private createEmptyItem(index: number): ExhibitionItem {
+  return {
+    id: `exhibition-${index + 1}`,
+    slug: `exhibition-${index + 1}`,
+    label: '',
+    imageAlt: '',
+    hoverText: '',
+    imageFile: null,
+    imagePreview: '',
+    existingImageUrl: '',
+  };
+}
 
   loadExhibitions(): void {
     this.loading = true;
@@ -107,18 +109,18 @@ export class Exhibitions implements OnInit, OnDestroy {
 
         this.items = Array.isArray(data.items)
           ? data.items.map((item: any, index: number) => {
-              const defaultId = `exhibition-${index + 1}`;
+            const defaultId = `exhibition-${index + 1}`;
 
-              return {
-                id: item.id ?? defaultId,
-                slug: item.slug ?? item.id ?? defaultId,
-                label: item.label ?? '',
-                imageAlt: item.imageAlt ?? '',
-                imageFile: null,
-                imagePreview: '',
-                existingImageUrl: this.extractImageUrl(item),
-              };
-            })
+            return {
+              id: item.id ?? defaultId,
+              slug: item.slug ?? item.id ?? defaultId,
+              label: item.label ?? '',
+              imageAlt: item.imageAlt ?? '',
+              imageFile: null,
+              imagePreview: '',
+              existingImageUrl: this.extractImageUrl(item),
+            };
+          })
           : [];
 
         this.isEditMode = !!data.title || this.items.length > 0;
@@ -218,6 +220,7 @@ export class Exhibitions implements OnInit, OnDestroy {
         label: item.label.trim(),
         imageField: `items[${index}].image`,
         imageAlt: item.imageAlt.trim() || item.label.trim(),
+        hoverText: item.hoverText?.trim() || item.label.trim(),
       })),
     };
 
@@ -253,6 +256,7 @@ export class Exhibitions implements OnInit, OnDestroy {
       },
     });
   }
+
 
   deleteExhibitions(): void {
     if (!confirm('Are you sure you want to delete the entire Exhibitions section?')) {
