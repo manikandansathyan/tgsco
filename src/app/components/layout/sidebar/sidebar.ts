@@ -3,12 +3,9 @@ import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import {
-  LucideLayoutDashboard,
   LucidePanelsTopLeft,
   LucideImage,
   LucidePackage,
-  LucideUsers,
-  LucideNewspaper,
   LucideSettings,
   LucideChevronDown,
 } from '@lucide/angular';
@@ -20,8 +17,9 @@ import {
     CommonModule,
     RouterLink,
     RouterLinkActive,
-    LucideLayoutDashboard,
     LucidePanelsTopLeft,
+    LucideImage,
+    LucidePackage,
     LucideSettings,
     LucideChevronDown,
   ],
@@ -31,6 +29,7 @@ import {
 export class Sidebar {
   @Output() closeMenu = new EventEmitter<void>();
 
+  isPortfolioOpen = false;
   isHomepageOpen = false;
   isAboutpageOpen = false;
   isSchemepageOpen = false;
@@ -38,6 +37,10 @@ export class Sidebar {
   isNewsAndEventsOpen = false;
   isContactOpen = false;
   isVideoOpen = false;
+
+  togglePortfolio(): void {
+    this.isPortfolioOpen = !this.isPortfolioOpen;
+  }
 
   toggleHomepage(): void {
     this.isHomepageOpen = !this.isHomepageOpen;
@@ -48,23 +51,22 @@ export class Sidebar {
   }
 
   toggleSchemePage(): void {
-    this.isSchemepageOpen = !this.isSchemepageOpen
+    this.isSchemepageOpen = !this.isSchemepageOpen;
   }
 
   toggleHeritagePage(): void {
-    this.isHeritageOpen = !this.isHeritageOpen
+    this.isHeritageOpen = !this.isHeritageOpen;
   }
 
   toggleNewsAndEventsPage(): void {
-    this.isNewsAndEventsOpen = !this.isNewsAndEventsOpen
+    this.isNewsAndEventsOpen = !this.isNewsAndEventsOpen;
   }
 
   toggleContactPage(): void {
-    this.isContactOpen = !this.isContactOpen
+    this.isContactOpen = !this.isContactOpen;
   }
 
   toggleVideoPage(): void {
-    this.isVideoOpen = !this.isVideoOpen
+    this.isVideoOpen = !this.isVideoOpen;
   }
-
 }

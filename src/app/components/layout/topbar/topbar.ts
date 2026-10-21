@@ -1,9 +1,9 @@
+
 import { Component, EventEmitter, Output, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   LucideBell,
   LucideMenu,
-  LucideSearch,
   LucideChevronDown,
   LucideLogOut,
 } from '@lucide/angular';
@@ -13,9 +13,9 @@ import { Auth } from '../../../core/services/auth';
   selector: 'app-topbar',
   standalone: true,
   imports: [
+    RouterLink,
     LucideBell,
     LucideMenu,
-    LucideSearch,
     LucideChevronDown,
     LucideLogOut,
   ],
@@ -29,11 +29,17 @@ export class Topbar {
   private readonly router = inject(Router);
 
   isLoggingOut = false;
+  isProfileMenuOpen = false;
+
+  toggleProfileMenu(): void {
+    this.isProfileMenuOpen = !this.isProfileMenuOpen;
+  }
 
   logout(): void {
     if (this.isLoggingOut) return;
 
     this.isLoggingOut = true;
+    this.isProfileMenuOpen = false;
 
     this.auth.logout().subscribe({
       next: () => {

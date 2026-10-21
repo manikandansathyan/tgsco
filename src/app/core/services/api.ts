@@ -1946,74 +1946,70 @@ export class Api {
   }
 
 
-  getRegionalMap() {
-    return this.http.get(
-      `${this.baseURL}/contact-content/regional-map`,
-      this.appendToken()
+getRegionalMap() {
+  return this.http.get(
+    `${this.baseURL}/contact-content/regional-map`,
+    this.appendToken()
+  );
+}
+
+getRegionalMapItem(id: string) {
+  return this.http.get(
+    `${this.baseURL}/contact-content/regional-map/items/${encodeURIComponent(id)}`,
+    this.appendToken()
+  );
+}
+
+createRegionalMap(
+  content: Record<string, any>,
+  itemImages: Record<number, File> = {}
+) {
+  const formData = new FormData();
+
+  formData.append('content', JSON.stringify(content));
+
+  Object.entries(itemImages).forEach(([index, file]) => {
+    formData.append(
+      `regions[${index}].locations[0].image`,
+      file
     );
-  }
+  });
 
-  getRegionalMapItem(id: string) {
-    return this.http.get(
-      `${this.baseURL}/contact-content/regional-map/items/${encodeURIComponent(id)}`,
-      this.appendToken()
+  return this.http.post(
+    `${this.baseURL}/contact-content/regional-map`,
+    formData,
+    this.appendToken()
+  );
+}
+
+updateRegionalMap(
+  content: Record<string, any>,
+  itemImages: Record<number, File> = {}
+) {
+  const formData = new FormData();
+
+  formData.append('content', JSON.stringify(content));
+
+  Object.entries(itemImages).forEach(([index, file]) => {
+    formData.append(
+      `regions[${index}].locations[0].image`,
+      file
     );
-  }
+  });
 
-  createRegionalMap(
-    content: Record<string, any>,
-    mapImage?: File,
-    itemImages: Record<number, File> = {}
-  ) {
-    const formData = new FormData();
+  return this.http.patch(
+    `${this.baseURL}/contact-content/regional-map`,
+    formData,
+    this.appendToken()
+  );
+}
 
-    formData.append('content', JSON.stringify(content));
-
-    if (mapImage) {
-      formData.append('mapImage', mapImage);
-    }
-
-    Object.entries(itemImages).forEach(([index, file]) => {
-      formData.append(`items[${index}].mapImage`, file);
-    });
-
-    return this.http.post(
-      `${this.baseURL}/contact-content/regional-map`,
-      formData,
-      this.appendToken()
-    );
-  }
-
-  updateRegionalMap(
-    content: Record<string, any>,
-    mapImage?: File,
-    itemImages: Record<number, File> = {}
-  ) {
-    const formData = new FormData();
-
-    formData.append('content', JSON.stringify(content));
-
-    if (mapImage) {
-      formData.append('mapImage', mapImage);
-    }
-
-    Object.entries(itemImages).forEach(([index, file]) => {
-      formData.append(`items[${index}].mapImage`, file);
-    });
-
-    return this.http.patch(
-      `${this.baseURL}/contact-content/regional-map`,
-      formData,
-      this.appendToken()
-    );
-  }
-
-  deleteRegionalMap() {
-    return this.http.delete(
-      `${this.baseURL}/contact-content/regional-map`,
-      this.appendToken()
-    );
-  }
+deleteRegionalMap() {
+  return this.http.delete(
+    `${this.baseURL}/contact-content/regional-map`,
+    this.appendToken()
+  );
+}
 
 
   getContactForm() {

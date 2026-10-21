@@ -1,55 +1,82 @@
-<div class="login-page">
-  <div class="login-card">
-    <div class="brand">
-      <div class="brand-logo">
-        <img src="/logo.png" alt="TGSCO Logo" />
-      </div>
-      <div>
-        <h1>TGSCO</h1>
-        <p>Admin Portal</p>
+<main class="login-page">
+  <!-- LEFT: Editorial hero image (~60%) -->
+  <section class="login-hero" aria-label="Telangana handloom heritage">
+    <img
+      class="login-hero-image"
+      src="/login1.png"
+      alt="A richly woven Telangana handloom saree in deep magenta and violet with gold zari borders, draped over a stand"
+    />
+    <div class="login-hero-overlay" aria-hidden="true"></div>
+
+    <div class="login-hero-content">
+      <p class="hero-eyebrow">Telangana State Cooperative</p>
+
+      <div class="hero-copy">
+        <span class="hero-divider" aria-hidden="true"></span>
+        <h2 class="hero-headline">Weaving tradition into every thread.</h2>
+        <p class="hero-text">
+          Telangana's handloom heritage lives in the hands of its weavers. Every
+          saree carries generations of craft, patience and pride.
+        </p>
       </div>
     </div>
+  </section>
 
-    <div class="login-heading">
-      <h2>Welcome back</h2>
-      <p>Sign in to manage your website and content.</p>
-    </div>
-
-    <form (ngSubmit)="onLogin()" #loginForm="ngForm">
-      <div class="form-group">
-        <label for="email">Email address</label>
-        <input id="email" type="email" name="email" [(ngModel)]="email" placeholder="Enter your email"
-          autocomplete="username" required email />
-      </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-
-        <div class="password-wrapper">
-          <input id="password" [type]="showPassword ? 'text' : 'password'" name="password" [(ngModel)]="password"
-            placeholder="Enter your password" autocomplete="current-password" required />
-
-          <button type="button" class="password-toggle" (click)="showPassword = !showPassword"
-            [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
-            @if (showPassword) {
-            <svg lucideEyeClosed [size]="18"></svg>
-            } @else {
-            <svg lucideEye [size]="18"></svg>
-            }
-          </button>
+  <!-- RIGHT: Login panel (~40%) -->
+  <section class="login-panel">
+    <div class="login-card">
+      <div class="brand">
+        <div class="brand-logo">
+          <img src="/logo.png" alt="TGSCO Logo" />
+        </div>
+        <div>
+          <h1>TGSCO</h1>
+          <p>Admin Portal</p>
         </div>
       </div>
 
-      <p class="error-message" *ngIf="errorMessage" role="alert">
-        {{ errorMessage }}
-      </p>
+      <div class="login-heading">
+        <h2>Welcome back</h2>
+        <p>Sign in to manage your website and content.</p>
+      </div>
 
-      <button type="submit" class="login-button" [disabled]="isLoading || loginForm.invalid">
-        {{ isLoading ? 'Signing in...' : 'Sign in to dashboard' }}
-      </button>
-    </form>
+      <form (ngSubmit)="onLogin()" #loginForm="ngForm">
+        <div class="form-group">
+          <label for="email">Email address</label>
+          <input id="email" type="email" name="email" [(ngModel)]="email" placeholder="Enter your email"
+            autocomplete="username" required email />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+
+          <div class="password-wrapper">
+            <input id="password" [type]="showPassword ? 'text' : 'password'" name="password" [(ngModel)]="password"
+              placeholder="Enter your password" autocomplete="current-password" required />
+
+            <button type="button" class="password-toggle" (click)="showPassword = !showPassword"
+              [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+              @if (showPassword) {
+              <svg lucideEyeClosed [size]="18"></svg>
+              } @else {
+              <svg lucideEye [size]="18"></svg>
+              }
+            </button>
+          </div>
+        </div>
+
+        <p class="error-message" *ngIf="errorMessage" role="alert">
+          {{ errorMessage }}
+        </p>
+
+        <button type="submit" class="login-button" [disabled]="isLoading || loginForm.invalid">
+          {{ isLoading ? 'Signing in...' : 'Sign in to dashboard' }}
+        </button>
+      </form>
+    </div>
 
     <p class="login-footer">
       Developed by <strong>Qmark Technolabs</strong>
     </p>
-  </div>
-</div>
+  </section>
+</main>
