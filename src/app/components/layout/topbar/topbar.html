@@ -1,62 +1,51 @@
-
 <header class="topbar">
-  <button
-    type="button"
-    class="icon-button mobile-menu"
-    aria-label="Open navigation"
-    (click)="menuClick.emit()"
-  >
+  <button type="button" class="icon-button mobile-menu" aria-label="Open navigation" (click)="menuClick.emit()">
     <svg lucideMenu [size]="22"></svg>
   </button>
 
   <div class="breadcrumb">
-    <a routerLink="/dashboard">Dashboard</a>
-    <svg lucideChevronDown [size]="16" class="breadcrumb-chevron"></svg>
-    <span>Dashboard</span>
+    @for (crumb of breadcrumbs; track crumb.url; let last = $last) {
+    @if (!$first) {
+    <svg lucideChevronRight [size]="16" class="breadcrumb-chevron"></svg>
+    }
+
+    @if (last) {
+    <span class="breadcrumb-current" aria-current="page">
+      {{ crumb.label }}
+    </span>
+    } @else {
+    <a [routerLink]="crumb.url">{{ crumb.label }}</a>
+    }
+    }
   </div>
 
   <div class="topbar-actions">
-    <button
-      type="button"
-      class="icon-button notification-button"
-      aria-label="Notifications"
-    >
+    <button type="button" class="icon-button notification-button" aria-label="Notifications">
       <svg lucideBell [size]="21"></svg>
       <span class="notification-dot"></span>
     </button>
 
     <div class="profile-menu-container">
-      <button
-        type="button"
-        class="profile-avatar"
-        aria-label="Open profile menu"
-        [attr.aria-expanded]="isProfileMenuOpen"
-        (click)="toggleProfileMenu()"
-      >
+      <button type="button" class="profile-avatar" aria-label="Open profile menu"
+        [attr.aria-expanded]="isProfileMenuOpen" (click)="toggleProfileMenu()">
         <img src="/logo.png" alt="Administrator" />
       </button>
 
       @if (isProfileMenuOpen) {
-        <div class="profile-dropdown">
-          <div class="dropdown-profile">
-            <strong>Administrator</strong>
-            <span>Super Admin</span>
-          </div>
-
-          <div class="dropdown-divider"></div>
-
-          <button
-            type="button"
-            class="dropdown-logout"
-            (click)="logout()"
-            [disabled]="isLoggingOut"
-          >
-            <svg lucideLogOut [size]="19"></svg>
-            <span>{{ isLoggingOut ? 'Logging out...' : 'Logout' }}</span>
-          </button>
+      <div class="profile-dropdown">
+        <div class="dropdown-profile">
+          <strong>Administrator</strong>
+          <span>Super Admin</span>
         </div>
+
+        <div class="dropdown-divider"></div>
+
+        <button type="button" class="dropdown-logout" (click)="logout()" [disabled]="isLoggingOut">
+          <svg lucideLogOut [size]="19"></svg>
+          <span>{{ isLoggingOut ? 'Logging out...' : 'Logout' }}</span>
+        </button>
+      </div>
       }
     </div>
   </div>
 </header>
-

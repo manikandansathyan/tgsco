@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 export interface HeroImageUpload {
@@ -1946,70 +1946,70 @@ export class Api {
   }
 
 
-getRegionalMap() {
-  return this.http.get(
-    `${this.baseURL}/contact-content/regional-map`,
-    this.appendToken()
-  );
-}
-
-getRegionalMapItem(id: string) {
-  return this.http.get(
-    `${this.baseURL}/contact-content/regional-map/items/${encodeURIComponent(id)}`,
-    this.appendToken()
-  );
-}
-
-createRegionalMap(
-  content: Record<string, any>,
-  itemImages: Record<number, File> = {}
-) {
-  const formData = new FormData();
-
-  formData.append('content', JSON.stringify(content));
-
-  Object.entries(itemImages).forEach(([index, file]) => {
-    formData.append(
-      `regions[${index}].locations[0].image`,
-      file
+  getRegionalMap() {
+    return this.http.get(
+      `${this.baseURL}/contact-content/regional-map`,
+      this.appendToken()
     );
-  });
+  }
 
-  return this.http.post(
-    `${this.baseURL}/contact-content/regional-map`,
-    formData,
-    this.appendToken()
-  );
-}
-
-updateRegionalMap(
-  content: Record<string, any>,
-  itemImages: Record<number, File> = {}
-) {
-  const formData = new FormData();
-
-  formData.append('content', JSON.stringify(content));
-
-  Object.entries(itemImages).forEach(([index, file]) => {
-    formData.append(
-      `regions[${index}].locations[0].image`,
-      file
+  getRegionalMapItem(id: string) {
+    return this.http.get(
+      `${this.baseURL}/contact-content/regional-map/items/${encodeURIComponent(id)}`,
+      this.appendToken()
     );
-  });
+  }
 
-  return this.http.patch(
-    `${this.baseURL}/contact-content/regional-map`,
-    formData,
-    this.appendToken()
-  );
-}
+  createRegionalMap(
+    content: Record<string, any>,
+    itemImages: Record<number, File> = {}
+  ) {
+    const formData = new FormData();
 
-deleteRegionalMap() {
-  return this.http.delete(
-    `${this.baseURL}/contact-content/regional-map`,
-    this.appendToken()
-  );
-}
+    formData.append('content', JSON.stringify(content));
+
+    Object.entries(itemImages).forEach(([index, file]) => {
+      formData.append(
+        `regions[${index}].locations[0].image`,
+        file
+      );
+    });
+
+    return this.http.post(
+      `${this.baseURL}/contact-content/regional-map`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  updateRegionalMap(
+    content: Record<string, any>,
+    itemImages: Record<number, File> = {}
+  ) {
+    const formData = new FormData();
+
+    formData.append('content', JSON.stringify(content));
+
+    Object.entries(itemImages).forEach(([index, file]) => {
+      formData.append(
+        `regions[${index}].locations[0].image`,
+        file
+      );
+    });
+
+    return this.http.patch(
+      `${this.baseURL}/contact-content/regional-map`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  deleteRegionalMap() {
+    return this.http.delete(
+      `${this.baseURL}/contact-content/regional-map`,
+      this.appendToken()
+    );
+  }
 
 
   getContactForm() {
@@ -2115,8 +2115,6 @@ deleteRegionalMap() {
     );
   }
 
-
-
   uploadVideo(video: File) {
     const formData = new FormData();
     formData.append('video', video);
@@ -2137,5 +2135,335 @@ deleteRegionalMap() {
       }
     );
   }
+
+
+
+  //---------- Catalogue Management ----------\\
+
+  // Build multipart form data for catalogue requests
+  private buildCatalogueFormData(
+    data: Record<string, unknown>,
+    singleFileFields: string[] = [],
+    multipleFileFields: string[] = []
+  ): FormData {
+    const formData = new FormData();
+
+    Object.entries(data).forEach(([key, value]) => {
+      if (
+        singleFileFields.includes(key) ||
+        multipleFileFields.includes(key) ||
+        value === undefined ||
+        value === null
+      ) {
+        return;
+      }
+
+      if (Array.isArray(value) || typeof value === 'object') {
+        formData.append(key, JSON.stringify(value));
+      } else {
+        formData.append(key, String(value));
+      }
+    });
+
+    singleFileFields.forEach((field) => {
+      const file = data[field];
+
+      if (file instanceof File) {
+        formData.append(field, file, file.name);
+      }
+    });
+
+    multipleFileFields.forEach((field) => {
+      const files = data[field];
+
+      if (Array.isArray(files)) {
+        files.forEach((file) => {
+          if (file instanceof File) {
+            formData.append(field, file, file.name);
+          }
+        });
+      }
+    });
+
+    return formData;
+  }
+
+  // ---------------- CATALOGUE GROUPS ----------------
+
+  // 3. List all catalogue groups
+  getCatalogueGroupsAPI() {
+    return this.http.get(
+      `${this.baseURL}/catalog/admin/groups`,
+      this.appendToken()
+    );
+  }
+
+  // 4. Create catalogue group
+  createCatalogueGroupAPI(data: {
+    name: string;
+    slug: string;
+    description?: string;
+    sortOrder?: number;
+    image?: File | null;
+  }) {
+    const formData = this.buildCatalogueFormData(
+      data as unknown as Record<string, unknown>,
+      ['image']
+    );
+
+    return this.http.post(
+      `${this.baseURL}/catalog/admin/groups`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  // 5. Update catalogue group
+  updateCatalogueGroupAPI(
+    id: string,
+    data: {
+      name?: string;
+      slug?: string;
+      description?: string;
+      sortOrder?: number;
+      image?: File | null;
+    }
+  ) {
+    const formData = this.buildCatalogueFormData(
+      data as Record<string, unknown>,
+      ['image']
+    );
+
+    return this.http.patch(
+      `${this.baseURL}/catalog/admin/groups/${encodeURIComponent(id)}`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  // 6. Delete catalogue group
+  deleteCatalogueGroupAPI(id: string) {
+    return this.http.delete(
+      `${this.baseURL}/catalog/admin/groups/${encodeURIComponent(id)}`,
+      this.appendToken()
+    );
+  }
+
+  // ---------------- CATEGORIES ----------------
+
+  // 7. List all categories
+  getCatalogueCategoriesAPI(type?: string) {
+    let params = new HttpParams();
+
+    if (type) {
+      params = params.set('type', type);
+    }
+
+    return this.http.get(
+      `${this.baseURL}/catalog/admin/categories`,
+      {
+        ...this.appendToken(),
+        params,
+      }
+    );
+  }
+
+  // 8. Get category by ID
+  getCatalogueCategoryByIdAPI(id: string) {
+    return this.http.get(
+      `${this.baseURL}/catalog/admin/categories/${encodeURIComponent(id)}`,
+      this.appendToken()
+    );
+  }
+
+  // 1. Create category
+  createCatalogueCategoryAPI(data: {
+    name: string;
+    slug: string;
+    groupId?: string;
+    description?: string;
+    subtitle?: string;
+    active?: boolean;
+    type?: string;
+    image?: File | null;
+  }) {
+    const formData = this.buildCatalogueFormData(
+      data as unknown as Record<string, unknown>,
+      ['image']
+    );
+
+    return this.http.post(
+      `${this.baseURL}/catalog/admin/categories`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  // 9. Update category
+  updateCatalogueCategoryAPI(
+    id: string,
+    data: {
+      name?: string;
+      slug?: string;
+      groupId?: string;
+      description?: string;
+      subtitle?: string;
+      active?: boolean;
+      type?: string;
+      image?: File | null;
+    }
+  ) {
+    const formData = this.buildCatalogueFormData(
+      data as Record<string, unknown>,
+      ['image']
+    );
+
+    return this.http.patch(
+      `${this.baseURL}/catalog/admin/categories/${encodeURIComponent(id)}`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  // 10. Delete category
+  deleteCatalogueCategoryAPI(id: string) {
+    return this.http.delete(
+      `${this.baseURL}/catalog/admin/categories/${encodeURIComponent(id)}`,
+      this.appendToken()
+    );
+  }
+
+  // 15. List weaves categories
+  getWeavesCategoriesAPI() {
+    return this.getCatalogueCategoriesAPI('weaves');
+  }
+
+  // 16. List occasions categories
+  getOccasionsCategoriesAPI() {
+    return this.getCatalogueCategoriesAPI('occasions');
+  }
+
+  // 17. List fabric categories
+  getFabricCategoriesAPI() {
+    return this.getCatalogueCategoriesAPI('fabric');
+  }
+
+  // ---------------- PRODUCTS ----------------
+
+  // 11. List all products
+  getCatalogueProductsAPI() {
+    return this.http.get(
+      `${this.baseURL}/catalog/admin/products`,
+      this.appendToken()
+    );
+  }
+
+  // 12. Get product by ID
+  getCatalogueProductByIdAPI(id: string) {
+    return this.http.get(
+      `${this.baseURL}/catalog/admin/products/${encodeURIComponent(id)}`,
+      this.appendToken()
+    );
+  }
+
+  // 2. Create product
+  createCatalogueProductAPI(data: {
+    name: string;
+    slug: string;
+    sku?: string;
+    categorySlug?: string;
+    type?: string;
+    shortDescription?: string;
+    description?: string;
+    price?: number;
+    originalPrice?: number;
+    discountPercent?: number;
+    currency?: string;
+    stockQuantity?: number;
+    active?: boolean;
+    overview?: string;
+    craftStory?: string;
+    materialCare?: string;
+    shippingReturns?: string;
+    categorySlugs?: string[];
+    categoryIds?: string[];
+    types?: string[];
+    attributes?: Record<string, unknown>;
+    bulkPricing?: {
+      minimumQuantity: number;
+      maximumQuantity?: number;
+      price: number;
+    }[];
+    mainImage?: File | null;
+    galleryImages?: File[];
+  }) {
+    const formData = this.buildCatalogueFormData(
+      data as unknown as Record<string, unknown>,
+      ['mainImage'],
+      ['galleryImages']
+    );
+
+    return this.http.post(
+      `${this.baseURL}/catalog/admin/products`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  // 13. Update product
+  updateCatalogueProductAPI(
+    id: string,
+    data: {
+      name?: string;
+      slug?: string;
+      sku?: string;
+      categorySlug?: string;
+      type?: string;
+      shortDescription?: string;
+      description?: string;
+      price?: number;
+      originalPrice?: number;
+      discountPercent?: number;
+      currency?: string;
+      stockQuantity?: number;
+      active?: boolean;
+      overview?: string;
+      craftStory?: string;
+      materialCare?: string;
+      shippingReturns?: string;
+      categorySlugs?: string[];
+      categoryIds?: string[];
+      types?: string[];
+      attributes?: Record<string, unknown>;
+      bulkPricing?: {
+        minimumQuantity: number;
+        maximumQuantity?: number;
+        price: number;
+      }[];
+      mainImage?: File | null;
+      galleryImages?: File[];
+    }
+  ) {
+    const formData = this.buildCatalogueFormData(
+      data as unknown as Record<string, unknown>,
+      ['mainImage'],
+      ['galleryImages']
+    );
+
+    return this.http.patch(
+      `${this.baseURL}/catalog/admin/products/${encodeURIComponent(id)}`,
+      formData,
+      this.appendToken()
+    );
+  }
+
+  // 14. Delete product
+  deleteCatalogueProductAPI(id: string) {
+    return this.http.delete(
+      `${this.baseURL}/catalog/admin/products/${encodeURIComponent(id)}`,
+      this.appendToken()
+    );
+  }
+
 
 }

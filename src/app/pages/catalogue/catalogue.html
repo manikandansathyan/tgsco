@@ -1,0 +1,275 @@
+
+<div class="catalogue-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">WEBSITE MANAGEMENT</span>
+      <h1>Catalogue Management</h1>
+      <p>Manage catalogue groups, categories, and products.</p>
+    </div>
+
+    <button class="refresh-button" type="button" (click)="loadCatalogue()">
+      ↻ Refresh
+    </button>
+  </header>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="summary-icon groups-icon">▤</div>
+      <div>
+        <p>Total Groups</p>
+        <h2>{{ groups.length }}</h2>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-icon categories-icon">▦</div>
+      <div>
+        <p>Total Categories</p>
+        <h2>{{ categories.length }}</h2>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-icon products-icon">□</div>
+      <div>
+        <p>Total Products</p>
+        <h2>{{ products.length }}</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="category-shortcuts">
+    <div>
+      <h2>Product Categories</h2>
+      <p>Quickly view categories by type.</p>
+    </div>
+
+    <div class="shortcut-buttons">
+      <button type="button" (click)="viewCategories('weaves')">
+        Weaves
+      </button>
+      <button type="button" (click)="viewCategories('occasions')">
+        Occasions
+      </button>
+      <button type="button" (click)="viewCategories('fabric')">
+        Fabric
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <div class="loader"></div>
+    <p>Loading catalogue...</p>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <section class="listing-section">
+      <div class="section-header">
+        <div>
+          <h2>Catalogue Groups</h2>
+          <p>Manage the main groups in your catalogue.</p>
+        </div>
+
+        <div class="section-actions">
+          <button
+            class="secondary-button"
+            type="button"
+            (click)="viewDetails('groups')"
+          >
+            View Details
+          </button>
+          <button
+            class="primary-button"
+            type="button"
+            (click)="createNew('groups')"
+          >
+            + Create New
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Group Name</th>
+              <th>Slug</th>
+              <th>Description</th>
+              <th>Sort Order</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let group of groups; trackBy: trackById">
+              <td class="item-name">{{ getName(group) }}</td>
+              <td>{{ group.slug || '—' }}</td>
+              <td class="description-cell">
+                {{ getDescription(group) }}
+              </td>
+              <td>{{ group.sortOrder ?? '—' }}</td>
+              <td>
+                <span
+                  class="status"
+                  [class.inactive]="group.active === false"
+                >
+                  {{ getStatus(group) }}
+                </span>
+              </td>
+            </tr>
+
+            <tr *ngIf="groups.length === 0">
+              <td colspan="5" class="empty-state">
+                No groups found.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="listing-section">
+      <div class="section-header">
+        <div>
+          <h2>Catalogue Categories</h2>
+          <p>Manage product categories and their types.</p>
+        </div>
+
+        <div class="section-actions">
+          <button
+            class="secondary-button"
+            type="button"
+            (click)="viewDetails('categories')"
+          >
+            View Details
+          </button>
+          <button
+            class="primary-button"
+            type="button"
+            (click)="createNew('categories')"
+          >
+            + Create New
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Category Name</th>
+              <th>Slug</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let category of categories; trackBy: trackById">
+              <td class="item-name">{{ getName(category) }}</td>
+              <td>{{ category.slug || '—' }}</td>
+              <td>
+                <span class="type-label">
+                  {{ getCategoryType(category) }}
+                </span>
+              </td>
+              <td class="description-cell">
+                {{ getDescription(category) }}
+              </td>
+              <td>
+                <span
+                  class="status"
+                  [class.inactive]="category.active === false"
+                >
+                  {{ getStatus(category) }}
+                </span>
+              </td>
+            </tr>
+
+            <tr *ngIf="categories.length === 0">
+              <td colspan="5" class="empty-state">
+                No categories found.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="listing-section">
+      <div class="section-header">
+        <div>
+          <h2>Catalogue Products</h2>
+          <p>Manage products, pricing, and stock availability.</p>
+        </div>
+
+        <div class="section-actions">
+          <button
+            class="secondary-button"
+            type="button"
+            (click)="viewDetails('products')"
+          >
+            View Details
+          </button>
+          <button
+            class="primary-button"
+            type="button"
+            (click)="createNew('products')"
+          >
+            + Create New
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Product Name</th>
+              <th>SKU</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let product of products; trackBy: trackById">
+              <td class="item-name">{{ getName(product) }}</td>
+              <td>{{ product.sku || '—' }}</td>
+              <td>
+                {{
+                  product.category?.name ||
+                    product.categorySlug ||
+                    product.categorySlugs?.join(', ') ||
+                    '—'
+                }}
+              </td>
+              <td>
+                {{ product.currency || 'INR' }}
+                {{ product.price ?? '—' }}
+              </td>
+              <td>{{ product.stockQuantity ?? '—' }}</td>
+              <td>
+                <span
+                  class="status"
+                  [class.inactive]="product.active === false"
+                >
+                  {{ getStatus(product) }}
+                </span>
+              </td>
+            </tr>
+
+            <tr *ngIf="products.length === 0">
+              <td colspan="6" class="empty-state">
+                No products found.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </ng-container>
+</div>

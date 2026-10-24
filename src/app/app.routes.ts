@@ -342,6 +342,46 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/vides/video/video').then((m) => m.Video),
       },
+
+      {
+        path: 'catalogue',
+        loadComponent: () =>
+          import('./pages/catalogue/catalogue').then(
+            (m) => m.Catalogue
+          ),
+      },
+      {
+        path: 'catalogue/groups',
+        loadComponent: () =>
+          import('./pages/catalogue/catalogue-detail/catalogue-detail').then(
+            (m) => m.CatalogueDetail
+          ),
+        data: { section: 'groups' },
+      },
+      {
+        path: 'catalogue/categories',
+        loadComponent: () =>
+          import('./pages/catalogue/catalogue-detail/catalogue-detail').then(
+            (m) => m.CatalogueDetail
+          ),
+        data: { section: 'categories' },
+      },
+      {
+        path: 'catalogue/categories/:type',
+        loadComponent: () =>
+          import('./pages/catalogue/catalogue-detail/catalogue-detail').then(
+            (m) => m.CatalogueDetail
+          ),
+        data: { section: 'categories' },
+      },
+      {
+        path: 'catalogue/products',
+        loadComponent: () =>
+          import('./pages/catalogue/catalogue-detail/catalogue-detail').then(
+            (m) => m.CatalogueDetail
+          ),
+        data: { section: 'products' },
+      },
     ],
   },
   {
