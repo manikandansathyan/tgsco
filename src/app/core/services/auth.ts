@@ -13,8 +13,8 @@ interface AuthResponse {
 })
 export class Auth {
 
-// private readonly baseUrl = 'https://tgsco.onrender.com/api/v1';
-private readonly baseUrl = 'https://tgscobackend.qmarkdesk.com/api/v1'; //main URL
+private readonly baseUrl = 'https://tgsco.onrender.com/api/v1';
+// private readonly baseUrl = 'https://tgscobackend.qmarkdesk.com/api/v1'; //main URL
 
   constructor(private http: HttpClient) {}
 
