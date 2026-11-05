@@ -1,3 +1,4 @@
+
 <div class="page-container">
   <header class="page-header">
     <div>
@@ -29,6 +30,8 @@
     </div>
   } @else {
     <form class="content-form" (ngSubmit)="saveChainOfCraft()">
+
+      <!-- Section Details -->
       <section class="form-section">
         <div class="section-heading">
           <div>
@@ -42,6 +45,7 @@
           <input
             id="sectionEyebrow"
             name="eyebrow"
+            type="text"
             [(ngModel)]="eyebrow"
             placeholder="A Chain of Craft"
             required
@@ -61,6 +65,7 @@
         </div>
       </section>
 
+      <!-- Roles -->
       <div class="roles-heading">
         <div>
           <h2>People Behind the Craft</h2>
@@ -71,38 +76,53 @@
 
       @for (role of roles; track $index; let i = $index) {
         <section class="role-card">
+
           <div class="role-header">
-            <div class="role-number">{{ (i + 1).toString().padStart(2, '0') }}</div>
+            <div class="role-number">
+              {{ (i + 1).toString().padStart(2, '0') }}
+            </div>
+
             <div class="role-heading-text">
               <h3>{{ role.title || 'New Role' }}</h3>
               <p>Craft journey stage {{ i + 1 }}</p>
             </div>
+
             <span class="role-indicator">Role {{ i + 1 }}</span>
           </div>
 
           <div class="role-form">
+
+            <!-- Role Eyebrow -->
             <div class="form-group">
-              <label [for]="'roleEyebrow' + i">Eyebrow <span>*</span></label>
+              <label [for]="'roleEyebrow' + i">
+                Eyebrow <span>*</span>
+              </label>
               <input
                 [id]="'roleEyebrow' + i"
                 [name]="'roleEyebrow' + i"
+                type="text"
                 [(ngModel)]="role.eyebrow"
                 placeholder="Enter eyebrow"
                 required
               />
             </div>
 
+            <!-- Role Title -->
             <div class="form-group">
-              <label [for]="'roleTitle' + i">Role Title <span>*</span></label>
+              <label [for]="'roleTitle' + i">
+                Role Title <span>*</span>
+              </label>
               <input
                 [id]="'roleTitle' + i"
                 [name]="'roleTitle' + i"
+                type="text"
                 [(ngModel)]="role.title"
                 placeholder="Enter role title"
                 required
               />
             </div>
 
+            <!-- Description -->
             <div class="form-group full-width">
               <label [for]="'roleDescription' + i">
                 Description <span>*</span>
@@ -118,8 +138,12 @@
               <small>{{ role.description.length }} characters</small>
             </div>
 
+            <!-- Accent Color -->
             <div class="form-group">
-              <label [for]="'roleColor' + i">Accent Color <span>*</span></label>
+              <label [for]="'roleColor' + i">
+                Accent Color <span>*</span>
+              </label>
+
               <div class="color-control">
                 <input
                   class="color-picker"
@@ -128,9 +152,11 @@
                   type="color"
                   [(ngModel)]="role.color"
                 />
+
                 <input
                   class="color-text"
                   [name]="'roleColorText' + i"
+                  type="text"
                   [(ngModel)]="role.color"
                   placeholder="#C95D52"
                   pattern="^#[0-9A-Fa-f]{6}$"
@@ -139,6 +165,7 @@
               </div>
             </div>
 
+            <!-- Image Alt -->
             <div class="form-group">
               <label [for]="'roleImageAlt' + i">
                 Image Alt Text <span>*</span>
@@ -146,15 +173,18 @@
               <input
                 [id]="'roleImageAlt' + i"
                 [name]="'roleImageAlt' + i"
+                type="text"
                 [(ngModel)]="role.imageAlt"
                 placeholder="Describe the role image"
                 required
               />
             </div>
 
+            <!-- Role Image -->
             <div class="form-group full-width">
               <label [for]="'roleImage' + i">
-                Role Image {{ i + 1 }} <span>{{ !isEditing ? '*' : '' }}</span>
+                Role Image {{ i + 1 }}
+                <span>{{ !isEditing ? '*' : '' }}</span>
               </label>
 
               <label class="upload-area" [for]="'roleImage' + i">
@@ -183,6 +213,7 @@
                       : 'Click to upload ' + role.title + ' image'
                   }}
                 </strong>
+
                 <span>PNG, JPG, JPEG or WebP · Maximum 5 MB</span>
 
                 <input
@@ -197,6 +228,7 @@
                 <div class="image-preview-container">
                   <div class="preview-header">
                     <span>Image Preview</span>
+
                     @if (selectedImages[i]) {
                       <button
                         type="button"
@@ -211,15 +243,23 @@
                   <img
                     class="role-image-preview"
                     [src]="role.imagePreview || role.imageUrl"
-                    [alt]="role.imageAlt"
+                    [alt]="role.imageAlt || role.title"
                   />
+
+                  @if (selectedImages[i]) {
+                    <small class="file-info">
+                      Selected file: {{ selectedImages[i].name }}
+                    </small>
+                  }
                 </div>
               }
             </div>
+
           </div>
         </section>
       }
 
+      <!-- Actions -->
       <footer class="form-actions">
         @if (isEditing) {
           <button
@@ -257,6 +297,7 @@
           </button>
         </div>
       </footer>
+
     </form>
   }
 </div>

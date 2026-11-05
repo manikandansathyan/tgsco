@@ -1,10 +1,12 @@
-
 <div class="govt-page">
   <header class="page-header">
     <div>
       <span class="eyebrow">WEBSITE MANAGEMENT</span>
       <h1>Current Government Schemes</h1>
-      <p>Manage government scheme information, eligibility, benefits, documents, and images.</p>
+      <p>
+        Manage government scheme information, eligibility, benefits,
+        documents, and images.
+      </p>
     </div>
 
     <div class="header-actions">
@@ -24,11 +26,18 @@
         [disabled]="isLoading || isSaving || isDeleting"
       >
         <span *ngIf="isSaving" class="spinner"></span>
-        {{ isSaving ? 'Saving...' : isEditing ? 'Update Content' : 'Create Content' }}
+        {{
+          isSaving
+            ? 'Saving...'
+            : isEditing
+              ? 'Update Content'
+              : 'Create Content'
+        }}
       </button>
     </div>
   </header>
 
+  <!-- Message -->
   <div
     *ngIf="message"
     class="alert"
@@ -37,6 +46,7 @@
     role="status"
   >
     <span>{{ message }}</span>
+
     <button
       type="button"
       class="alert-close"
@@ -47,26 +57,36 @@
     </button>
   </div>
 
+  <!-- Loading -->
   <div *ngIf="isLoading" class="loading-state">
     <span class="spinner spinner-dark"></span>
     <p>Loading government schemes...</p>
   </div>
 
   <ng-container *ngIf="!isLoading">
+
+    <!-- Page Settings -->
     <section class="editor-card page-settings">
       <div class="card-heading">
         <div>
           <h2>Page Settings</h2>
           <p>Configure the page heading and main image.</p>
         </div>
-        <span class="status-pill" [class.status-existing]="isEditing">
+
+        <span
+          class="status-pill"
+          [class.status-existing]="isEditing"
+        >
           {{ isEditing ? 'Existing Content' : 'New Content' }}
         </span>
       </div>
 
       <div class="settings-grid">
         <div class="form-group">
-          <label for="pageTitle">Page Title <span class="required">*</span></label>
+          <label for="pageTitle">
+            Page Title <span class="required">*</span>
+          </label>
+
           <input
             id="pageTitle"
             type="text"
@@ -79,6 +99,7 @@
 
         <div class="form-group">
           <label for="imageAlt">Main Image Alt Text</label>
+
           <input
             id="imageAlt"
             type="text"
@@ -92,15 +113,20 @@
         <div class="form-group full-width">
           <label for="schemeImage">
             Main Scheme Image
-            <span class="required" *ngIf="!isEditing">*</span>
-            <span class="optional" *ngIf="isEditing">(Optional)</span>
+            <span class="optional">(Optional)</span>
           </label>
 
           <label for="schemeImage" class="upload-area">
             <span class="upload-icon">↑</span>
+
             <strong>
-              {{ schemeImage ? 'Choose another image' : 'Upload main scheme image' }}
+              {{
+                schemeImage
+                  ? 'Choose another image'
+                  : 'Upload main scheme image'
+              }}
             </strong>
+
             <span>PNG, JPG, JPEG or WebP · Maximum 5 MB</span>
           </label>
 
@@ -120,43 +146,68 @@
               [src]="schemeImagePreview || existingSchemeImage"
               [alt]="imageAlt || pageTitle"
             />
+
             <div>
-              <strong>{{ schemeImage?.name || 'Current main image' }}</strong>
-              <span>{{ schemeImage ? 'New image selected' : 'Saved image' }}</span>
+              <strong>
+                {{ schemeImage?.name || 'Current main image' }}
+              </strong>
+
+              <span>
+                {{ schemeImage ? 'New image selected' : 'Saved image' }}
+              </span>
             </div>
           </div>
         </div>
       </div>
     </section>
 
+    <!-- Schemes Heading -->
     <div class="schemes-heading">
       <div>
         <h2>Individual Schemes</h2>
         <p>Manage each scheme and its detailed information.</p>
       </div>
 
-      <button type="button" class="btn btn-primary" (click)="addScheme()">
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="addScheme()"
+      >
         <span class="add-icon">+</span>
         Add Scheme
       </button>
     </div>
 
+    <!-- Empty State -->
     <div *ngIf="schemes.length === 0" class="empty-state">
       <span class="empty-icon">▧</span>
+
       <h3>No schemes added</h3>
-      <p>Add a scheme to start managing government scheme details.</p>
-      <button type="button" class="btn btn-primary" (click)="addScheme()">
+
+      <p>
+        Add a scheme to start managing government scheme details.
+      </p>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="addScheme()"
+      >
         Add Your First Scheme
       </button>
     </div>
 
+    <!-- Scheme List -->
     <div class="scheme-list">
       <section
         class="editor-card scheme-card"
         *ngFor="let scheme of schemes; let i = index"
       >
+        <!-- Scheme Header -->
         <div class="card-heading scheme-card-heading">
-          <div class="scheme-number">{{ (i + 1).toString().padStart(2, '0') }}</div>
+          <div class="scheme-number">
+            {{ (i + 1).toString().padStart(2, '0') }}
+          </div>
 
           <div class="scheme-heading-text">
             <h2>{{ scheme.title || 'New Scheme' }}</h2>
@@ -174,10 +225,13 @@
 
         <div class="scheme-form">
           <div class="form-grid">
+
+            <!-- Basic Information -->
             <div class="form-group">
               <label [for]="'scheme-title-' + i">
                 Scheme Title <span class="required">*</span>
               </label>
+
               <input
                 [id]="'scheme-title-' + i"
                 type="text"
@@ -192,6 +246,7 @@
               <label [for]="'scheme-slug-' + i">
                 URL Slug <span class="required">*</span>
               </label>
+
               <input
                 [id]="'scheme-slug-' + i"
                 type="text"
@@ -203,7 +258,10 @@
             </div>
 
             <div class="form-group">
-              <label [for]="'scheme-category-' + i">Category</label>
+              <label [for]="'scheme-category-' + i">
+                Category
+              </label>
+
               <input
                 [id]="'scheme-category-' + i"
                 type="text"
@@ -215,21 +273,25 @@
             </div>
 
             <div class="form-group">
-              <label [for]="'detail-field-' + i">
-                Detail Image Field <span class="required">*</span>
-              </label>
+              <label>Detail Image Field</label>
+
               <input
-                [id]="'detail-field-' + i"
                 type="text"
-                [(ngModel)]="scheme.detailImageField"
-                [name]="'detailImageField' + i"
-                placeholder="e.g. chenethaLakshmiDetailImage"
+                [value]="'schemes[' + i + '].image'"
+                readonly
               />
-              <small>Must match the backend's expected multipart field name.</small>
+
+              <small>
+                This field name is generated automatically for the
+                corresponding scheme image.
+              </small>
             </div>
 
             <div class="form-group full-width">
-              <label [for]="'scheme-description-' + i">Description</label>
+              <label [for]="'scheme-description-' + i">
+                Description
+              </label>
+
               <textarea
                 [id]="'scheme-description-' + i"
                 [(ngModel)]="scheme.description"
@@ -240,8 +302,12 @@
               ></textarea>
             </div>
 
+            <!-- Scheme Image -->
             <div class="form-group full-width">
-              <label [for]="'detail-alt-' + i">Detail Image Alt Text</label>
+              <label [for]="'detail-alt-' + i">
+                Detail Image Alt Text
+              </label>
+
               <input
                 [id]="'detail-alt-' + i"
                 type="text"
@@ -253,10 +319,16 @@
             </div>
 
             <div class="form-group full-width">
-              <label [for]="'detail-image-' + i">Scheme Detail Image</label>
+              <label [for]="'detail-image-' + i">
+                Scheme Detail Image
+              </label>
 
-              <label [for]="'detail-image-' + i" class="upload-area compact-upload">
+              <label
+                [for]="'detail-image-' + i"
+                class="upload-area compact-upload"
+              >
                 <span class="upload-icon">↑</span>
+
                 <strong>
                   {{
                     scheme.detailImageFile
@@ -264,6 +336,7 @@
                       : 'Upload detail image'
                   }}
                 </strong>
+
                 <span>PNG, JPG, JPEG or WebP · Maximum 5 MB</span>
               </label>
 
@@ -277,48 +350,372 @@
 
               <div
                 class="main-image-preview"
-                *ngIf="scheme.detailImagePreview || scheme.detailImageUrl"
+                *ngIf="
+                  scheme.detailImagePreview ||
+                  scheme.detailImageUrl
+                "
               >
                 <img
-                  [src]="scheme.detailImagePreview || scheme.detailImageUrl"
+                  [src]="
+                    scheme.detailImagePreview ||
+                    scheme.detailImageUrl
+                  "
                   [alt]="scheme.detailImageAlt || scheme.title"
                 />
+
                 <div>
                   <strong>
-                    {{ scheme.detailImageFile?.name || 'Current detail image' }}
+                    {{
+                      scheme.detailImageFile?.name ||
+                        'Current detail image'
+                    }}
                   </strong>
+
                   <span>
-                    {{ scheme.detailImageFile ? 'New image selected' : 'Saved image' }}
+                    {{
+                      scheme.detailImageFile
+                        ? 'New image selected'
+                        : 'Saved image'
+                    }}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div class="form-group full-width">
-              <label [for]="'detail-json-' + i">
-                Eligibility, Benefits, Application and Documents (JSON)
-              </label>
+            <!-- Who Can Apply -->
+            <div class="form-group full-width detail-section">
+              <h3>Who Can Apply</h3>
+
+              <label>Section Heading</label>
+
+              <input
+                type="text"
+                [(ngModel)]="scheme.whoCanApply.heading"
+                [name]="'whoHeading' + i"
+                placeholder="Who Can Apply"
+              />
+
+              <label>Eligibility Items</label>
+
+              <div
+                class="dynamic-field"
+                *ngFor="
+                  let item of scheme.whoCanApply.items;
+                  let j = index
+                "
+              >
+                <input
+                  type="text"
+                  [(ngModel)]="scheme.whoCanApply.items[j]"
+                  [name]="'whoItem' + i + '_' + j"
+                  placeholder="Enter eligibility requirement"
+                />
+
+                <button
+                  type="button"
+                  class="btn btn-danger-outline"
+                  (click)="
+                    removeArrayItem(
+                      scheme.whoCanApply.items,
+                      j
+                    )
+                  "
+                >
+                  Remove
+                </button>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="addArrayItem(scheme.whoCanApply.items)"
+              >
+                + Add Eligibility Item
+              </button>
+            </div>
+
+            <!-- Scheme Benefits -->
+            <div class="form-group full-width detail-section">
+              <h3>Scheme Benefits</h3>
+
+              <label>Section Heading</label>
+
+              <input
+                type="text"
+                [(ngModel)]="scheme.schemeBenefits.heading"
+                [name]="'benefitsHeading' + i"
+                placeholder="Scheme Benefits"
+              />
+
+              <label>Introduction</label>
 
               <textarea
-                [id]="'detail-json-' + i"
-                [(ngModel)]="detailJson[i]"
-                [name]="'detailJson' + i"
-                rows="18"
-                spellcheck="false"
-                class="json-editor"
+                [(ngModel)]="scheme.schemeBenefits.intro"
+                [name]="'benefitsIntro' + i"
+                rows="2"
+                placeholder="Choose the plan that suits you"
               ></textarea>
 
-              <small>
-                Edit the nested JSON fields here. Keep valid JSON and preserve the
-                expected keys: whoCanApply, schemeBenefits, howToApply, and
-                documentsRequired.
-              </small>
+              <h4>Contribution Plans</h4>
+
+              <div
+                class="nested-card"
+                *ngFor="
+                  let plan of scheme.schemeBenefits.contributionPlans;
+                  let j = index
+                "
+              >
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Monthly Contribution</label>
+
+                    <input
+                      type="text"
+                      [(ngModel)]="plan.monthlyContribution"
+                      [name]="'monthlyContribution' + i + '_' + j"
+                      placeholder="₹4,500"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label>Purchase Value</label>
+
+                    <input
+                      type="text"
+                      [(ngModel)]="plan.purchaseValue"
+                      [name]="'purchaseValue' + i + '_' + j"
+                      placeholder="₹7,200 worth of handloom products"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  class="btn btn-danger-outline"
+                  (click)="removeContributionPlan(scheme, j)"
+                >
+                  Remove Plan
+                </button>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="addContributionPlan(scheme)"
+              >
+                + Add Contribution Plan
+              </button>
+
+              <h4>Instalment Benefits</h4>
+
+              <div
+                class="dynamic-field"
+                *ngFor="
+                  let benefit of scheme.schemeBenefits.instalmentBenefits;
+                  let j = index
+                "
+              >
+                <input
+                  type="text"
+                  [(ngModel)]="
+                    scheme.schemeBenefits.instalmentBenefits[j]
+                  "
+                  [name]="'instalmentBenefit' + i + '_' + j"
+                  placeholder="Enter instalment benefit"
+                />
+
+                <button
+                  type="button"
+                  class="btn btn-danger-outline"
+                  (click)="
+                    removeArrayItem(
+                      scheme.schemeBenefits.instalmentBenefits,
+                      j
+                    )
+                  "
+                >
+                  Remove
+                </button>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="
+                  addArrayItem(
+                    scheme.schemeBenefits.instalmentBenefits
+                  )
+                "
+              >
+                + Add Instalment Benefit
+              </button>
             </div>
+
+            <!-- How to Apply -->
+            <div class="form-group full-width detail-section">
+              <h3>How to Apply</h3>
+
+              <label>Section Heading</label>
+
+              <input
+                type="text"
+                [(ngModel)]="scheme.howToApply.heading"
+                [name]="'howToApplyHeading' + i"
+                placeholder="How to Apply"
+              />
+
+              <label>Application Steps</label>
+
+              <div
+                class="dynamic-field"
+                *ngFor="
+                  let step of scheme.howToApply.steps;
+                  let j = index
+                "
+              >
+                <input
+                  type="text"
+                  [(ngModel)]="scheme.howToApply.steps[j]"
+                  [name]="'applicationStep' + i + '_' + j"
+                  [placeholder]="'Application step ' + (j + 1)"
+                />
+
+                <button
+                  type="button"
+                  class="btn btn-danger-outline"
+                  (click)="
+                    removeArrayItem(scheme.howToApply.steps, j)
+                  "
+                >
+                  Remove
+                </button>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="addArrayItem(scheme.howToApply.steps)"
+              >
+                + Add Application Step
+              </button>
+            </div>
+
+            <!-- Documents Required -->
+            <div class="form-group full-width detail-section">
+              <h3>Documents Required</h3>
+
+              <label>Section Heading</label>
+
+              <input
+                type="text"
+                [(ngModel)]="scheme.documentsRequired.heading"
+                [name]="'documentsHeading' + i"
+                placeholder="Documents Required"
+              />
+
+              <label>Required Documents</label>
+
+              <div
+                class="dynamic-field"
+                *ngFor="
+                  let document of scheme.documentsRequired.items;
+                  let j = index
+                "
+              >
+                <input
+                  type="text"
+                  [(ngModel)]="scheme.documentsRequired.items[j]"
+                  [name]="'requiredDocument' + i + '_' + j"
+                  placeholder="Enter required document"
+                />
+
+                <button
+                  type="button"
+                  class="btn btn-danger-outline"
+                  (click)="
+                    removeArrayItem(
+                      scheme.documentsRequired.items,
+                      j
+                    )
+                  "
+                >
+                  Remove
+                </button>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="
+                  addArrayItem(scheme.documentsRequired.items)
+                "
+              >
+                + Add Required Document
+              </button>
+            </div>
+
+            <!-- Membership Benefits -->
+            <div class="form-group full-width detail-section">
+              <h3>Membership Benefits</h3>
+
+              <label>Section Heading</label>
+
+              <input
+                type="text"
+                [(ngModel)]="scheme.membershipBenefits.heading"
+                [name]="'membershipHeading' + i"
+                placeholder="Cooperative Membership"
+              />
+
+              <label>Membership Benefit Items</label>
+
+              <div
+                class="dynamic-field"
+                *ngFor="
+                  let benefit of scheme.membershipBenefits.items;
+                  let j = index
+                "
+              >
+                <input
+                  type="text"
+                  [(ngModel)]="
+                    scheme.membershipBenefits.items[j]
+                  "
+                  [name]="'membershipBenefit' + i + '_' + j"
+                  placeholder="Enter membership benefit"
+                />
+
+                <button
+                  type="button"
+                  class="btn btn-danger-outline"
+                  (click)="
+                    removeArrayItem(
+                      scheme.membershipBenefits.items,
+                      j
+                    )
+                  "
+                >
+                  Remove
+                </button>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="
+                  addArrayItem(scheme.membershipBenefits.items)
+                "
+              >
+                + Add Membership Benefit
+              </button>
+            </div>
+
           </div>
         </div>
       </section>
     </div>
 
+    <!-- Bottom Actions -->
     <div class="bottom-actions">
       <button
         *ngIf="isEditing"
@@ -327,7 +724,11 @@
         (click)="deleteCurrentSchemes()"
         [disabled]="isSaving || isDeleting"
       >
-        {{ isDeleting ? 'Deleting...' : 'Delete All Scheme Content' }}
+        {{
+          isDeleting
+            ? 'Deleting...'
+            : 'Delete All Scheme Content'
+        }}
       </button>
 
       <button
@@ -337,8 +738,16 @@
         [disabled]="isSaving || isDeleting"
       >
         <span *ngIf="isSaving" class="spinner"></span>
-        {{ isSaving ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Schemes' }}
+
+        {{
+          isSaving
+            ? 'Saving...'
+            : isEditing
+              ? 'Save Changes'
+              : 'Create Schemes'
+        }}
       </button>
     </div>
+
   </ng-container>
 </div>

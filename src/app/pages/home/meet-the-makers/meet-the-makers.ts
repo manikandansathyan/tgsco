@@ -109,7 +109,7 @@ export class MeetTheMakers implements OnInit {
   constructor(
     private readonly api: Api,
     private readonly cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.resetToDefaults();
@@ -147,39 +147,36 @@ export class MeetTheMakers implements OnInit {
             this.counterFormat =
               content.navigation?.counterFormat ?? '01 / 05';
 
-            const returnedImages = data?.images ?? content?.images ?? {};
+            const returnedImages: any[] = Array.isArray(data?.images)
+              ? data.images
+              : [];
 
             this.makers = content.items.map(
               (item: any, index: number): Maker => {
                 const defaultMaker = this.defaultMakers[index];
 
+                const imageField =
+                  item.imageField ?? `makers[${index}].image`;
+
+                const matchedImage = returnedImages.find(
+                  (image: any) => image.field === imageField
+                );
+
                 const imageUrl =
+                  matchedImage?.url ??
+                  (typeof item.image === 'string' ? item.image : item.image?.url) ??
                   item.imageUrl ??
-                  item.image ??
-                  item.image?.url ??
-                  returnedImages?.[`makers[${index}].image`] ??
-                  returnedImages?.[`makers[${index}]`] ??
-                  returnedImages?.makers?.[index]?.image ??
                   '';
 
                 return {
                   id: item.id ?? defaultMaker?.id ?? `maker-${index + 1}`,
-                  slug:
-                    item.slug ??
-                    defaultMaker?.slug ??
-                    `maker-${index + 1}`,
+                  slug: item.slug ?? defaultMaker?.slug ?? `maker-${index + 1}`,
                   name: item.name ?? '',
                   role: item.role ?? '',
                   quote: item.quote ?? '',
-                  imageField:
-                    item.imageField ??
-                    defaultMaker?.imageField ??
-                    `makers[${index}].image`,
+                  imageField,
                   imageAlt: item.imageAlt ?? '',
-                  imageUrl:
-                    typeof imageUrl === 'string'
-                      ? imageUrl
-                      : imageUrl?.url ?? '',
+                  imageUrl,
                   imageFile: null,
                 };
               }

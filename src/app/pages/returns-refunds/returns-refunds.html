@@ -1,0 +1,377 @@
+
+<div class="returns-page">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1>Returns & Refunds</h1>
+      <p>Manage customer return requests and refund processing.</p>
+    </div>
+
+    <button
+      class="refresh-btn"
+      type="button"
+      (click)="loadReturns()"
+      [disabled]="loading"
+    >
+      <span class="refresh-icon">↻</span>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-row">
+    <div class="summary-card">
+      <span class="summary-label">Total Returns</span>
+      <strong>{{ totalReturns }}</strong>
+      <span class="summary-description">Matching your filters</span>
+    </div>
+
+    <div class="summary-card">
+      <span class="summary-label">Requests on This Page</span>
+      <strong>{{ returns.length }}</strong>
+      <span class="summary-description">Currently displayed</span>
+    </div>
+
+    <div class="summary-card">
+      <span class="summary-label">Requested</span>
+      <strong>{{ pendingReturnsCount }}</strong>
+      <span class="summary-description">Awaiting admin review</span>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-card">
+    <div class="filter-heading">
+      <div>
+        <h2>Filter Returns</h2>
+        <p>Find requests by status, payment, reason, or date.</p>
+      </div>
+
+      <button
+        class="clear-btn"
+        type="button"
+        (click)="clearFilters()"
+        [disabled]="loading"
+      >
+        Clear filters
+      </button>
+    </div>
+
+    <div class="filter-grid">
+
+      <div class="filter-field">
+        <label for="returnStatus">Return Status</label>
+        <select id="returnStatus" [(ngModel)]="status">
+          <option value="">All statuses</option>
+          <option *ngFor="let option of statusOptions" [value]="option">
+            {{ formatStatus(option) }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="returnReason">Reason</label>
+        <select id="returnReason" [(ngModel)]="reason">
+          <option value="">All reasons</option>
+          <option *ngFor="let option of reasonOptions" [value]="option">
+            {{ formatStatus(option) }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="paymentMethod">Payment Method</label>
+        <select id="paymentMethod" [(ngModel)]="paymentMethod">
+          <option value="">All methods</option>
+          <option *ngFor="let option of paymentMethodOptions" [value]="option">
+            {{ formatStatus(option) }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="paymentStatus">Payment Status</label>
+        <select id="paymentStatus" [(ngModel)]="paymentStatus">
+          <option value="">All payment statuses</option>
+          <option *ngFor="let option of paymentStatusOptions" [value]="option">
+            {{ formatStatus(option) }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="fromDate">From Date</label>
+        <input
+          id="fromDate"
+          type="date"
+          [(ngModel)]="from"
+        />
+      </div>
+
+      <div class="filter-field">
+        <label for="toDate">To Date</label>
+        <input
+          id="toDate"
+          type="date"
+          [(ngModel)]="to"
+        />
+      </div>
+
+      <div class="filter-field">
+        <label for="sortOrder">Sort By</label>
+        <select
+          id="sortOrder"
+          [ngModel]="sort"
+          (ngModelChange)="changeSort($event)"
+        >
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="pageSize">Rows per page</label>
+        <select
+          id="pageSize"
+          [ngModel]="limit"
+          (ngModelChange)="changeLimit($event)"
+        >
+          <option value="10">10 rows</option>
+          <option value="20">20 rows</option>
+          <option value="50">50 rows</option>
+          <option value="100">100 rows</option>
+        </select>
+      </div>
+
+    </div>
+
+    <div class="filter-actions">
+      <button
+        class="apply-btn"
+        type="button"
+        (click)="applyFilters()"
+        [disabled]="loading"
+      >
+        Apply Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div
+    *ngIf="successMessage"
+    class="alert alert-success"
+    role="status"
+  >
+    {{ successMessage }}
+  </div>
+
+  <div
+    *ngIf="errorMessage"
+    class="alert alert-error"
+    role="alert"
+  >
+    {{ errorMessage }}
+  </div>
+
+  <!-- Returns Table -->
+  <div class="table-card">
+
+    <div class="table-heading">
+      <div>
+        <h2>Return Requests</h2>
+        <p>{{ totalReturns }} request(s) found</p>
+      </div>
+
+      <span class="page-indicator">
+        Page {{ page }} of {{ totalPages }}
+      </span>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading-state">
+      <span class="loader"></span>
+      <span>Loading return requests...</span>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrapper" *ngIf="!loading">
+      <table>
+        <thead>
+          <tr>
+            <th>Return ID</th>
+            <th>Order Number</th>
+            <th>Customer</th>
+            <th>Product</th>
+            <th>Reason</th>
+            <th>Amount</th>
+            <th>Payment</th>
+            <th>Status</th>
+            <th>Requested On</th>
+            <th class="actions-column">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of returns">
+
+            <!-- Return ID -->
+            <td>
+              <span class="return-id">
+                {{ getReturnId(item) || '—' }}
+              </span>
+            </td>
+
+            <!-- Order -->
+            <td>
+              <span class="order-number">
+                {{ getOrderNumber(item) }}
+              </span>
+            </td>
+
+            <!-- Customer -->
+            <td>
+              <div class="customer-cell">
+                <span class="customer-name">
+                  {{ getCustomerName(item) }}
+                </span>
+
+                <small class="customer-email">
+                  {{ getCustomerMobile(item) }}
+                </small>
+              </div>
+            </td>
+
+            <!-- Product -->
+            <td>
+              <span class="product-name">
+                {{ getProductNames(item) }}
+              </span>
+            </td>
+
+            <!-- Reason -->
+            <td>
+              {{ formatStatus(item.reason) }}
+            </td>
+
+            <!-- Amount -->
+            <td class="amount">
+              {{ getAmount(item) | currency:'INR':'symbol':'1.2-2' }}
+            </td>
+
+            <!-- Payment -->
+            <td>
+              <div class="payment-cell">
+                <span>
+                  {{ formatStatus(item.order?.paymentMethod) }}
+                </span>
+
+                <small class="customer-email">
+                  {{ formatStatus(item.order?.paymentStatus) }}
+                </small>
+              </div>
+            </td>
+
+            <!-- Return Status -->
+            <td>
+              <span
+                class="status-badge"
+                [ngClass]="statusClass(item.status)"
+              >
+                {{ formatStatus(item.status) }}
+              </span>
+            </td>
+
+            <!-- Requested Date -->
+            <td>
+              {{
+                getDate(item)
+                  ? (getDate(item) | date:'dd MMM yyyy, hh:mm a')
+                  : '—'
+              }}
+            </td>
+
+            <!-- Actions -->
+            <td>
+              <div class="action-buttons">
+
+                <button
+                  class="action-btn view-btn"
+                  type="button"
+                  (click)="openDetails(item)"
+                >
+                  View Details
+                </button>
+
+                <button
+                  *ngIf="item.status === 'requested'"
+                  class="action-btn approve-btn"
+                  type="button"
+                  [disabled]="updatingId === getReturnId(item)"
+                  (click)="approveReturn(item)"
+                >
+                  {{ updatingId === getReturnId(item) ? 'Updating...' : 'Approve' }}
+                </button>
+
+                <span
+                  *ngIf="item.status === 'cancelled'"
+                  class="action-note"
+                >
+                  Cancelled
+                </span>
+
+                <span
+                  *ngIf="item.status === 'rejected'"
+                  class="action-note"
+                >
+                  Rejected
+                </span>
+
+              </div>
+            </td>
+
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="returns.length === 0">
+            <td colspan="10" class="empty-state">
+              <div class="empty-icon">↩</div>
+              <strong>No return requests found</strong>
+              <p>Try changing your filters or refresh the page.</p>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="!loading">
+      <span>
+        Showing page {{ page }} of {{ totalPages }}
+      </span>
+
+      <div class="pagination-buttons">
+        <button
+          type="button"
+          class="pagination-btn"
+          [disabled]="page <= 1"
+          (click)="previousPage()"
+        >
+          Previous
+        </button>
+
+        <button
+          type="button"
+          class="pagination-btn"
+          [disabled]="page >= totalPages"
+          (click)="nextPage()"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

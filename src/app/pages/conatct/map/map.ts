@@ -1,7 +1,14 @@
+
+import {
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Subscription, finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
 interface RegionalOffice {
@@ -20,6 +27,13 @@ interface RegionalOffice {
   imageUrl: string;
   previewUrl: string;
   imageFile: File | null;
+  lat: number | null;
+  lng: number | null;
+}
+
+interface RegionalMapImage {
+  field: string;
+  url: string;
 }
 
 @Component({
@@ -31,6 +45,7 @@ interface RegionalOffice {
 })
 export class Map implements OnInit, OnDestroy {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
   private subscriptions = new Subscription();
 
   eyebrow = 'Regional Map';
@@ -85,6 +100,8 @@ export class Map implements OnInit, OnDestroy {
         imageUrl: '',
         previewUrl: '',
         imageFile: null,
+        lat: null,
+        lng: null,
       },
       {
         id: 'khammam-regional-office',
@@ -102,6 +119,8 @@ export class Map implements OnInit, OnDestroy {
         imageUrl: '',
         previewUrl: '',
         imageFile: null,
+        lat: null,
+        lng: null,
       },
       {
         id: 'medak-regional-office',
@@ -119,6 +138,8 @@ export class Map implements OnInit, OnDestroy {
         imageUrl: '',
         previewUrl: '',
         imageFile: null,
+        lat: null,
+        lng: null,
       },
     ];
   }
@@ -140,11 +161,13 @@ export class Map implements OnInit, OnDestroy {
       imageUrl: '',
       previewUrl: '',
       imageFile: null,
+      lat: null,
+      lng: null,
     };
   }
 
   private clearPreview(url: string): void {
-    if (url.startsWith('blob:')) {
+    if (url?.startsWith('blob:')) {
       URL.revokeObjectURL(url);
     }
   }
@@ -157,171 +180,187 @@ export class Map implements OnInit, OnDestroy {
     });
   }
 
-  private extractPayload(response: any): any {
-    let data = response?.data ?? response;
-
-    if (data?.content !== undefined) {
-      if (typeof data.content === 'string') {
-        try {
-          data = JSON.parse(data.content);
-        } catch {
-          // Keep the response if content is not JSON.
-        }
-      } else if (
-        typeof data.content === 'object' &&
-        data.content !== null
-      ) {
-        data = data.content;
+  private parseContent(value: any): any {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return {};
       }
     }
 
-    return data;
+    return value && typeof value === 'object' ? value : {};
   }
 
-  private imageUrl(value: any): string {
-    if (typeof value === 'string') {
-      return value;
-    }
+  private extractResponse(response: any): {
+    data: any;
+    content: any;
+    images: RegionalMapImage[];
+  } {
+    const data = response?.data ?? response;
+    const content = this.parseContent(data?.content ?? data);
 
-    if (!value || typeof value !== 'object') {
+    return {
+      data,
+      content,
+      images: Array.isArray(data?.images) ? data.images : [],
+    };
+  }
+
+  private getImageUrl(
+    images: RegionalMapImage[],
+    field: string,
+  ): string {
+    if (!field) {
       return '';
     }
 
-    for (const key of [
-      'url',
-      'imageUrl',
-      'image_url',
-      'mapImageUrl',
-      'mapImage',
-      'image',
-      'src',
-    ]) {
-      const candidate = value[key];
+    return images.find((image) => image.field === field)?.url ?? '';
+  }
 
-      if (typeof candidate === 'string') {
-        return candidate;
-      }
+  private getOfficeImageField(
+    regionIndex: number,
+    locationIndex: number,
+  ): string {
+    return `regions[${regionIndex}].locations[${locationIndex}].image`;
+  }
 
-      if (candidate && typeof candidate === 'object') {
-        const nested = this.imageUrl(candidate);
+  private normalizeOffice(
+    region: any,
+    location: any,
+    regionIndex: number,
+    locationIndex: number,
+    images: RegionalMapImage[],
+  ): RegionalOffice {
+    const imageField = this.getOfficeImageField(
+      regionIndex,
+      locationIndex,
+    );
 
-        if (nested) {
-          return nested;
-        }
-      }
-    }
+    const imageUrl =
+      this.getImageUrl(images, imageField) ||
+      (typeof location?.image === 'string' &&
+      location.image.startsWith('http')
+        ? location.image
+        : '');
 
-    return '';
+    return {
+      id: location?.id ?? '',
+      slug: location?.slug ?? location?.id ?? '',
+      regionId: region?.regionId ?? '',
+      mapLabel: region?.regionName ?? '',
+      officeName: location?.title ?? '',
+      address: location?.address ?? '',
+      phone: location?.phone ?? '',
+      email: location?.email ?? '',
+      hours: location?.timing ?? '',
+      directionsLabel: 'Get Direction',
+      directionsUrl: location?.directionUrl ?? '',
+      mapImageAlt: location?.imageAlt ?? location?.title ?? '',
+      imageUrl,
+      previewUrl: imageUrl,
+      imageFile: null,
+      lat:
+        location?.lat !== undefined && location?.lat !== null
+          ? Number(location.lat)
+          : null,
+      lng:
+        location?.lng !== undefined && location?.lng !== null
+          ? Number(location.lng)
+          : null,
+    };
   }
 
   loadRegionalMap(): void {
     this.isLoading = true;
     this.errorMessage = '';
-    this.successMessage = '';
 
     this.subscriptions.add(
-      this.api.getRegionalMap().subscribe({
-        next: (response: any) => {
-          const data = this.extractPayload(response);
+      this.api
+        .getRegionalMap()
+        .pipe(
+          timeout(60000),
+          finalize(() => {
+            this.isLoading = false;
+            this.cdr.markForCheck();
+          }),
+        )
+        .subscribe({
+          next: (response: any) => {
+            const { data, content, images } =
+              this.extractResponse(response);
 
-          this.clearAllPreviews();
+            this.clearAllPreviews();
 
-          this.eyebrow = data?.eyebrow ?? 'Regional Map';
-          this.title = data?.title ?? 'Regional Map';
+            this.eyebrow = content?.eyebrow ?? 'Regional Map';
+            this.title = content?.title ?? 'Regional Map';
 
-          this.navigation = {
-            previousLabel:
-              data?.navigation?.previousLabel ?? 'Previous',
-            nextLabel: data?.navigation?.nextLabel ?? 'Next',
-            counterFormat:
-              data?.navigation?.counterFormat ?? '01 / 03',
-          };
+            this.navigation = {
+              previousLabel:
+                content?.navigation?.previousLabel ?? 'Previous',
+              nextLabel:
+                content?.navigation?.nextLabel ?? 'Next',
+              counterFormat:
+                content?.navigation?.counterFormat ?? '01 / 03',
+            };
 
-          this.mapImageAlt =
-            data?.mapImageAlt ?? 'Telangana regional district map';
+            this.mapImageAlt =
+              content?.mapImageAlt ??
+              'Telangana regional district map';
 
-          this.mapImageUrl = this.imageUrl(
-            data?.mapImageUrl ?? data?.mapImage ?? data?.image
-          );
+            this.mapImageUrl =
+              this.getImageUrl(images, 'mapImage') ||
+              content?.mapImageUrl ||
+              content?.mapImage ||
+              '';
 
-          this.mapImagePreview = this.mapImageUrl;
-          this.mapImageFile = null;
+            this.mapImagePreview = this.mapImageUrl;
+            this.mapImageFile = null;
 
-          const receivedRegions = Array.isArray(data?.regions)
-            ? data.regions
-            : [];
+            const receivedRegions = Array.isArray(content?.regions)
+              ? content.regions
+              : [];
 
-          const receivedLocations = receivedRegions.flatMap(
-            (region: any) =>
-              (
-                Array.isArray(region?.locations)
+            const receivedLocations: RegionalOffice[] = [];
+
+            receivedRegions.forEach(
+              (region: any, regionIndex: number) => {
+                const locations = Array.isArray(region?.locations)
                   ? region.locations
-                  : []
-              ).map((location: any) => ({
-                ...location,
-                id: location?.id ?? '',
-                slug: location?.slug ?? location?.id ?? '',
-                regionId: region?.regionId ?? '',
-                mapLabel: region?.regionName ?? '',
-                officeName: location?.title ?? '',
-                hours: location?.timing ?? '',
-                directionsLabel: 'Get Direction',
-                directionsUrl: location?.directionUrl ?? '',
-                mapImageAlt: location?.title ?? '',
-                imageUrl: this.imageUrl(location?.image),
-              }))
-          );
+                  : [];
 
-          const defaults = this.defaultOffices();
-
-          this.offices = receivedLocations.length
-            ? receivedLocations.map((item: any, index: number) => {
-                const fallback =
-                  defaults[index] ?? this.defaultOffice(index);
-
-                const url = this.imageUrl(
-                  item?.imageUrl ?? item?.image
+                locations.forEach(
+                  (location: any, locationIndex: number) => {
+                    receivedLocations.push(
+                      this.normalizeOffice(
+                        region,
+                        location,
+                        regionIndex,
+                        locationIndex,
+                        images,
+                      ),
+                    );
+                  },
                 );
+              },
+            );
 
-                return {
-                  ...fallback,
-                  ...item,
-                  id: item?.id || fallback.id,
-                  slug: item?.slug || fallback.slug,
-                  regionId: item?.regionId || fallback.regionId,
-                  mapLabel: item?.mapLabel ?? fallback.mapLabel,
-                  officeName:
-                    item?.officeName ?? fallback.officeName,
-                  address: item?.address ?? fallback.address,
-                  phone: item?.phone ?? fallback.phone,
-                  email: item?.email ?? fallback.email,
-                  hours: item?.hours ?? fallback.hours,
-                  directionsLabel:
-                    item?.directionsLabel ?? 'Get Direction',
-                  directionsUrl: item?.directionsUrl ?? '',
-                  mapImageAlt:
-                    item?.mapImageAlt ?? item?.officeName ?? '',
-                  imageUrl: url,
-                  previewUrl: url,
-                  imageFile: null,
-                };
-              })
-            : defaults;
+            this.offices = receivedLocations.length
+              ? receivedLocations
+              : this.defaultOffices();
 
-          this.isEditMode =
-            receivedRegions.length > 0 ||
-            !!data?.eyebrow ||
-            !!data?.title;
+            this.isEditMode = !!data?.id;
 
-          this.isLoading = false;
-        },
-        error: (error: any) => {
-          this.isLoading = false;
-          this.errorMessage =
-            error?.error?.message ??
-            'Unable to load Regional Map content.';
-        },
-      })
+            this.cdr.markForCheck();
+          },
+          error: (error: any) => {
+            this.errorMessage =
+              error?.error?.message ??
+              'Unable to load Regional Map content.';
+
+            this.cdr.markForCheck();
+          },
+        }),
     );
   }
 
@@ -329,7 +368,8 @@ export class Map implements OnInit, OnDestroy {
     const office = this.offices[index];
 
     if (!office?.id.trim()) {
-      this.errorMessage = 'Enter an office ID before fetching its details.';
+      this.errorMessage =
+        'Enter an office ID before fetching its details.';
       return;
     }
 
@@ -337,47 +377,72 @@ export class Map implements OnInit, OnDestroy {
     this.successMessage = '';
 
     this.subscriptions.add(
-      this.api.getRegionalMapItem(office.id.trim()).subscribe({
-        next: (response: any) => {
-          const item = this.extractPayload(response);
-          const current = this.offices[index];
+      this.api
+        .getRegionalMapItem(office.id.trim())
+        .pipe(
+          timeout(60000),
+          finalize(() => {
+            this.cdr.markForCheck();
+          }),
+        )
+        .subscribe({
+          next: (response: any) => {
+            const { content, images } =
+              this.extractResponse(response);
 
-          if (!item) {
-            this.errorMessage = 'No office details were returned.';
-            return;
-          }
+            const location = content?.location ?? content;
+            const region = content?.region ?? {};
 
-          const location = item?.location ?? item;
-          const url = this.imageUrl(
-            location?.image ?? location?.imageUrl
-          );
+            if (!location) {
+              this.errorMessage = 'No office details were returned.';
+              return;
+            }
 
-          this.clearPreview(current.previewUrl);
+            const current = this.offices[index];
 
-          this.offices[index] = {
-            ...current,
-            id: location?.id ?? current.id,
-            slug: location?.slug ?? current.slug,
-            officeName: location?.title ?? current.officeName,
-            address: location?.address ?? current.address,
-            phone: location?.phone ?? current.phone,
-            email: location?.email ?? current.email,
-            hours: location?.timing ?? current.hours,
-            directionsUrl:
-              location?.directionUrl ?? current.directionsUrl,
-            imageUrl: url || current.imageUrl,
-            previewUrl: url || current.previewUrl,
-            imageFile: null,
-          };
+            const imageUrl =
+              this.getImageUrl(
+                images,
+                location?.imageField ?? '',
+              ) ||
+              (typeof location?.image === 'string' &&
+              location.image.startsWith('http')
+                ? location.image
+                : '');
 
-          this.successMessage = 'Office details loaded.';
-        },
-        error: (error: any) => {
-          this.errorMessage =
-            error?.error?.message ??
-            'Unable to load this regional office.';
-        },
-      })
+            this.clearPreview(current.previewUrl);
+
+            this.offices[index] = {
+              ...current,
+              id: location?.id ?? current.id,
+              slug: location?.slug ?? current.slug,
+              regionId: region?.regionId ?? current.regionId,
+              mapLabel: region?.regionName ?? current.mapLabel,
+              officeName: location?.title ?? current.officeName,
+              address: location?.address ?? current.address,
+              phone: location?.phone ?? current.phone,
+              email: location?.email ?? current.email,
+              hours: location?.timing ?? current.hours,
+              directionsUrl:
+                location?.directionUrl ?? current.directionsUrl,
+              imageUrl: imageUrl || current.imageUrl,
+              previewUrl: imageUrl || current.previewUrl,
+              imageFile: null,
+              lat: location?.lat ?? current.lat,
+              lng: location?.lng ?? current.lng,
+            };
+
+            this.successMessage = 'Office details loaded.';
+            this.cdr.markForCheck();
+          },
+          error: (error: any) => {
+            this.errorMessage =
+              error?.error?.message ??
+              'Unable to load this regional office.';
+
+            this.cdr.markForCheck();
+          },
+        }),
     );
   }
 
@@ -406,6 +471,8 @@ export class Map implements OnInit, OnDestroy {
     this.mapImageFile = file;
     this.mapImagePreview = URL.createObjectURL(file);
     this.errorMessage = '';
+
+    this.cdr.markForCheck();
   }
 
   onOfficeImageSelected(event: Event, index: number): void {
@@ -434,20 +501,63 @@ export class Map implements OnInit, OnDestroy {
 
     office.imageFile = file;
     office.previewUrl = URL.createObjectURL(file);
+
     this.errorMessage = '';
+    this.cdr.markForCheck();
   }
 
   addOffice(): void {
     this.offices.push(this.defaultOffice(this.offices.length));
+    this.cdr.markForCheck();
   }
 
   removeOffice(index: number): void {
-    if (!confirm('Remove this office from the regional map content?')) {
+    if (
+      !confirm('Remove this office from the regional map content?')
+    ) {
       return;
     }
 
     this.clearPreview(this.offices[index].previewUrl);
     this.offices.splice(index, 1);
+
+    this.cdr.markForCheck();
+  }
+
+  private buildRegions(): any[] {
+    const regions: any[] = [];
+
+    this.offices.forEach((office) => {
+      let region = regions.find(
+        (item) => item.regionId === office.regionId,
+      );
+
+      if (!region) {
+        region = {
+          regionId: office.regionId.trim(),
+          regionName: office.mapLabel.trim(),
+          locations: [],
+        };
+
+        regions.push(region);
+      }
+
+      region.locations.push({
+        id: office.id.trim(),
+        title: office.officeName.trim(),
+        lat: office.lat,
+        lng: office.lng,
+        image: `regions[${regions.length - 1}].locations[${region.locations.length}].image`,
+        imageAlt: office.mapImageAlt.trim(),
+        address: office.address.trim(),
+        phone: office.phone.trim(),
+        email: office.email.trim(),
+        timing: office.hours.trim(),
+        directionUrl: office.directionsUrl.trim(),
+      });
+    });
+
+    return regions;
   }
 
   saveRegionalMap(): void {
@@ -476,35 +586,40 @@ export class Map implements OnInit, OnDestroy {
           'Each office must have a region ID, region name, office ID, office name, and address.';
         return;
       }
-    }
 
-    const regions = this.offices.map((office, index) => ({
-      regionId: office.regionId.trim(),
-      regionName: office.mapLabel.trim(),
-      locations: [
-        {
-          id: office.id.trim(),
-          title: office.officeName.trim(),
-          image: `regions[${index}].locations[0].image`,
-          address: office.address.trim(),
-          phone: office.phone.trim(),
-          email: office.email.trim(),
-          timing: office.hours.trim(),
-          directionUrl: office.directionsUrl.trim(),
-        },
-      ],
-    }));
+      if (
+        (office.lat !== null && !Number.isFinite(office.lat)) ||
+        (office.lng !== null && !Number.isFinite(office.lng))
+      ) {
+        this.errorMessage =
+          'Please enter valid latitude and longitude values.';
+        return;
+      }
+    }
 
     const content = {
       eyebrow: this.eyebrow.trim(),
-      regions,
+      regions: this.buildRegions(),
     };
 
+    /*
+     * The existing API method accepts Record<number, File>.
+     * This maps the first location image in each region to its region index.
+     * If the API service supports arbitrary multipart field paths, its
+     * parameter type and FormData mapping must be updated for multiple
+     * location images in the same region.
+     */
     const itemImages: Record<number, File> = {};
 
-    this.offices.forEach((office, index) => {
-      if (office.imageFile) {
-        itemImages[index] = office.imageFile;
+    const regions = content.regions;
+
+    regions.forEach((region, regionIndex) => {
+      const firstOffice = this.offices.find(
+        (office) => office.regionId === region.regionId,
+      );
+
+      if (firstOffice?.imageFile) {
+        itemImages[regionIndex] = firstOffice.imageFile;
       }
     });
 
@@ -515,22 +630,31 @@ export class Map implements OnInit, OnDestroy {
       : this.api.createRegionalMap(content, itemImages);
 
     this.subscriptions.add(
-      request.subscribe({
-        next: () => {
-          this.isSaving = false;
-          this.successMessage = this.isEditMode
-            ? 'Regional Map updated successfully.'
-            : 'Regional Map created successfully.';
+      request
+        .pipe(
+          timeout(60000),
+          finalize(() => {
+            this.isSaving = false;
+            this.cdr.markForCheck();
+          }),
+        )
+        .subscribe({
+          next: () => {
+            this.successMessage = this.isEditMode
+              ? 'Regional Map updated successfully.'
+              : 'Regional Map created successfully.';
 
-          this.loadRegionalMap();
-        },
-        error: (error: any) => {
-          this.isSaving = false;
-          this.errorMessage =
-            error?.error?.message ??
-            'Unable to save Regional Map content.';
-        },
-      })
+            this.loadRegionalMap();
+            this.cdr.markForCheck();
+          },
+          error: (error: any) => {
+            this.errorMessage =
+              error?.error?.message ??
+              'Unable to save Regional Map content.';
+
+            this.cdr.markForCheck();
+          },
+        }),
     );
   }
 
@@ -541,7 +665,7 @@ export class Map implements OnInit, OnDestroy {
 
     if (
       !confirm(
-        'Are you sure you want to delete the entire Regional Map content?'
+        'Are you sure you want to delete the entire Regional Map content?',
       )
     ) {
       return;
@@ -552,38 +676,49 @@ export class Map implements OnInit, OnDestroy {
     this.successMessage = '';
 
     this.subscriptions.add(
-      this.api.deleteRegionalMap().subscribe({
-        next: () => {
-          this.isDeleting = false;
-          this.clearAllPreviews();
+      this.api
+        .deleteRegionalMap()
+        .pipe(
+          timeout(60000),
+          finalize(() => {
+            this.isDeleting = false;
+            this.cdr.markForCheck();
+          }),
+        )
+        .subscribe({
+          next: () => {
+            this.clearAllPreviews();
 
-          this.eyebrow = 'Regional Map';
-          this.title = 'Regional Map';
+            this.eyebrow = 'Regional Map';
+            this.title = 'Regional Map';
 
-          this.navigation = {
-            previousLabel: 'Previous',
-            nextLabel: 'Next',
-            counterFormat: '01 / 03',
-          };
+            this.navigation = {
+              previousLabel: 'Previous',
+              nextLabel: 'Next',
+              counterFormat: '01 / 03',
+            };
 
-          this.mapImageAlt = 'Telangana regional district map';
-          this.mapImageUrl = '';
-          this.mapImagePreview = '';
-          this.mapImageFile = null;
+            this.mapImageAlt = 'Telangana regional district map';
+            this.mapImageUrl = '';
+            this.mapImagePreview = '';
+            this.mapImageFile = null;
 
-          this.offices = this.defaultOffices();
-          this.isEditMode = false;
+            this.offices = this.defaultOffices();
+            this.isEditMode = false;
 
-          this.successMessage =
-            'Regional Map content deleted successfully.';
-        },
-        error: (error: any) => {
-          this.isDeleting = false;
-          this.errorMessage =
-            error?.error?.message ??
-            'Unable to delete Regional Map content.';
-        },
-      })
+            this.successMessage =
+              'Regional Map content deleted successfully.';
+
+            this.cdr.markForCheck();
+          },
+          error: (error: any) => {
+            this.errorMessage =
+              error?.error?.message ??
+              'Unable to delete Regional Map content.';
+
+            this.cdr.markForCheck();
+          },
+        }),
     );
   }
 

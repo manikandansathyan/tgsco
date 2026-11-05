@@ -53,78 +53,90 @@ export class Vision implements OnInit {
     };
   }
 
-  loadVision(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+loadVision(): void {
+  this.isLoading = true;
+  this.errorMessage = '';
 
-    this.api
-      .getVisionAPI()
-      .pipe(
-        timeout(60000),
-        finalize(() => {
-          this.isLoading = false;
-          this.cdr.markForCheck();
-        })
-      )
-      .subscribe({
-        next: (response: any) => {
-          const responseData = response?.data ?? response;
-          const data = responseData?.content ?? responseData;
+  this.api
+    .getVisionAPI()
+    .pipe(
+      timeout(60000),
+      finalize(() => {
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      })
+    )
+    .subscribe({
+      next: (response: any) => {
+        const responseData = response?.data ?? response;
+        const data = responseData?.content ?? responseData;
 
-          if (
-            data &&
-            typeof data === 'object' &&
-            !Array.isArray(data) &&
+        if (
+          data &&
+          typeof data === 'object' &&
+          !Array.isArray(data) &&
+          (
+            data.label !== undefined ||
+            data.statement !== undefined
+          )
+        ) {
+          this.content = {
+            label: data.label ?? 'OUR VISION',
+            statement: data.statement ?? ''
+          };
+
+          // Find the vision image from the images array
+          const matchedImage = Array.isArray(responseData?.images)
+            ? responseData.images.find(
+                (image: any) => image.field === 'visionImage'
+              )
+            : null;
+
+          // Fallback for older API response formats
+          const fallbackImage =
+            data.visionImageUrl ??
+            data.vision_image_url ??
+            data.visionImage ??
+            data.vision_image ??
+            data.imageUrl ??
+            data.image ??
+            '';
+
+          this.visionImageUrl =
+            matchedImage?.url ??
             (
-              data.label !== undefined ||
-              data.statement !== undefined
-            )
-          ) {
-            this.content = {
-              label: data.label ?? 'OUR VISION',
-              statement: data.statement ?? ''
-            };
+              typeof fallbackImage === 'string'
+                ? fallbackImage
+                : fallbackImage?.url ?? ''
+            );
 
-            const imageValue =
-              data.visionImageUrl ??
-              data.vision_image_url ??
-              data.visionImage ??
-              data.vision_image ??
-              data.imageUrl ??
-              data.image ??
-              '';
+          this.visionImagePreview = this.visionImageUrl;
 
-            this.visionImageUrl =
-              typeof imageValue === 'string'
-                ? imageValue
-                : typeof imageValue?.url === 'string'
-                  ? imageValue.url
-                  : '';
-
-            this.visionImagePreview = this.visionImageUrl;
-            this.isExistingContent = true;
-          } else {
-            this.content = this.getDefaultContent();
-            this.visionImageUrl = '';
-            this.visionImagePreview = '';
-            this.isExistingContent = false;
-          }
-
-          this.visionImage = null;
-          this.successMessage = '';
-          this.cdr.markForCheck();
-        },
-        error: (error: any) => {
-          console.error('Failed to load vision content:', error);
-
-          this.errorMessage =
-            error?.error?.message ??
-            'Unable to load vision content. Please try again.';
-
-          this.cdr.markForCheck();
+          this.isExistingContent = !!responseData?.id;
+        } else {
+          this.content = this.getDefaultContent();
+          this.visionImageUrl = '';
+          this.visionImagePreview = '';
+          this.isExistingContent = false;
         }
-      });
-  }
+
+        this.visionImage = null;
+        this.successMessage = '';
+
+        this.cdr.markForCheck();
+      },
+
+      error: (error: any) => {
+        console.error('Failed to load vision content:', error);
+
+        this.errorMessage =
+          error?.error?.message ??
+          'Unable to load vision content. Please try again.';
+
+        this.cdr.markForCheck();
+      }
+    });
+}
 
   onVisionImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;

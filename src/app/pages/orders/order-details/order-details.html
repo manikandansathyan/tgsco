@@ -1,0 +1,1014 @@
+<div class="order-details-page">
+  <div class="page-header">
+    <div class="header-main">
+      <button type="button" class="back-button" (click)="goBack()">
+        <span>←</span> Back to Orders
+      </button>
+
+      <p class="eyebrow">ORDER MANAGEMENT</p>
+      <h1>Order #{{ orderNumber }}</h1>
+      <p class="page-description">
+        View order information and manage fulfillment.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="secondary-button"
+      (click)="loadOrder()"
+      [disabled]="loading || saving"
+    >
+      Refresh Order
+    </button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error" role="alert">
+    <span>{{ errorMessage }}</span>
+    <button
+      type="button"
+      (click)="errorMessage = ''"
+      aria-label="Dismiss error"
+    >
+      ×
+    </button>
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success" role="status">
+    <span>{{ successMessage }}</span>
+    <button
+      type="button"
+      (click)="successMessage = ''"
+      aria-label="Dismiss message"
+    >
+      ×
+    </button>
+  </div>
+
+  <div *ngIf="loading && !order" class="loading-card">
+    <span class="loading-spinner"></span>
+    Loading order details...
+  </div>
+
+  <div
+    *ngIf="!loading && !order && !errorMessage"
+    class="loading-card"
+  >
+    Order details are unavailable.
+  </div>
+
+  <ng-container *ngIf="order">
+    <section class="overview-grid">
+      <div class="overview-card">
+        <span class="overview-label">Order Number</span>
+        <strong>#{{ orderNumber }}</strong>
+        <span class="overview-subtext">
+          {{
+            order?.createdAt
+              ? (order.createdAt | date: 'dd MMM yyyy, h:mm a')
+              : 'Date unavailable'
+          }}
+        </span>
+      </div>
+
+      <div class="overview-card">
+        <span class="overview-label">Order Status</span>
+        <span
+          class="status-badge"
+          [ngClass]="'status-' + orderStatus.toLowerCase()"
+        >
+          {{ formatStatus(orderStatus) }}
+        </span>
+        <span class="overview-subtext">Current order progress</span>
+      </div>
+
+      <div class="overview-card">
+        <span class="overview-label">Payment Status</span>
+        <span
+          class="status-badge"
+          [ngClass]="'payment-' + paymentStatus.toLowerCase()"
+        >
+          {{ formatStatus(paymentStatus) }}
+        </span>
+        <span class="overview-subtext">
+          {{ formatStatus(paymentMethod) }}
+        </span>
+      </div>
+
+      <div class="overview-card">
+        <span class="overview-label">Order Total</span>
+        <strong>{{ formatCurrency(totalAmount) }}</strong>
+        <span class="overview-subtext">Total order amount</span>
+      </div>
+    </section>
+
+    <section class="details-card">
+      <div class="tabs">
+        <button
+          type="button"
+          [class.active]="activeTab === 'overview'"
+          (click)="activeTab = 'overview'"
+        >
+          Overview
+        </button>
+
+        <button
+          type="button"
+          [class.active]="activeTab === 'shipment'"
+          (click)="activeTab = 'shipment'"
+        >
+          Shipment
+        </button>
+
+        <button
+          type="button"
+          [class.active]="activeTab === 'notes'"
+          (click)="activeTab = 'notes'"
+        >
+          Notes
+        </button>
+
+        <button
+          type="button"
+          [class.active]="activeTab === 'refunds'"
+          (click)="activeTab = 'refunds'"
+        >
+          Refunds
+        </button>
+      </div>
+
+      <div *ngIf="activeTab === 'overview'" class="tab-content">
+        <div class="content-heading">
+          <div>
+            <h2>Order Information</h2>
+            <p>Customer details and current order information.</p>
+          </div>
+
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="getInvoice()"
+            [disabled]="saving"
+          >
+            {{ saving ? 'Please wait...' : 'Get Invoice' }}
+          </button>
+        </div>
+
+        <div class="information-grid">
+          <div class="information-block">
+            <h3>Customer</h3>
+
+            <div class="information-row">
+              <span>Name</span>
+              <strong>{{ customerName }}</strong>
+            </div>
+
+            <div class="information-row">
+              <span>Email</span>
+              <strong>{{ customerEmail || '—' }}</strong>
+            </div>
+
+            <div class="information-row">
+              <span>Phone</span>
+              <strong>{{ customerMobile }}</strong>
+            </div>
+          </div>
+
+          <div class="information-block">
+            <h3>Order Details</h3>
+
+            <div class="information-row">
+              <span>Order ID</span>
+              <strong class="break-value">{{ orderId }}</strong>
+            </div>
+
+            <div class="information-row">
+              <span>Order Number</span>
+              <strong>{{ orderNumber }}</strong>
+            </div>
+
+            <div class="information-row">
+              <span>Payment Method</span>
+              <strong>{{ formatStatus(paymentMethod) }}</strong>
+            </div>
+
+            <div class="information-row">
+              <span>Payment Status</span>
+              <strong>{{ formatStatus(paymentStatus) }}</strong>
+            </div>
+
+            <div class="information-row">
+              <span>Currency</span>
+              <strong>{{ currency }}</strong>
+            </div>
+
+            <div class="information-row">
+              <span>Return Status</span>
+              <strong>{{ formatStatus(returnStatus) }}</strong>
+            </div>
+
+            <div class="information-row">
+              <span>Razorpay Order ID</span>
+              <strong class="break-value">
+                {{ order?.razorpayOrderId ?? '—' }}
+              </strong>
+            </div>
+
+            <div class="information-row">
+              <span>Razorpay Payment ID</span>
+              <strong class="break-value">
+                {{ order?.razorpayPaymentId ?? '—' }}
+              </strong>
+            </div>
+          </div>
+
+          <div class="information-block">
+            <h3>Shipping Address</h3>
+
+            <ng-container
+              *ngIf="order?.shippingAddress as address; else noAddress"
+            >
+              <p class="address-text">
+                <strong>{{ address.recipientName || '—' }}</strong>
+                <br />
+
+                <ng-container *ngIf="address.mobile">
+                  {{ address.mobile }}
+                  <br />
+                </ng-container>
+
+                <ng-container *ngIf="address.addressLine1">
+                  {{ address.addressLine1 }}
+                  <br />
+                </ng-container>
+
+                <ng-container *ngIf="address.addressLine2">
+                  {{ address.addressLine2 }}
+                  <br />
+                </ng-container>
+
+                <ng-container *ngIf="address.locality">
+                  {{ address.locality }}
+                  <br />
+                </ng-container>
+
+                <ng-container *ngIf="address.landmark">
+                  Landmark: {{ address.landmark }}
+                  <br />
+                </ng-container>
+
+                <ng-container *ngIf="address.city">
+                  {{ address.city }}
+                </ng-container>
+
+                <ng-container *ngIf="address.district">
+                  , {{ address.district }}
+                </ng-container>
+                <br />
+
+                <ng-container *ngIf="address.state">
+                  {{ address.state }}
+                </ng-container>
+
+                <ng-container *ngIf="address.postalCode">
+                  {{ address.postalCode }}
+                </ng-container>
+                <br />
+
+                {{ address.country || '' }}
+              </p>
+
+              <p class="muted-text" *ngIf="address.deliveryInstructions">
+                Delivery instructions:
+                {{ address.deliveryInstructions }}
+              </p>
+            </ng-container>
+
+            <ng-template #noAddress>
+              <p class="muted-text">
+                No shipping address available.
+              </p>
+            </ng-template>
+          </div>
+
+          <div class="information-block">
+            <h3>Billing Address</h3>
+
+            <ng-container
+              *ngIf="order?.billingAddress as billing; else noBillingAddress"
+            >
+              <p class="address-text">
+                <strong>{{ billing.recipientName || '—' }}</strong>
+                <br />
+
+                <ng-container *ngIf="billing.mobile">
+                  {{ billing.mobile }}
+                  <br />
+                </ng-container>
+
+                <ng-container *ngIf="billing.addressLine1">
+                  {{ billing.addressLine1 }}
+                  <br />
+                </ng-container>
+
+                <ng-container *ngIf="billing.addressLine2">
+                  {{ billing.addressLine2 }}
+                  <br />
+                </ng-container>
+
+                <ng-container *ngIf="billing.locality">
+                  {{ billing.locality }}
+                  <br />
+                </ng-container>
+
+                <ng-container *ngIf="billing.city">
+                  {{ billing.city }}
+                </ng-container>
+
+                <ng-container *ngIf="billing.district">
+                  , {{ billing.district }}
+                </ng-container>
+                <br />
+
+                <ng-container *ngIf="billing.state">
+                  {{ billing.state }}
+                </ng-container>
+
+                <ng-container *ngIf="billing.postalCode">
+                  {{ billing.postalCode }}
+                </ng-container>
+                <br />
+
+                {{ billing.country || '' }}
+              </p>
+            </ng-container>
+
+            <ng-template #noBillingAddress>
+              <p class="muted-text">
+                No billing address available.
+              </p>
+            </ng-template>
+          </div>
+
+          <div class="information-block">
+            <h3>Order Amount</h3>
+
+            <div class="information-row">
+              <span>Subtotal</span>
+              <strong>{{ formatCurrency(order?.subtotal ?? 0) }}</strong>
+            </div>
+
+            <div class="information-row">
+              <span>Shipping Fee</span>
+              <strong>{{ formatCurrency(order?.shippingFee ?? 0) }}</strong>
+            </div>
+
+            <div class="information-row">
+              <span>Tax</span>
+              <strong>{{ formatCurrency(order?.taxAmount ?? 0) }}</strong>
+            </div>
+
+            <div class="information-row">
+              <span>Discount</span>
+              <strong>{{ formatCurrency(order?.discountAmount ?? 0) }}</strong>
+            </div>
+
+            <div class="information-row">
+              <span>Packing Fee</span>
+              <strong>{{ formatCurrency(order?.packingFee ?? 0) }}</strong>
+            </div>
+
+            <div class="information-row">
+              <span>COD Fee</span>
+              <strong>{{ formatCurrency(order?.codFee ?? 0) }}</strong>
+            </div>
+
+            <div class="information-row">
+              <span>Refunded Amount</span>
+              <strong>{{ formatCurrency(order?.refundedAmount ?? 0) }}</strong>
+            </div>
+
+            <div class="information-row total-row">
+              <span>Total</span>
+              <strong>{{ formatCurrency(totalAmount) }}</strong>
+            </div>
+          </div>
+
+          <div class="information-block">
+            <h3>Order Timeline</h3>
+
+            <div class="information-row">
+              <span>Created At</span>
+              <strong>
+                {{
+                  order?.createdAt
+                    ? (order.createdAt | date: 'dd MMM yyyy, h:mm a')
+                    : '—'
+                }}
+              </strong>
+            </div>
+
+            <div class="information-row">
+              <span>Last Updated</span>
+              <strong>
+                {{
+                  order?.updatedAt
+                    ? (order.updatedAt | date: 'dd MMM yyyy, h:mm a')
+                    : '—'
+                }}
+              </strong>
+            </div>
+
+            <div class="information-row">
+              <span>Reservation Expiry</span>
+              <strong>
+                {{
+                  order?.reservationExpiresAt
+                    ? (order.reservationExpiresAt | date: 'dd MMM yyyy, h:mm a')
+                    : '—'
+                }}
+              </strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="information-block items-block">
+          <h3>Ordered Items ({{ orderItems.length }})</h3>
+
+          <div
+            class="items-table-wrapper"
+            *ngIf="orderItems.length > 0; else noItems"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>PRODUCT</th>
+                  <th>SKU</th>
+                  <th>QUANTITY</th>
+                  <th>UNIT PRICE</th>
+                  <th class="right-align">TOTAL</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr *ngFor="let item of orderItems">
+                  <td>
+                    <div class="product-cell">
+                      <img
+                        *ngIf="item?.mainImage?.url"
+                        [src]="item.mainImage.url"
+                        [alt]="item?.name ?? 'Product'"
+                      />
+
+                      <div>
+                        <strong>{{ item?.name ?? 'Product' }}</strong>
+                        <span>{{ item?.slug ?? '' }}</span>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td>{{ item?.sku ?? '—' }}</td>
+
+                  <td>{{ item?.quantity ?? 0 }}</td>
+
+                  <td>
+                    {{
+                      formatCurrency(
+                        item?.unitPrice ?? 0,
+                        item?.currency ?? currency
+                      )
+                    }}
+                  </td>
+
+                  <td class="right-align">
+                    {{
+                      formatCurrency(
+                        item?.lineTotal ?? 0,
+                        item?.currency ?? currency
+                      )
+                    }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <ng-template #noItems>
+            <p class="muted-text">
+              No item details were returned for this order.
+            </p>
+          </ng-template>
+        </div>
+
+        <div class="form-section">
+          <div class="content-heading">
+            <div>
+              <h2>Update Order Status</h2>
+              <p>
+                Change the current status and optionally add a message.
+              </p>
+            </div>
+          </div>
+
+          <form class="form-grid" (ngSubmit)="updateStatus()">
+            <div class="form-field">
+              <label for="orderStatus">Order Status</label>
+
+              <select
+                id="orderStatus"
+                name="orderStatus"
+                [(ngModel)]="statusForm.status"
+                required
+              >
+                <option
+                  *ngFor="let item of statusOptions"
+                  [value]="item"
+                >
+                  {{ formatStatus(item) }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-field full-width">
+              <label for="statusMessage">Message (optional)</label>
+
+              <textarea
+                id="statusMessage"
+                name="statusMessage"
+                [(ngModel)]="statusForm.message"
+                rows="3"
+                placeholder="Add an update message..."
+              ></textarea>
+            </div>
+
+            <div class="form-actions full-width">
+              <button
+                type="submit"
+                class="primary-button"
+                [disabled]="saving"
+              >
+                {{ saving ? 'Saving...' : 'Update Status' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div
+          class="form-section cancellation-section"
+          *ngIf="canCancel"
+        >
+          <div class="content-heading">
+            <div>
+              <h2>Cancel Order</h2>
+              <p>
+                Cancel this order and optionally include a refund request.
+              </p>
+            </div>
+          </div>
+
+          <form class="form-grid" (ngSubmit)="cancelOrder()">
+            <div class="form-field full-width">
+              <label for="cancelReason">Cancellation Reason</label>
+
+              <textarea
+                id="cancelReason"
+                name="cancelReason"
+                [(ngModel)]="cancelForm.reason"
+                rows="3"
+                required
+                placeholder="Explain why this order is being cancelled..."
+              ></textarea>
+            </div>
+
+            <div class="form-field">
+              <label for="cancelRefundAmount">
+                Refund Amount (optional)
+              </label>
+
+              <input
+                id="cancelRefundAmount"
+                type="number"
+                name="cancelRefundAmount"
+                min="0"
+                step="0.01"
+                [(ngModel)]="cancelForm.refundAmount"
+                placeholder="0.00"
+              />
+            </div>
+
+            <div class="form-field">
+              <label for="cancelRefundStatus">Refund Status</label>
+
+              <select
+                id="cancelRefundStatus"
+                name="cancelRefundStatus"
+                [(ngModel)]="cancelForm.refundStatus"
+              >
+                <option value="requested">Requested</option>
+                <option value="pending">Pending</option>
+              </select>
+            </div>
+
+            <div class="form-field full-width">
+              <label for="cancelRefundReference">
+                Refund Reference (optional)
+              </label>
+
+              <input
+                id="cancelRefundReference"
+                type="text"
+                name="cancelRefundReference"
+                [(ngModel)]="cancelForm.refundReference"
+                placeholder="Refund reference"
+              />
+            </div>
+
+            <div class="form-actions full-width">
+              <button
+                type="submit"
+                class="danger-button"
+                [disabled]="saving"
+              >
+                {{ saving ? 'Processing...' : 'Cancel Order' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div *ngIf="activeTab === 'shipment'" class="tab-content">
+        <div class="content-heading">
+          <div>
+            <h2>Shipment Management</h2>
+            <p>Create or update shipping and tracking information.</p>
+          </div>
+        </div>
+
+        <div
+          class="information-block"
+          *ngIf="order?.shipment as shipment"
+        >
+          <h3>Current Shipment</h3>
+
+          <div class="information-row">
+            <span>Courier</span>
+            <strong>{{ shipment?.courier ?? '—' }}</strong>
+          </div>
+
+          <div class="information-row">
+            <span>Tracking Number</span>
+            <strong>{{ shipment?.trackingNumber ?? '—' }}</strong>
+          </div>
+
+          <div class="information-row">
+            <span>Shipment Status</span>
+            <strong>{{ formatStatus(shipment?.status) }}</strong>
+          </div>
+
+          <div class="information-row">
+            <span>Shipped At</span>
+            <strong>
+              {{
+                shipment?.shippedAt
+                  ? (shipment.shippedAt | date: 'dd MMM yyyy, h:mm a')
+                  : '—'
+              }}
+            </strong>
+          </div>
+
+          <div class="information-row">
+            <span>Estimated Delivery</span>
+            <strong>
+              {{
+                shipment?.estimatedDeliveryAt
+                  ? (shipment.estimatedDeliveryAt | date: 'dd MMM yyyy, h:mm a')
+                  : '—'
+              }}
+            </strong>
+          </div>
+        </div>
+
+        <div
+          class="muted-text"
+          *ngIf="!order?.shipment"
+        >
+          No shipment has been created for this order yet.
+        </div>
+
+        <form class="form-grid" (ngSubmit)="saveShipment()">
+          <div class="form-field">
+            <label for="courier">Courier</label>
+
+            <input
+              id="courier"
+              type="text"
+              name="courier"
+              [(ngModel)]="shipmentForm.courier"
+              required
+              placeholder="e.g. Delhivery"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="trackingNumber">Tracking Number</label>
+
+            <input
+              id="trackingNumber"
+              type="text"
+              name="trackingNumber"
+              [(ngModel)]="shipmentForm.trackingNumber"
+              required
+              placeholder="Enter tracking number"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="shipmentStatus">Shipment Status</label>
+
+            <select
+              id="shipmentStatus"
+              name="shipmentStatus"
+              [(ngModel)]="shipmentForm.status"
+              required
+            >
+              <option
+                *ngFor="let item of shipmentStatusOptions"
+                [value]="item"
+              >
+                {{ formatStatus(item) }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="shippedAt">Shipped At</label>
+
+            <input
+              id="shippedAt"
+              type="datetime-local"
+              name="shippedAt"
+              [(ngModel)]="shipmentForm.shippedAt"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="estimatedDeliveryAt">Estimated Delivery</label>
+
+            <input
+              id="estimatedDeliveryAt"
+              type="datetime-local"
+              name="estimatedDeliveryAt"
+              [(ngModel)]="shipmentForm.estimatedDeliveryAt"
+            />
+          </div>
+
+          <div class="form-actions full-width">
+            <button
+              type="submit"
+              class="primary-button"
+              [disabled]="saving"
+            >
+              {{ saving ? 'Saving...' : 'Save Shipment' }}
+            </button>
+
+            <button
+              type="button"
+              class="secondary-button"
+              (click)="updateShipmentStatus()"
+              [disabled]="saving"
+            >
+              Update Shipment Status
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div *ngIf="activeTab === 'notes'" class="tab-content">
+        <div class="content-heading">
+          <div>
+            <h2>Order Notes</h2>
+            <p>Record internal updates and customer requests.</p>
+          </div>
+
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="refreshNotes()"
+            [disabled]="notesLoading"
+          >
+            {{ notesLoading ? 'Refreshing...' : 'Refresh Notes' }}
+          </button>
+        </div>
+
+        <form class="note-form" (ngSubmit)="addNote()">
+          <div class="form-field">
+            <label for="noteMessage">New Note</label>
+
+            <textarea
+              id="noteMessage"
+              name="noteMessage"
+              [(ngModel)]="noteMessage"
+              rows="3"
+              required
+              placeholder="Write a note about this order..."
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            class="primary-button"
+            [disabled]="saving"
+          >
+            {{ saving ? 'Adding...' : 'Add Note' }}
+          </button>
+        </form>
+
+        <div class="notes-list">
+          <div *ngIf="notesLoading" class="inline-loading">
+            Loading notes...
+          </div>
+
+          <div class="note-card" *ngFor="let note of notes">
+            <p>
+              {{
+                note?.message ??
+                  note?.text ??
+                  note?.content ??
+                  '—'
+              }}
+            </p>
+
+            <div class="note-meta">
+              <span>
+                {{
+                  note?.createdBy?.name ??
+                    note?.author?.name ??
+                    note?.createdBy ??
+                    note?.author ??
+                    'Admin'
+                }}
+              </span>
+
+              <span>
+                {{
+                  note?.createdAt
+                    ? (note.createdAt | date: 'dd MMM yyyy, h:mm a')
+                    : ''
+                }}
+              </span>
+            </div>
+          </div>
+
+          <div
+            *ngIf="!notesLoading && notes.length === 0"
+            class="empty-state"
+          >
+            No notes found for this order.
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="activeTab === 'refunds'" class="tab-content">
+        <div class="content-heading">
+          <div>
+            <h2>Refund Management</h2>
+            <p>Submit a refund request for this order.</p>
+          </div>
+        </div>
+
+        <div class="information-block">
+          <h3>Refund Summary</h3>
+
+          <div class="information-row">
+            <span>Refunded Amount</span>
+            <strong>
+              {{ formatCurrency(order?.refundedAmount ?? 0) }}
+            </strong>
+          </div>
+
+          <div class="information-row">
+            <span>Return Status</span>
+            <strong>{{ formatStatus(returnStatus) }}</strong>
+          </div>
+        </div>
+
+        <form class="form-grid" (ngSubmit)="createRefund()">
+          <div class="form-field">
+            <label for="refundAmount">Refund Amount</label>
+
+            <input
+              id="refundAmount"
+              type="number"
+              name="refundAmount"
+              min="0.01"
+              step="0.01"
+              [max]="totalAmount ?? null"
+              [(ngModel)]="refundForm.amount"
+              required
+              placeholder="Enter amount"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="refundReason">Refund Reason</label>
+
+            <input
+              id="refundReason"
+              type="text"
+              name="refundReason"
+              [(ngModel)]="refundForm.reason"
+              required
+              placeholder="Enter refund reason"
+            />
+          </div>
+
+          <div class="form-field full-width">
+            <label for="refundNotes">Notes (optional)</label>
+
+            <textarea
+              id="refundNotes"
+              name="refundNotes"
+              [(ngModel)]="refundForm.notes"
+              rows="3"
+              placeholder="Additional refund information"
+            ></textarea>
+          </div>
+
+          <div class="form-actions full-width">
+            <button
+              type="submit"
+              class="primary-button"
+              [disabled]="saving"
+            >
+              {{ saving ? 'Submitting...' : 'Submit Refund' }}
+            </button>
+          </div>
+        </form>
+
+        <div class="refund-list-section">
+          <h3>Refund Records</h3>
+
+          <div
+            class="items-table-wrapper"
+            *ngIf="refunds.length > 0; else noRefunds"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>REFUND ID</th>
+                  <th>AMOUNT</th>
+                  <th>STATUS</th>
+                  <th>REASON</th>
+                  <th>DATE</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr *ngFor="let refund of refunds">
+                  <td>
+                    {{
+                      refund?.id ??
+                        refund?._id ??
+                        refund?.refundId ??
+                        '—'
+                    }}
+                  </td>
+
+                  <td>
+                    {{
+                      formatCurrency(
+                        refund?.amount ?? 0,
+                        refund?.currency ?? currency
+                      )
+                    }}
+                  </td>
+
+                  <td>
+                    <span class="status-badge">
+                      {{ formatStatus(refund?.status) }}
+                    </span>
+                  </td>
+
+                  <td>{{ refund?.reason ?? '—' }}</td>
+
+                  <td>
+                    {{
+                      refund?.createdAt
+                        ? (refund.createdAt | date: 'dd MMM yyyy')
+                        : '—'
+                    }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <ng-template #noRefunds>
+            <p class="muted-text">
+              No refund records were included in the order response.
+            </p>
+          </ng-template>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+</div>

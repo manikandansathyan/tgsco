@@ -1,262 +1,212 @@
-<div class="awards-page">
-  <header class="page-header">
+<div class="page-container">
+  <div class="page-header">
     <div>
-      <span class="eyebrow">WEBSITE MANAGEMENT</span>
-      <h1>Honoured for Heritage</h1>
-      <p>Manage awards, recognitions, and certifications displayed on the website.</p>
+      <h2>Honoured for Heritage</h2>
+      <p>Manage the awards and recognitions displayed on the website.</p>
     </div>
-
-    <button
-      type="button"
-      class="secondary-button"
-      (click)="resetForm()"
-      [disabled]="loading || saving"
-    >
-      Refresh
-    </button>
-  </header>
-
-  @if (message) {
-    <div class="alert success-alert">{{ message }}</div>
-  }
-
-  @if (errorMessage) {
-    <div class="alert error-alert">{{ errorMessage }}</div>
-  }
+  </div>
 
   @if (loading) {
-    <div class="loading-state">Loading awards content...</div>
+    <div class="loading-container">
+      <div class="loader"></div>
+      <p>Loading awards...</p>
+    </div>
   } @else {
-    <form (ngSubmit)="saveAwards()" class="awards-form">
-      <section class="form-section">
-        <div class="section-heading">
+    <form (ngSubmit)="saveAwards()">
+      <div class="content-card">
+        <div class="section-header">
           <div>
-            <h2>Section Information</h2>
-            <p>Enter the main heading and description.</p>
+            <h3>Section Details</h3>
+            <p>Update the heading and description.</p>
           </div>
         </div>
 
-        <div class="field">
-          <label for="sectionTitle">Section Title <span>*</span></label>
+        <div class="form-group">
+          <label for="title">Section Title</label>
           <input
-            id="sectionTitle"
-            name="sectionTitle"
+            id="title"
             type="text"
+            name="title"
             [(ngModel)]="title"
-            placeholder="Honoured for Heritage"
+            placeholder="Enter section title"
             required
           />
         </div>
 
-        <div class="field">
-          <label for="sectionDescription">Section Description</label>
+        <div class="form-group">
+          <label for="description">Description</label>
           <textarea
-            id="sectionDescription"
-            name="sectionDescription"
+            id="description"
+            name="description"
             [(ngModel)]="description"
             rows="4"
-            placeholder="Describe the awards and recognitions..."
+            placeholder="Enter section description"
           ></textarea>
         </div>
-      </section>
+      </div>
 
-      <section class="form-section">
-        <div class="section-heading">
+      <div class="content-card">
+        <div class="section-header">
           <div>
-            <h2>Awards</h2>
-            <p>Add the awards and their images. Each award requires a title, description, and image.</p>
+            <h3>Awards and Recognitions</h3>
+            <p>Manage the awards displayed in this section.</p>
           </div>
 
           <button
             type="button"
-            class="primary-button"
+            class="add-button"
             (click)="addAward()"
           >
-            + Add Award
+            <span>+</span> Add Award
           </button>
         </div>
 
-        @if (awards.length === 0) {
-          <div class="empty-state">
-            <h3>No awards added</h3>
-            <p>Select Add Award to create your first award.</p>
-          </div>
-        }
-
         @for (award of awards; track $index; let i = $index) {
-          <article class="award-card">
+          <div class="award-card">
             <div class="award-card-header">
-              <div>
-                <span class="award-number">AWARD {{ i + 1 }}</span>
-                <h3>{{ award.title || 'New Award' }}</h3>
-              </div>
+              <h4>Award {{ i + 1 }}</h4>
 
               <button
                 type="button"
-                class="remove-button"
+                class="delete-button"
                 (click)="removeAward(i)"
+                [disabled]="deleting"
               >
                 Remove
               </button>
             </div>
 
-            <div class="award-fields">
-              <div class="field">
-                <label [for]="'awardTitle' + i">Award Title <span>*</span></label>
-                <input
-                  [id]="'awardTitle' + i"
-                  [name]="'awardTitle' + i"
-                  type="text"
-                  [(ngModel)]="award.title"
-                  placeholder="HANDLOOM AWARD"
-                  required
-                />
-              </div>
-
-              <div class="field">
-                <label [for]="'awardAlt' + i">Image Alt Text</label>
-                <input
-                  [id]="'awardAlt' + i"
-                  [name]="'awardAlt' + i"
-                  type="text"
-                  [(ngModel)]="award.imageAlt"
-                  placeholder="Handloom award trophy"
-                />
-              </div>
-
-              <div class="field full-width">
-                <label [for]="'awardDescription' + i">
-                  Award Description <span>*</span>
-                </label>
-                <textarea
-                  [id]="'awardDescription' + i"
-                  [name]="'awardDescription' + i"
-                  [(ngModel)]="award.description"
-                  rows="3"
-                  placeholder="Describe this award..."
-                  required
-                ></textarea>
-              </div>
-
-              <div class="field full-width">
-                <label [for]="'awardImage' + i">Award Image <span>*</span></label>
-
-                <div class="image-upload-layout">
-                  <div class="image-preview">
-                    @if (award.imagePreview || award.existingImageUrl) {
-                      <img
-                        [src]="award.imagePreview || award.existingImageUrl"
-                        [alt]="award.imageAlt || award.title"
-                      />
-                    } @else {
-                      <div class="image-placeholder">
-                        <span>Image</span>
-                      </div>
-                    }
-                  </div>
-
-                  <div class="upload-control">
-                    <input
-                      [id]="'awardImage' + i"
-                      [name]="'awardImage' + i"
-                      type="file"
-                      accept="image/*"
-                      (change)="onAwardImageSelected($event, i)"
-                    />
-                    <small>JPG, PNG, WebP or another supported image format. Maximum 5 MB.</small>
-
-                    @if (award.imageFile) {
-                      <span class="selected-file">{{ award.imageFile.name }}</span>
-                    } @else if (award.existingImageUrl) {
-                      <span class="selected-file">Existing image retained unless replaced.</span>
-                    }
-                  </div>
-                </div>
-              </div>
-            </div>
-          </article>
-        }
-      </section>
-
-      <section class="form-section">
-        <div class="section-heading">
-          <div>
-            <h2>Decorative Icon</h2>
-            <p>Upload the decorative icon associated with this section, if required.</p>
-          </div>
-        </div>
-
-        <div class="image-upload-layout">
-          <div class="icon-preview">
-            @if (decorativeIconPreview || existingDecorativeIconUrl) {
-              <img
-                [src]="decorativeIconPreview || existingDecorativeIconUrl"
-                alt="Decorative icon"
+            <div class="form-group">
+              <label [for]="'award-title-' + i">Award Title</label>
+              <input
+                [id]="'award-title-' + i"
+                type="text"
+                [name]="'awardTitle' + i"
+                [(ngModel)]="award.title"
+                placeholder="Enter award title"
+                required
               />
-            } @else {
-              <div class="image-placeholder">
-                <span>Icon</span>
+            </div>
+
+            <div class="form-group">
+              <label [for]="'award-description-' + i">
+                Award Description
+              </label>
+              <textarea
+                [id]="'award-description-' + i"
+                [name]="'awardDescription' + i"
+                [(ngModel)]="award.description"
+                rows="3"
+                placeholder="Enter award description"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label [for]="'award-image-' + i">Award Image</label>
+
+              <input
+                [id]="'award-image-' + i"
+                type="file"
+                accept="image/*"
+                [name]="'awardImage' + i"
+                (change)="onAwardImageSelected($event, i)"
+              />
+
+              <small class="helper-text">
+                Upload an image. Maximum file size: 5 MB.
+              </small>
+            </div>
+
+            @if (award.imagePreview || award.existingImageUrl) {
+              <div class="image-preview-container">
+                <img
+                  [src]="award.imagePreview || award.existingImageUrl"
+                  [alt]="award.imageAlt || award.title || 'Award image'"
+                  class="image-preview"
+                />
+
+                <button
+                  type="button"
+                  class="remove-button"
+                  (click)="removeAwardImage(i)"
+                >
+                  Remove Image
+                </button>
               </div>
             }
           </div>
+        } @empty {
+          <div class="empty-state">
+            <p>No awards added yet.</p>
+            <span>Click Add Award to create your first award.</span>
+          </div>
+        }
+      </div>
 
-          <div class="upload-control">
-            <label for="decorativeIcon">Decorative Icon Image</label>
-            <input
-              id="decorativeIcon"
-              name="decorativeIcon"
-              type="file"
-              accept="image/*"
-              (change)="onDecorativeIconSelected($event)"
-            />
-            <small>Maximum file size: 5 MB.</small>
-
-            @if (decorativeIconFile) {
-              <span class="selected-file">{{ decorativeIconFile.name }}</span>
-            } @else if (existingDecorativeIconUrl) {
-              <span class="selected-file">Existing icon retained unless replaced.</span>
-            }
+      <div class="content-card">
+        <div class="section-header">
+          <div>
+            <h3>Decorative Icon</h3>
+            <p>Upload an optional decorative icon for this section.</p>
           </div>
         </div>
-      </section>
 
-      <footer class="form-actions">
-        @if (isEditMode) {
-          <button
-            type="button"
-            class="delete-button"
-            (click)="deleteAwards()"
-            [disabled]="saving || deleting"
-          >
-            {{ deleting ? 'Deleting...' : 'Delete Section' }}
-          </button>
-        }
+        <div class="form-group">
+          <label for="decorative-icon">Icon Image</label>
+          <input
+            id="decorative-icon"
+            type="file"
+            accept="image/*"
+            name="decorativeIcon"
+            (change)="onDecorativeIconSelected($event)"
+          />
 
-        <div class="action-right">
-          <button
-            type="button"
-            class="secondary-button"
-            (click)="resetForm()"
-            [disabled]="saving || deleting"
-          >
-            Reset
-          </button>
-
-          <button
-            type="submit"
-            class="primary-button save-button"
-            [disabled]="saving || deleting"
-          >
-            {{
-              saving
-                ? 'Saving...'
-                : isEditMode
-                  ? 'Update Awards'
-                  : 'Create Awards'
-            }}
-          </button>
+          <small class="helper-text">
+            Upload an image. Maximum file size: 5 MB.
+          </small>
         </div>
-      </footer>
+
+        @if (decorativeIconPreview || existingDecorativeIconUrl) {
+          <div class="image-preview-container">
+            <img
+              [src]="decorativeIconPreview || existingDecorativeIconUrl"
+              alt="Decorative icon"
+              class="icon-preview"
+            />
+
+            <button
+              type="button"
+              class="remove-button"
+              (click)="removeDecorativeIcon()"
+            >
+              Remove Icon
+            </button>
+          </div>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="button"
+          class="cancel-button"
+          (click)="resetForm()"
+          [disabled]="saving"
+        >
+          Reset
+        </button>
+
+        <button
+          type="submit"
+          class="save-button"
+          [disabled]="saving"
+        >
+          @if (saving) {
+            Saving...
+          } @else {
+            {{ isEditMode ? 'Update Awards' : 'Save Awards' }}
+          }
+        </button>
+      </div>
     </form>
   }
 </div>

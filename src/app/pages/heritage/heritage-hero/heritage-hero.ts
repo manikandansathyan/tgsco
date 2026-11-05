@@ -1,6 +1,14 @@
+
+import {
+  ChangeDetectorRef,
+  Component,
+  OnInit,
+  OnDestroy,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
 @Component({
@@ -10,8 +18,9 @@ import { Api } from '../../../core/services/api';
   templateUrl: './heritage-hero.html',
   styleUrl: './heritage-hero.css',
 })
-export class HeritageHero implements OnInit {
+export class HeritageHero implements OnInit, OnDestroy {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
 
   title = 'The Handloom Ecosystem';
   imageAlt = 'Handloom weaving with a traditional shuttle';
@@ -32,41 +41,58 @@ export class HeritageHero implements OnInit {
     this.loadHeritageHero();
   }
 
+  ngOnDestroy(): void {
+    this.clearPreview();
+  }
+
   loadHeritageHero(): void {
     this.isLoading = true;
     this.message = '';
 
-    this.api.getHeritageHero().subscribe({
-      next: (response: any) => {
-        const result = response?.data ?? response;
-        const content = result?.content ?? result;
+    this.api
+      .getHeritageHero()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const data = response?.data ?? response;
+          const content = data?.content ?? {};
 
-        if (content && typeof content === 'object' && content.title) {
-          this.title = content.title ?? '';
-          this.imageAlt = content.imageAlt ?? '';
-          this.existingImageUrl =
-            content.heroImageUrl ??
-            content.imageUrl ??
-            content.heroImage ??
-            result?.heroImageUrl ??
-            result?.imageUrl ??
-            null;
+          if (content && content.title) {
+            this.title = content.title ?? '';
+            this.imageAlt = content.imageAlt ?? '';
 
-          this.isEditing = true;
-        } else {
-          this.isEditing = false;
-        }
+            const images = Array.isArray(data?.images)
+              ? data.images
+              : [];
 
-        this.isLoading = false;
-      },
-      error: (error: any) => {
-        this.isLoading = false;
-        this.showMessage(
-          error?.error?.message ?? 'Unable to load Heritage Hero content.',
-          'error'
-        );
-      },
-    });
+            const heroImage = images.find(
+              (image: any) => image.field === 'heroImage'
+            );
+
+            this.existingImageUrl = heroImage?.url ?? null;
+
+            this.isEditing = true;
+          } else {
+            this.isEditing = false;
+            this.existingImageUrl = null;
+          }
+
+          this.cdr.markForCheck();
+        },
+        error: (error: any) => {
+          this.showMessage(
+            error?.error?.message ??
+              'Unable to load Heritage Hero content.',
+            'error'
+          );
+        },
+      });
   }
 
   onImageSelected(event: Event): void {
@@ -87,9 +113,7 @@ export class HeritageHero implements OnInit {
       return;
     }
 
-    if (this.imagePreview) {
-      URL.revokeObjectURL(this.imagePreview);
-    }
+    this.clearPreview();
 
     this.selectedImage = file;
     this.imagePreview = URL.createObjectURL(file);
@@ -108,7 +132,10 @@ export class HeritageHero implements OnInit {
     }
 
     if (!this.isEditing && !this.selectedImage) {
-      this.showMessage('Please select a hero image before creating.', 'error');
+      this.showMessage(
+        'Please select a hero image before creating.',
+        'error'
+      );
       return;
     }
 
@@ -122,36 +149,47 @@ export class HeritageHero implements OnInit {
     this.message = '';
 
     const request = this.isEditing
-      ? this.api.updateHeritageHero(content, this.selectedImage ?? undefined)
-      : this.api.createHeritageHero(content, this.selectedImage ?? undefined);
-
-    request.subscribe({
-      next: (response: any) => {
-        const wasEditing = this.isEditing;
-
-        this.isSaving = false;
-        this.isEditing = true;
-        this.selectedImage = null;
-        this.clearPreview();
-
-        this.showMessage(
-          response?.message ??
-          (wasEditing
-            ? 'Heritage Hero updated successfully.'
-            : 'Heritage Hero created successfully.'),
-          'success'
+      ? this.api.updateHeritageHero(
+          content,
+          this.selectedImage ?? undefined
+        )
+      : this.api.createHeritageHero(
+          content,
+          this.selectedImage ?? undefined
         );
 
-        this.loadHeritageHero();
-      },
-      error: (error: any) => {
-        this.isSaving = false;
-        this.showMessage(
-          error?.error?.message ?? 'Failed to save Heritage Hero content.',
-          'error'
-        );
-      },
-    });
+    request
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isSaving = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const wasEditing = this.isEditing;
+
+          this.selectedImage = null;
+          this.clearPreview();
+
+          this.showMessage(
+            response?.message ??
+              (wasEditing
+                ? 'Heritage Hero updated successfully.'
+                : 'Heritage Hero created successfully.'),
+            'success'
+          );
+
+          this.loadHeritageHero();
+        },
+        error: (error: any) => {
+          this.showMessage(
+            error?.error?.message ?? 'Failed to save Heritage Hero content.',
+            'error'
+          );
+        },
+      });
   }
 
   deleteHeritageHero(): void {
@@ -164,34 +202,41 @@ export class HeritageHero implements OnInit {
     this.isDeleting = true;
     this.message = '';
 
-    this.api.deleteHeritageHero().subscribe({
-      next: (response: any) => {
-        this.isDeleting = false;
-        this.title = '';
-        this.imageAlt = '';
-        this.existingImageUrl = null;
-        this.selectedImage = null;
-        this.clearPreview();
-        this.isEditing = false;
+    this.api
+      .deleteHeritageHero()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isDeleting = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          this.title = '';
+          this.imageAlt = '';
+          this.existingImageUrl = null;
+          this.selectedImage = null;
+          this.clearPreview();
+          this.isEditing = false;
 
-        this.showMessage(
-          response?.message ?? 'Heritage Hero content deleted successfully.',
-          'success'
-        );
-      },
-      error: (error: any) => {
-        this.isDeleting = false;
-        this.showMessage(
-          error?.error?.message ?? 'Failed to delete Heritage Hero content.',
-          'error'
-        );
-      },
-    });
+          this.showMessage(
+            response?.message ??
+              'Heritage Hero content deleted successfully.',
+            'success'
+          );
+        },
+        error: (error: any) => {
+          this.showMessage(
+            error?.error?.message ??
+              'Failed to delete Heritage Hero content.',
+            'error'
+          );
+        },
+      });
   }
 
   resetForm(): void {
-    this.title = '';
-    this.imageAlt = '';
     this.selectedImage = null;
     this.clearPreview();
     this.message = '';
@@ -199,8 +244,15 @@ export class HeritageHero implements OnInit {
     if (this.isEditing) {
       this.loadHeritageHero();
     } else {
+      this.title = '';
+      this.imageAlt = '';
       this.existingImageUrl = null;
     }
+  }
+
+  removeSelectedImage(): void {
+    this.selectedImage = null;
+    this.clearPreview();
   }
 
   private clearPreview(): void {
@@ -217,10 +269,6 @@ export class HeritageHero implements OnInit {
   ): void {
     this.message = message;
     this.messageType = type;
-  }
-
-  removeSelectedImage(): void {
-    this.selectedImage = null;
-    this.clearPreview();
+    this.cdr.markForCheck();
   }
 }

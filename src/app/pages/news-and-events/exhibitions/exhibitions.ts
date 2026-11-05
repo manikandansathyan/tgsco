@@ -1,6 +1,14 @@
+
+import {
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
 interface ExhibitionItem {
@@ -23,6 +31,7 @@ interface ExhibitionItem {
 })
 export class Exhibitions implements OnInit, OnDestroy {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
 
   sectionTitle = 'Exhibitions';
   items: ExhibitionItem[] = [];
@@ -54,17 +63,34 @@ export class Exhibitions implements OnInit, OnDestroy {
   }
 
   private extractData(response: any): any {
-    let data = response?.data ?? response ?? {};
+    const data = response?.data ?? response ?? {};
+    const content = this.parseContent(data.content);
 
-    if (data?.content !== undefined) {
-      const content = this.parseContent(data.content);
-      data = { ...data, ...content };
-    }
-
-    return data;
+    return {
+      ...data,
+      ...content,
+      images: data.images ?? content.images ?? [],
+    };
   }
 
-  private extractImageUrl(item: any): string {
+  private extractImageUrl(
+    item: any,
+    images: any[],
+    index: number
+  ): string {
+    const imageField =
+      item?.imageField ?? `items[${index}].image`;
+
+    // First, find the matching image in the sibling images array.
+    const matchingImage = images.find(
+      (image: any) => image.field === imageField
+    );
+
+    if (matchingImage?.url) {
+      return matchingImage.url;
+    }
+
+    // Fallback for older API response formats.
     const image =
       item?.imageUrl ??
       item?.imageURL ??
@@ -82,63 +108,82 @@ export class Exhibitions implements OnInit, OnDestroy {
     );
   }
 
- private createEmptyItem(index: number): ExhibitionItem {
-  return {
-    id: `exhibition-${index + 1}`,
-    slug: `exhibition-${index + 1}`,
-    label: '',
-    imageAlt: '',
-    hoverText: '',
-    imageFile: null,
-    imagePreview: '',
-    existingImageUrl: '',
-  };
-}
+  private createEmptyItem(index: number): ExhibitionItem {
+    return {
+      id: `exhibition-${index + 1}`,
+      slug: `exhibition-${index + 1}`,
+      label: '',
+      imageAlt: '',
+      hoverText: '',
+      imageFile: null,
+      imagePreview: '',
+      existingImageUrl: '',
+    };
+  }
 
   loadExhibitions(): void {
     this.loading = true;
     this.message = '';
     this.errorMessage = '';
 
-    this.api.getExhibitions().subscribe({
-      next: (response: any) => {
-        const data = this.extractData(response);
+    this.api
+      .getExhibitions()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.loading = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const data = this.extractData(response);
+          const images = Array.isArray(data.images)
+            ? data.images
+            : [];
 
-        this.clearImagePreviews();
-        this.sectionTitle = data.title ?? 'Exhibitions';
+          this.clearImagePreviews();
 
-        this.items = Array.isArray(data.items)
-          ? data.items.map((item: any, index: number) => {
-            const defaultId = `exhibition-${index + 1}`;
+          this.sectionTitle = data.title ?? 'Exhibitions';
 
-            return {
-              id: item.id ?? defaultId,
-              slug: item.slug ?? item.id ?? defaultId,
-              label: item.label ?? '',
-              imageAlt: item.imageAlt ?? '',
-              imageFile: null,
-              imagePreview: '',
-              existingImageUrl: this.extractImageUrl(item),
-            };
-          })
-          : [];
+          this.items = Array.isArray(data.items)
+            ? data.items.map((item: any, index: number) => {
+                const defaultId = `exhibition-${index + 1}`;
 
-        this.isEditMode = !!data.title || this.items.length > 0;
-        this.loading = false;
-      },
-      error: (error: any) => {
-        this.loading = false;
+                return {
+                  id: item.id ?? defaultId,
+                  slug: item.slug ?? item.id ?? defaultId,
+                  label: item.label ?? '',
+                  imageAlt: item.imageAlt ?? '',
+                  hoverText: item.hoverText ?? '',
+                  imageFile: null,
+                  imagePreview: '',
+                  existingImageUrl: this.extractImageUrl(
+                    item,
+                    images,
+                    index
+                  ),
+                };
+              })
+            : [];
 
-        if (error.status === 404) {
-          this.isEditMode = false;
-          this.message = 'No exhibitions found. You can create the section below.';
-          return;
-        }
+          this.isEditMode =
+            !!data.title || this.items.length > 0;
 
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to load exhibitions.';
-      },
-    });
+          this.cdr.markForCheck();
+        },
+        error: (error: any) => {
+          if (error.status === 404) {
+            this.isEditMode = false;
+            this.message =
+              'No exhibitions found. You can create the section below.';
+            return;
+          }
+
+          this.errorMessage =
+            error?.error?.message ?? 'Failed to load exhibitions.';
+        },
+      });
   }
 
   addItem(): void {
@@ -169,9 +214,11 @@ export class Exhibitions implements OnInit, OnDestroy {
     }
 
     this.errorMessage = '';
+
     const item = this.items[index];
 
     this.revokeUrl(item.imagePreview);
+
     item.imageFile = file;
     item.imagePreview = URL.createObjectURL(file);
   }
@@ -202,12 +249,14 @@ export class Exhibitions implements OnInit, OnDestroy {
       const item = this.items[index];
 
       if (!item.label.trim()) {
-        this.errorMessage = `Please enter a label for exhibition ${index + 1}.`;
+        this.errorMessage =
+          `Please enter a label for exhibition ${index + 1}.`;
         return;
       }
 
       if (!item.imageFile && !item.existingImageUrl) {
-        this.errorMessage = `Please upload an image for exhibition ${index + 1}.`;
+        this.errorMessage =
+          `Please upload an image for exhibition ${index + 1}.`;
         return;
       }
     }
@@ -238,28 +287,37 @@ export class Exhibitions implements OnInit, OnDestroy {
       ? this.api.updateExhibitions(content, itemImages)
       : this.api.createExhibitions(content, itemImages);
 
-    request.subscribe({
-      next: (response: any) => {
-        this.saving = false;
-        this.message =
-          response?.message ??
-          (this.isEditMode
-            ? 'Exhibitions updated successfully.'
-            : 'Exhibitions created successfully.');
+    request
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.saving = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          this.message =
+            response?.message ??
+            (this.isEditMode
+              ? 'Exhibitions updated successfully.'
+              : 'Exhibitions created successfully.');
 
-        this.loadExhibitions();
-      },
-      error: (error: any) => {
-        this.saving = false;
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to save exhibitions.';
-      },
-    });
+          this.loadExhibitions();
+        },
+        error: (error: any) => {
+          this.errorMessage =
+            error?.error?.message ?? 'Failed to save exhibitions.';
+        },
+      });
   }
 
-
   deleteExhibitions(): void {
-    if (!confirm('Are you sure you want to delete the entire Exhibitions section?')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete the entire Exhibitions section?'
+      )
+    ) {
       return;
     }
 
@@ -267,21 +325,28 @@ export class Exhibitions implements OnInit, OnDestroy {
     this.message = '';
     this.errorMessage = '';
 
-    this.api.deleteExhibitions().subscribe({
-      next: () => {
-        this.deleting = false;
-        this.clearImagePreviews();
-        this.sectionTitle = 'Exhibitions';
-        this.items = [];
-        this.isEditMode = false;
-        this.message = 'Exhibitions section deleted successfully.';
-      },
-      error: (error: any) => {
-        this.deleting = false;
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to delete exhibitions.';
-      },
-    });
+    this.api
+      .deleteExhibitions()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.deleting = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.clearImagePreviews();
+          this.sectionTitle = 'Exhibitions';
+          this.items = [];
+          this.isEditMode = false;
+          this.message = 'Exhibitions section deleted successfully.';
+        },
+        error: (error: any) => {
+          this.errorMessage =
+            error?.error?.message ?? 'Failed to delete exhibitions.';
+        },
+      });
   }
 
   resetForm(): void {
@@ -289,11 +354,13 @@ export class Exhibitions implements OnInit, OnDestroy {
   }
 
   private clearImagePreviews(): void {
-    this.items.forEach((item) => this.revokeUrl(item.imagePreview));
+    this.items.forEach((item) => {
+      this.revokeUrl(item.imagePreview);
+    });
   }
 
   private revokeUrl(url: string): void {
-    if (url.startsWith('blob:')) {
+    if (url?.startsWith('blob:')) {
       URL.revokeObjectURL(url);
     }
   }

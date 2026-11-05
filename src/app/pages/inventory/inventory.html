@@ -1,0 +1,660 @@
+<div class="inventory-page">
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">INVENTORY MANAGEMENT</p>
+      <h1>Inventory</h1>
+      <p class="page-subtitle">
+        Monitor stock levels and manage inventory operations.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="btn btn-primary"
+      (click)="loadInventory(); loadSummary()"
+      [disabled]="loading || summaryLoading"
+    >
+      <span class="refresh-icon">↻</span>
+      Refresh
+    </button>
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success">
+    <span>{{ successMessage }}</span>
+    <button
+      type="button"
+      class="alert-close"
+      aria-label="Dismiss success message"
+      (click)="successMessage = ''"
+    >
+      ×
+    </button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error">
+    <span>{{ errorMessage }}</span>
+    <button
+      type="button"
+      class="alert-close"
+      aria-label="Dismiss error message"
+      (click)="errorMessage = ''"
+    >
+      ×
+    </button>
+  </div>
+
+  <section class="summary-grid">
+    <article class="summary-card">
+      <div class="summary-icon icon-red">▦</div>
+      <div class="summary-content">
+        <p>Total Products</p>
+        <h2>{{ summaryLoading ? '—' : summary.products }}</h2>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <div class="summary-icon icon-blue">▤</div>
+      <div class="summary-content">
+        <p>Total Stock</p>
+        <h2>{{ summaryLoading ? '—' : summary.totalStock }}</h2>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <div class="summary-icon icon-orange">◷</div>
+      <div class="summary-content">
+        <p>Reserved Stock</p>
+        <h2>{{ summaryLoading ? '—' : summary.totalReserved }}</h2>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <div class="summary-icon icon-green">✓</div>
+      <div class="summary-content">
+        <p>Available Stock</p>
+        <h2>{{ summaryLoading ? '—' : summary.totalAvailable }}</h2>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <div class="summary-icon icon-yellow">!</div>
+      <div class="summary-content">
+        <p>Low Stock</p>
+        <h2>{{ summaryLoading ? '—' : summary.lowStock }}</h2>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <div class="summary-icon icon-dark-red">×</div>
+      <div class="summary-content">
+        <p>Out of Stock</p>
+        <h2>{{ summaryLoading ? '—' : summary.outOfStock }}</h2>
+      </div>
+    </article>
+  </section>
+
+  <section class="inventory-panel">
+    <div class="panel-header">
+      <div>
+        <h2>Inventory List</h2>
+        <p>Search, filter and manage your product stock.</p>
+      </div>
+
+      <span class="total-badge">{{ total }} products</span>
+    </div>
+
+    <div class="filters">
+      <div class="filter-field search-field">
+        <label for="inventorySearch">Search</label>
+        <div class="search-input-wrap">
+          <span class="search-icon">⌕</span>
+          <input
+            id="inventorySearch"
+            type="text"
+            name="search"
+            [(ngModel)]="search"
+            placeholder="Search name, SKU or barcode"
+            (keyup.enter)="applyFilters()"
+          />
+        </div>
+      </div>
+
+      <div class="filter-field">
+        <label for="statusFilter">Stock Status</label>
+        <select
+          id="statusFilter"
+          name="statusFilter"
+          [(ngModel)]="statusFilter"
+        >
+          <option value="all">All statuses</option>
+          <option value="in_stock">In Stock</option>
+          <option value="low_stock">Low Stock</option>
+          <option value="out_of_stock">Out of Stock</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="activeFilter">Product Status</label>
+        <select
+          id="activeFilter"
+          name="activeFilter"
+          [(ngModel)]="activeFilter"
+        >
+          <option value="all">All products</option>
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="sortFilter">Sort By</label>
+        <select id="sortFilter" name="sort" [(ngModel)]="sort">
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="name">Product Name</option>
+          <option value="stock-asc">Stock: Low to High</option>
+          <option value="stock-desc">Stock: High to Low</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="applyFilters()"
+          [disabled]="loading"
+        >
+          Apply Filters
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="resetFilters()"
+          [disabled]="loading"
+        >
+          Reset
+        </button>
+      </div>
+    </div>
+
+   <div class="table-container">
+  <table class="inventory-table">
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>SKU / Barcode</th>
+        <th class="number-cell">Stock</th>
+        <th class="number-cell">Reserved</th>
+        <th class="number-cell">Available</th>
+        <th>Status</th>
+        <th>Active</th>
+        <th class="actions-heading">Actions</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <!-- Loading -->
+      <tr *ngIf="loading">
+        <td colspan="8" class="state-cell">
+          <span class="loader"></span>
+          Loading inventory...
+        </td>
+      </tr>
+
+      <!-- Empty State -->
+      <tr *ngIf="!loading && inventory.length === 0">
+        <td colspan="8" class="state-cell">
+          <div class="empty-state">
+            <span class="empty-icon">▦</span>
+            <h3>No inventory found</h3>
+            <p>Try changing your search or filter options.</p>
+          </div>
+        </td>
+      </tr>
+
+      <!-- Inventory Items -->
+      <tr
+        *ngFor="let item of inventory; trackBy: trackByProductId"
+      >
+        <!-- Product -->
+        <td>
+          <div class="product-cell">
+            <div class="product-avatar">
+              {{ (item.name || 'P').charAt(0).toUpperCase() }}
+            </div>
+
+            <div class="product-info">
+              <span class="product-name">
+                {{ item.name || 'Unnamed Product' }}
+              </span>
+
+              <span class="product-id">
+                {{ item.productId }}
+              </span>
+            </div>
+          </div>
+        </td>
+
+        <!-- SKU / Barcode -->
+        <td>
+          <div class="sku-info">
+            <span>{{ item.sku || '—' }}</span>
+            <small>{{ item.barcode || 'No barcode' }}</small>
+          </div>
+        </td>
+
+        <!-- Stock -->
+        <td class="number-cell">
+          <span class="quantity-value">
+            {{ item.stockQuantity }}
+          </span>
+        </td>
+
+        <!-- Reserved -->
+        <td class="number-cell">
+          <span class="muted-value">
+            {{ item.reservedQuantity}}
+          </span>
+        </td>
+
+        <!-- Available -->
+        <td class="number-cell">
+          <span class="quantity-value">
+            {{ item.availableQuantity}}
+          </span>
+        </td>
+
+        <!-- Stock Status -->
+        <td>
+          <span
+            class="status-badge"
+            [ngClass]="getStatusClass(item.status)"
+          >
+            <span class="status-dot"></span>
+            {{ getStatusLabel(item.status) }}
+          </span>
+        </td>
+
+        <!-- Active Status -->
+        <td>
+          <span
+            class="active-badge"
+            [class.active-yes]="item.active"
+            [class.active-no]="!item.active"
+          >
+            {{ item.active ? 'Active' : 'Inactive' }}
+          </span>
+        </td>
+
+        <!-- Actions -->
+        <td>
+          <div class="action-buttons">
+
+            <button
+              type="button"
+              class="action-btn action-view"
+              [routerLink]="['/inventory', item.productId]"
+              title="View inventory details"
+            >
+              View
+            </button>
+
+            <button
+              type="button"
+              class="action-btn action-restock"
+              (click)="openOperation('restock', item)"
+              title="Add stock"
+            >
+              + Stock
+            </button>
+
+            <button
+              type="button"
+              class="action-btn action-adjust"
+              (click)="openOperation('adjust', item)"
+              title="Adjust stock"
+            >
+              Adjust
+            </button>
+
+            <button
+              type="button"
+              class="action-btn action-damage"
+              (click)="openOperation('damage', item)"
+              title="Record damaged stock"
+            >
+              Damage
+            </button>
+
+            <button
+              type="button"
+              class="action-btn action-return"
+              (click)="openOperation('return', item)"
+              title="Record returned stock"
+            >
+              Return
+            </button>
+
+            <button
+              type="button"
+              class="action-btn action-reconcile"
+              (click)="openOperation('reconcile', item)"
+              title="Reconcile physical stock"
+            >
+              Count
+            </button>
+
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+    <div class="table-footer">
+      <div class="page-size-control">
+        <label for="pageSize">Rows per page</label>
+        <select
+          id="pageSize"
+          name="pageSize"
+          [ngModel]="limit"
+          (ngModelChange)="changeLimit($event)"
+        >
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="20">20</option>
+          <option [ngValue]="50">50</option>
+          <option [ngValue]="100">100</option>
+        </select>
+      </div>
+
+      <span class="pagination-info">
+        Showing {{ firstItem }}–{{ lastItem }} of {{ total }}
+      </span>
+
+      <div class="pagination">
+        <button
+          type="button"
+          class="page-btn"
+          (click)="changePage(page - 1)"
+          [disabled]="page <= 1 || loading"
+          aria-label="Previous page"
+        >
+          ‹
+        </button>
+
+        <button
+          type="button"
+          class="page-btn"
+          *ngFor="let pageNumber of pageNumbers"
+          [class.current-page]="pageNumber === page"
+          (click)="changePage(pageNumber)"
+          [disabled]="loading"
+        >
+          {{ pageNumber }}
+        </button>
+
+        <button
+          type="button"
+          class="page-btn"
+          (click)="changePage(page + 1)"
+          [disabled]="page >= pages || loading"
+          aria-label="Next page"
+        >
+          ›
+        </button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div
+  *ngIf="showOperationModal"
+  class="modal-backdrop"
+  (click)="closeOperation()"
+>
+  <section
+    class="operation-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="operationModalTitle"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <div>
+        <p class="eyebrow">INVENTORY OPERATION</p>
+        <h2 id="operationModalTitle">{{ operationTitle }}</h2>
+        <p>{{ operationDescription }}</p>
+      </div>
+
+      <button
+        type="button"
+        class="modal-close"
+        (click)="closeOperation()"
+        [disabled]="saving"
+        aria-label="Close dialog"
+      >
+        ×
+      </button>
+    </div>
+
+    <div *ngIf="operationProduct" class="modal-product">
+      <div class="product-avatar">
+        {{ (operationProduct.name || 'P').charAt(0).toUpperCase() }}
+      </div>
+
+      <div>
+        <strong>{{ operationProduct.name }}</strong>
+        <span>SKU: {{ operationProduct.sku || '—' }}</span>
+      </div>
+
+      <div class="current-stock">
+        <span>Current stock</span>
+        <strong>{{ operationProduct.stockQuantity }}</strong>
+      </div>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-error modal-alert">
+      {{ errorMessage }}
+    </div>
+
+    <form (ngSubmit)="submitOperation()">
+      <div class="form-grid">
+        <div
+          class="form-field full-width"
+          *ngIf="operationType === 'adjust'"
+        >
+          <label for="adjustDirection">Adjustment Direction *</label>
+          <select
+            id="adjustDirection"
+            name="direction"
+            [(ngModel)]="form.direction"
+            required
+          >
+            <option value="increase">Increase stock</option>
+            <option value="decrease">Decrease stock</option>
+          </select>
+        </div>
+
+        <div
+          class="form-field full-width"
+          *ngIf="operationType !== 'reconcile'"
+        >
+          <label for="operationQuantity">Quantity *</label>
+          <input
+            id="operationQuantity"
+            type="number"
+            name="quantity"
+            [(ngModel)]="form.quantity"
+            min="1"
+            step="1"
+            placeholder="Enter quantity"
+            required
+          />
+        </div>
+
+        <div
+          class="form-field full-width"
+          *ngIf="operationType === 'reconcile'"
+        >
+          <label for="physicalQuantity">Physical Quantity *</label>
+          <input
+            id="physicalQuantity"
+            type="number"
+            name="physicalQuantity"
+            [(ngModel)]="form.physicalQuantity"
+            min="0"
+            step="1"
+            placeholder="Enter actual physical stock"
+            required
+          />
+          <small>
+            This is the actual quantity counted, not the quantity to add.
+          </small>
+        </div>
+
+        <div
+          class="form-field"
+          *ngIf="operationType === 'restock'"
+        >
+          <label for="supplierName">Supplier Name</label>
+          <input
+            id="supplierName"
+            type="text"
+            name="supplierName"
+            [(ngModel)]="form.supplierName"
+            placeholder="Enter supplier name"
+          />
+        </div>
+
+        <div
+          class="form-field"
+          *ngIf="operationType === 'restock'"
+        >
+          <label for="supplierInvoiceNumber">Supplier Invoice Number</label>
+          <input
+            id="supplierInvoiceNumber"
+            type="text"
+            name="supplierInvoiceNumber"
+            [(ngModel)]="form.supplierInvoiceNumber"
+            placeholder="Enter invoice number"
+          />
+        </div>
+
+        <div
+          class="form-field"
+          *ngIf="operationType === 'restock'"
+        >
+          <label for="unitCost">Unit Cost</label>
+          <input
+            id="unitCost"
+            type="number"
+            name="unitCost"
+            [(ngModel)]="form.unitCost"
+            min="0"
+            step="0.01"
+            placeholder="Enter unit cost"
+          />
+        </div>
+
+        <div
+          class="form-field"
+          *ngIf="operationType === 'restock'"
+        >
+          <label for="receivedAt">Received At</label>
+          <input
+            id="receivedAt"
+            type="datetime-local"
+            name="receivedAt"
+            [(ngModel)]="form.receivedAt"
+          />
+        </div>
+
+        <div
+          class="form-field full-width"
+          *ngIf="operationType === 'return'"
+        >
+          <label for="returnId">Return ID</label>
+          <input
+            id="returnId"
+            type="text"
+            name="returnId"
+            [(ngModel)]="form.returnId"
+            placeholder="Enter return reference"
+          />
+        </div>
+
+        <div
+          class="form-field"
+          *ngIf="operationType === 'adjust'"
+        >
+          <label for="referenceType">Reference Type</label>
+          <input
+            id="referenceType"
+            type="text"
+            name="referenceType"
+            [(ngModel)]="form.referenceType"
+            placeholder="Optional reference type"
+          />
+        </div>
+
+        <div
+          class="form-field"
+          *ngIf="operationType === 'adjust' || operationType === 'restock' || operationType === 'damage'"
+        >
+          <label for="referenceId">Reference ID</label>
+          <input
+            id="referenceId"
+            type="text"
+            name="referenceId"
+            [(ngModel)]="form.referenceId"
+            placeholder="Optional reference ID"
+          />
+        </div>
+
+        <div class="form-field full-width">
+          <label for="operationReason">Reason *</label>
+          <input
+            id="operationReason"
+            type="text"
+            name="reason"
+            [(ngModel)]="form.reason"
+            placeholder="Enter the reason for this operation"
+            required
+          />
+        </div>
+
+        <div class="form-field full-width">
+          <label for="operationNote">Note</label>
+          <textarea
+            id="operationNote"
+            name="note"
+            [(ngModel)]="form.note"
+            rows="3"
+            placeholder="Additional information (optional)"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="closeOperation()"
+          [disabled]="saving"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="saving"
+        >
+          <span *ngIf="saving" class="button-loader"></span>
+          {{ saving ? 'Saving...' : 'Confirm Operation' }}
+        </button>
+      </div>
+    </form>
+  </section>
+</div>

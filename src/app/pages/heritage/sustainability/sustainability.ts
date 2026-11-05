@@ -1,10 +1,18 @@
 
+import {
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
 interface SustainabilityImage {
+  title: string;
   alt: string;
   file: File | null;
   previewUrl: string | null;
@@ -20,6 +28,7 @@ interface SustainabilityImage {
 })
 export class Sustainability implements OnInit, OnDestroy {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
 
   title = 'Slow by Tradition, Sustainable by Design';
   description = '';
@@ -36,6 +45,33 @@ export class Sustainability implements OnInit, OnDestroy {
   message = '';
   messageType: 'success' | 'error' = 'success';
 
+  private readonly defaultImages = [
+    {
+      title: 'Slow fashion, made with intention',
+      alt: 'Hands weaving fabric on a traditional loom',
+    },
+    {
+      title: 'Crafted with care',
+      alt: 'Close-up of handloom weaving',
+    },
+    {
+      title: 'Natural fibres, lasting beauty',
+      alt: 'Natural fibres prepared for handloom weaving',
+    },
+    {
+      title: 'Heritage in every thread',
+      alt: 'Traditional handloom textile',
+    },
+    {
+      title: 'Made by hand, made to last',
+      alt: 'Artisan working at a handloom',
+    },
+    {
+      title: 'A sustainable tradition',
+      alt: 'Telangana handloom artisan weaving',
+    },
+  ];
+
   ngOnInit(): void {
     this.initializeImages();
     this.loadSustainability();
@@ -46,11 +82,9 @@ export class Sustainability implements OnInit, OnDestroy {
   }
 
   private initializeImages(): void {
-    this.images = Array.from({ length: 6 }, (_, index) => ({
-      alt:
-        index === 0
-          ? 'Hands weaving fabric on a traditional loom'
-          : '',
+    this.images = this.defaultImages.map((item) => ({
+      title: item.title,
+      alt: item.alt,
       file: null,
       previewUrl: null,
       existingUrl: null,
@@ -61,76 +95,80 @@ export class Sustainability implements OnInit, OnDestroy {
     this.isLoading = true;
     this.message = '';
 
-    this.api.getHeritageSustainability().subscribe({
-      next: (response: any) => {
-        const result = response?.data ?? response;
-        let content = result?.content ?? result;
+    this.api
+      .getHeritageSustainability()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const result = response?.data ?? response;
+          const content = result?.content ?? {};
 
-        if (typeof content === 'string') {
-          try {
-            content = JSON.parse(content);
-          } catch {
-            content = {};
+          if (
+            content &&
+            typeof content === 'object' &&
+            content.title
+          ) {
+            this.title = content.title ?? '';
+            this.description = content.description ?? '';
+            this.closingTitle = content.closingTitle ?? '';
+            this.backgroundColor =
+              content.backgroundColor ?? '#000000';
+
+            this.clearAllPreviews();
+            this.initializeImages();
+
+            // Metadata is stored inside data.content.images.
+            const imageMetadata = Array.isArray(content.images)
+              ? content.images
+              : [];
+
+            // Actual image URLs are stored separately in data.images.
+            const uploadedImages = Array.isArray(result?.images)
+              ? result.images
+              : [];
+
+            this.images.forEach((image, index) => {
+              const field = `images[${index}].image`;
+
+              const metadata = imageMetadata.find(
+                (item: any) => item?.field === field
+              );
+
+              const uploadedImage = uploadedImages.find(
+                (item: any) => item?.field === field
+              );
+
+              if (metadata) {
+                image.title = metadata.title ?? image.title;
+                image.alt = metadata.alt ?? '';
+              }
+
+              image.existingUrl = uploadedImage?.url ?? null;
+            });
+
+            this.isEditing = true;
+          } else {
+            this.clearAllPreviews();
+            this.initializeImages();
+            this.isEditing = false;
           }
-        }
 
-        if (content && typeof content === 'object' && content.title) {
-          this.title = content.title ?? '';
-          this.description = content.description ?? '';
-          this.closingTitle = content.closingTitle ?? '';
-          this.backgroundColor = content.backgroundColor ?? '#000000';
-
-          this.initializeImages();
-
-          const apiImages = Array.isArray(content.images)
-            ? content.images
-            : [];
-
-          apiImages.slice(0, 6).forEach((image: any, index: number) => {
-            this.images[index].alt =
-              image?.alt ??
-              image?.imageAlt ??
-              (index === 0
-                ? 'Hands weaving fabric on a traditional loom'
-                : '');
-
-            this.images[index].existingUrl =
-              this.extractImageUrl(image);
-          });
-
-          if (apiImages.length === 0) {
-            const legacyImageUrl = this.extractLegacyImageUrl(
-              content,
-              result
-            );
-
-            if (legacyImageUrl) {
-              this.images[0].existingUrl = legacyImageUrl;
-            }
-
-            this.images[0].alt =
-              content.imageAlt ??
-              this.images[0].alt;
-          }
-
-          this.isEditing = true;
-        } else {
-          this.isEditing = false;
-          this.initializeImages();
-        }
-
-        this.isLoading = false;
-      },
-      error: (error: any) => {
-        this.isLoading = false;
-
-        this.showMessage(
-          error?.error?.message ??
-            'Unable to load sustainability content.',
-          'error'
-        );
-      },
-    });
+          this.cdr.markForCheck();
+        },
+        error: (error: any) => {
+          this.showMessage(
+            error?.error?.message ??
+              'Unable to load sustainability content.',
+            'error'
+          );
+        },
+      });
   }
 
   onImageSelected(event: Event, index: number): void {
@@ -154,6 +192,7 @@ export class Sustainability implements OnInit, OnDestroy {
     const image = this.images[index];
 
     this.clearPreview(image);
+
     image.file = file;
     image.previewUrl = URL.createObjectURL(file);
 
@@ -218,16 +257,17 @@ export class Sustainability implements OnInit, OnDestroy {
       }
     }
 
+    // Match the image metadata structure returned by the API.
     const content = {
       title: this.title.trim(),
       description: this.description.trim(),
       closingTitle: this.closingTitle.trim(),
       backgroundColor: this.backgroundColor,
-      imageField: 'sustainabilityImage',
-      imageAlt: this.images[0].alt.trim(),
+
       images: this.images
         .map((image, index) => ({
-          field: `sustainabilityImage${index + 1}`,
+          title: image.title.trim(),
+          field: `images[${index}].image`,
           alt: image.alt.trim(),
           index,
         }))
@@ -235,9 +275,15 @@ export class Sustainability implements OnInit, OnDestroy {
           (image) =>
             this.images[image.index].file ||
             this.images[image.index].existingUrl
-        ),
+        )
+        .map(({ title, field, alt }) => ({
+          title,
+          field,
+          alt,
+        })),
     };
 
+    // Files are indexed so the API service can use the exact field names.
     const uploadedImages: Record<number, File> = {};
 
     this.images.forEach((image, index) => {
@@ -261,31 +307,36 @@ export class Sustainability implements OnInit, OnDestroy {
           uploadedImages
         );
 
-    request.subscribe({
-      next: (response: any) => {
-        this.isSaving = false;
+    request
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isSaving = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          this.clearAllPreviews();
 
-        this.clearAllPreviews();
-        this.showMessage(
-          response?.message ??
-            (wasEditing
-              ? 'Sustainability content updated successfully.'
-              : 'Sustainability content created successfully.'),
-          'success'
-        );
+          this.showMessage(
+            response?.message ??
+              (wasEditing
+                ? 'Sustainability content updated successfully.'
+                : 'Sustainability content created successfully.'),
+            'success'
+          );
 
-        this.loadSustainability();
-      },
-      error: (error: any) => {
-        this.isSaving = false;
-
-        this.showMessage(
-          error?.error?.message ??
-            'Failed to save sustainability content.',
-          'error'
-        );
-      },
-    });
+          this.loadSustainability();
+        },
+        error: (error: any) => {
+          this.showMessage(
+            error?.error?.message ??
+              'Failed to save sustainability content.',
+            'error'
+          );
+        },
+      });
   }
 
   deleteSustainability(): void {
@@ -300,34 +351,41 @@ export class Sustainability implements OnInit, OnDestroy {
     this.isDeleting = true;
     this.message = '';
 
-    this.api.deleteHeritageSustainability().subscribe({
-      next: (response: any) => {
-        this.isDeleting = false;
+    this.api
+      .deleteHeritageSustainability()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isDeleting = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          this.clearAllPreviews();
 
-        this.clearAllPreviews();
-        this.title = 'Slow by Tradition, Sustainable by Design';
-        this.description = '';
-        this.closingTitle = 'Slow fashion, made with intention';
-        this.backgroundColor = '#000000';
-        this.initializeImages();
-        this.isEditing = false;
+          this.title = 'Slow by Tradition, Sustainable by Design';
+          this.description = '';
+          this.closingTitle = 'Slow fashion, made with intention';
+          this.backgroundColor = '#000000';
 
-        this.showMessage(
-          response?.message ??
-            'Sustainability content deleted successfully.',
-          'success'
-        );
-      },
-      error: (error: any) => {
-        this.isDeleting = false;
+          this.initializeImages();
+          this.isEditing = false;
 
-        this.showMessage(
-          error?.error?.message ??
-            'Failed to delete sustainability content.',
-          'error'
-        );
-      },
-    });
+          this.showMessage(
+            response?.message ??
+              'Sustainability content deleted successfully.',
+            'success'
+          );
+        },
+        error: (error: any) => {
+          this.showMessage(
+            error?.error?.message ??
+              'Failed to delete sustainability content.',
+            'error'
+          );
+        },
+      });
   }
 
   resetForm(): void {
@@ -343,36 +401,8 @@ export class Sustainability implements OnInit, OnDestroy {
     this.description = '';
     this.closingTitle = 'Slow fashion, made with intention';
     this.backgroundColor = '#000000';
+
     this.initializeImages();
-  }
-
-  private extractImageUrl(image: any): string | null {
-    if (typeof image === 'string') return image;
-
-    return (
-      image?.imageUrl ??
-      image?.url ??
-      image?.image ??
-      image?.path ??
-      null
-    );
-  }
-
-  private extractLegacyImageUrl(
-    content: any,
-    result: any
-  ): string | null {
-    const image = content?.sustainabilityImage;
-
-    return (
-      content?.sustainabilityImageUrl ??
-      content?.imageUrl ??
-      content?.image ??
-      (typeof image === 'string' ? image : image?.url) ??
-      result?.sustainabilityImageUrl ??
-      result?.imageUrl ??
-      null
-    );
   }
 
   private clearPreview(image: SustainabilityImage): void {

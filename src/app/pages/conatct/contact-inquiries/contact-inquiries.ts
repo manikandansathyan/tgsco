@@ -1,7 +1,12 @@
-
+import {
+  ChangeDetectorRef,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
 interface ContactInquiry {
@@ -11,7 +16,9 @@ interface ContactInquiry {
   email: string;
   phone: string;
   message: string;
+  status?: string;
   createdAt?: string;
+  updatedAt?: string;
   created_at?: string;
 }
 
@@ -23,6 +30,7 @@ interface ContactInquiry {
 })
 export class ContactInquiries implements OnInit {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
 
   inquiries: ContactInquiry[] = [];
 
@@ -46,30 +54,39 @@ export class ContactInquiries implements OnInit {
   loadInquiries(): void {
     this.isLoading = true;
     this.errorMessage = '';
-    this.successMessage = '';
 
-    this.api.getContactInquiries().subscribe({
-      next: (response: any) => {
-        const data = response?.data ?? response;
+    this.api
+      .getContactInquiries()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (response: any) => {
+          const data = response?.data ?? response;
 
-        if (Array.isArray(data)) {
-          this.inquiries = data;
-        } else if (Array.isArray(data?.inquiries)) {
-          this.inquiries = data.inquiries;
-        } else if (Array.isArray(data?.items)) {
-          this.inquiries = data.items;
-        } else {
-          this.inquiries = [];
-        }
+          if (Array.isArray(data)) {
+            this.inquiries = data;
+          } else if (Array.isArray(data?.inquiries)) {
+            this.inquiries = data.inquiries;
+          } else if (Array.isArray(data?.items)) {
+            this.inquiries = data.items;
+          } else {
+            this.inquiries = [];
+          }
 
-        this.isLoading = false;
-      },
-      error: (error: any) => {
-        this.errorMessage =
-          error?.error?.message ?? 'Unable to load contact inquiries.';
-        this.isLoading = false;
-      },
-    });
+          this.cdr.markForCheck();
+        },
+        error: (error: any) => {
+          this.errorMessage =
+            error?.error?.message ?? 'Unable to load contact inquiries.';
+
+          this.cdr.markForCheck();
+        },
+      });
   }
 
   submitInquiry(): void {
@@ -95,25 +112,36 @@ export class ContactInquiries implements OnInit {
 
     this.isSubmitting = true;
 
-    this.api.createContactInquiry(inquiry).subscribe({
-      next: () => {
-        this.isSubmitting = false;
-        this.successMessage = 'Contact inquiry submitted successfully.';
-        this.form = {
-          name: '',
-          email: '',
-          phone: '',
-          message: '',
-        };
+    this.api
+      .createContactInquiry(inquiry)
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isSubmitting = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.successMessage = 'Contact inquiry submitted successfully.';
 
-        this.loadInquiries();
-      },
-      error: (error: any) => {
-        this.isSubmitting = false;
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to submit contact inquiry.';
-      },
-    });
+          this.form = {
+            name: '',
+            email: '',
+            phone: '',
+            message: '',
+          };
+
+          this.loadInquiries();
+          this.cdr.markForCheck();
+        },
+        error: (error: any) => {
+          this.errorMessage =
+            error?.error?.message ?? 'Failed to submit contact inquiry.';
+
+          this.cdr.markForCheck();
+        },
+      });
   }
 
   getInquiryDate(inquiry: ContactInquiry): string {

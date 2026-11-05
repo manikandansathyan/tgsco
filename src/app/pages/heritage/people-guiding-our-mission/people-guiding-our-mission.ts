@@ -1,6 +1,14 @@
+
+import {
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
 interface MissionPerson {
@@ -21,10 +29,12 @@ interface MissionPerson {
 })
 export class PeopleGuidingOurMission implements OnInit, OnDestroy {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
 
   title = 'The People Guiding Our Mission';
 
   people: MissionPerson[] = [];
+
   decorativeIcon: File | null = null;
   decorativeIconPreview: string | null = null;
   existingDecorativeIconUrl: string | null = null;
@@ -87,51 +97,88 @@ export class PeopleGuidingOurMission implements OnInit, OnDestroy {
     this.isLoading = true;
     this.message = '';
 
-    this.api.getHeritageMissionGuides().subscribe({
-      next: (response: any) => {
-        const result = response?.data ?? response;
-        const content = result?.content ?? result;
+    this.api
+      .getHeritageMissionGuides()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const result = response?.data ?? response;
+          const content = result?.content ?? {};
 
-        if (
-          content &&
-          typeof content === 'object' &&
-          (content.title || Array.isArray(content.people))
-        ) {
-          this.clearAllPreviews();
+          if (
+            content &&
+            typeof content === 'object' &&
+            (content.title || Array.isArray(content.people))
+          ) {
+            this.clearAllPreviews();
 
-          this.title = content.title ?? '';
+            this.decorativeIcon = null;
+            this.title = content.title ?? '';
 
-          if (Array.isArray(content.people)) {
-            this.people = content.people.map(
-              (person: any, index: number): MissionPerson => ({
-                name: person?.name ?? '',
-                role: person?.role ?? '',
-                imageAlt: person?.imageAlt ?? person?.name ?? '',
-                imageUrl: this.extractPersonImageUrl(person, result, index),
-                selectedImage: null,
-                imagePreview: null,
-              })
+            // The actual image URLs are stored in result.images.
+            const uploadedImages = Array.isArray(result?.images)
+              ? result.images
+              : [];
+
+            // Person information is stored in content.people.
+            this.people = Array.isArray(content.people)
+              ? content.people.map(
+                  (person: any, index: number): MissionPerson => {
+                    const imageField =
+                      person?.imageField ?? `people[${index}].image`;
+
+                    const uploadedImage = uploadedImages.find(
+                      (image: any) => image?.field === imageField
+                    );
+
+                    return {
+                      name: person?.name ?? '',
+                      role: person?.role ?? '',
+                      imageAlt:
+                        person?.imageAlt ?? person?.name ?? '',
+                      imageUrl: uploadedImage?.url ?? null,
+                      selectedImage: null,
+                      imagePreview: null,
+                    };
+                  }
+                )
+              : [];
+
+            // Decorative icon URL is also in result.images.
+            const decorativeIconImage = uploadedImages.find(
+              (image: any) => image?.field === 'decorativeIcon'
             );
+
+            this.existingDecorativeIconUrl =
+              decorativeIconImage?.url ?? null;
+
+            this.isEditing = true;
+          } else {
+            this.clearAllPreviews();
+            this.title = 'The People Guiding Our Mission';
+            this.setDefaultPeople();
+
+            this.decorativeIcon = null;
+            this.existingDecorativeIconUrl = null;
+            this.isEditing = false;
           }
 
-          this.existingDecorativeIconUrl =
-            this.extractDecorativeIconUrl(content, result);
-
-          this.isEditing = true;
-        } else {
-          this.isEditing = false;
-        }
-
-        this.isLoading = false;
-      },
-      error: (error: any) => {
-        this.isLoading = false;
-        this.showMessage(
-          error?.error?.message ?? 'Unable to load mission guides content.',
-          'error'
-        );
-      },
-    });
+          this.cdr.markForCheck();
+        },
+        error: (error: any) => {
+          this.showMessage(
+            error?.error?.message ??
+              'Unable to load mission guides content.',
+            'error'
+          );
+        },
+      });
   }
 
   addPerson(): void {
@@ -146,8 +193,12 @@ export class PeopleGuidingOurMission implements OnInit, OnDestroy {
   }
 
   removePerson(index: number): void {
-    this.clearPersonPreview(this.people[index]);
-    this.people.splice(index, 1);
+    const person = this.people[index];
+
+    if (person) {
+      this.clearPersonPreview(person);
+      this.people.splice(index, 1);
+    }
   }
 
   onPersonImageSelected(event: Event, index: number): void {
@@ -169,16 +220,24 @@ export class PeopleGuidingOurMission implements OnInit, OnDestroy {
     }
 
     const person = this.people[index];
+
+    if (!person) return;
+
     this.clearPersonPreview(person);
+
     person.selectedImage = file;
     person.imagePreview = URL.createObjectURL(file);
+
     this.message = '';
   }
 
   removePersonImage(index: number): void {
     const person = this.people[index];
-    this.clearPersonPreview(person);
+
+    if (!person) return;
+
     person.selectedImage = null;
+    this.clearPersonPreview(person);
   }
 
   onDecorativeIconSelected(event: Event): void {
@@ -188,20 +247,28 @@ export class PeopleGuidingOurMission implements OnInit, OnDestroy {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      this.showMessage('Please select a valid decorative icon image.', 'error');
+      this.showMessage(
+        'Please select a valid decorative icon image.',
+        'error'
+      );
       input.value = '';
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      this.showMessage('The decorative icon must be 5 MB or less.', 'error');
+      this.showMessage(
+        'The decorative icon must be 5 MB or less.',
+        'error'
+      );
       input.value = '';
       return;
     }
 
     this.clearDecorativeIconPreview();
+
     this.decorativeIcon = file;
     this.decorativeIconPreview = URL.createObjectURL(file);
+
     this.message = '';
   }
 
@@ -235,22 +302,25 @@ export class PeopleGuidingOurMission implements OnInit, OnDestroy {
       }
 
       if (!person.imageAlt.trim()) {
-        this.showMessage(`Enter image alt text for ${person.name}.`, 'error');
+        this.showMessage(
+          `Enter image alt text for ${person.name}.`,
+          'error'
+        );
         return;
       }
 
-      if (!this.isEditing && !person.selectedImage && !person.imageUrl) {
+      if (!person.selectedImage && !person.imageUrl) {
         this.showMessage(
-          `Upload a profile image for ${person.name} before creating the content.`,
+          `Upload a profile image for ${person.name}.`,
           'error'
         );
         return;
       }
     }
 
-    if (!this.isEditing && !this.decorativeIcon) {
+    if (!this.decorativeIcon && !this.existingDecorativeIconUrl) {
       this.showMessage(
-        'Upload the decorative icon before creating the content.',
+        'Upload the decorative icon before saving.',
         'error'
       );
       return;
@@ -258,12 +328,14 @@ export class PeopleGuidingOurMission implements OnInit, OnDestroy {
 
     const content = {
       title: this.title.trim(),
+
       people: this.people.map((person, index) => ({
         name: person.name.trim(),
         role: person.role.trim(),
         imageField: `people[${index}].image`,
         imageAlt: person.imageAlt.trim(),
       })),
+
       iconField: 'decorativeIcon',
     };
 
@@ -292,27 +364,38 @@ export class PeopleGuidingOurMission implements OnInit, OnDestroy {
           this.decorativeIcon ?? undefined
         );
 
-    request.subscribe({
-      next: (response: any) => {
-        this.isSaving = false;
-        this.showMessage(
-          response?.message ??
-            (wasEditing
-              ? 'Mission guides content updated successfully.'
-              : 'Mission guides content created successfully.'),
-          'success'
-        );
+    request
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isSaving = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          this.clearAllPreviews();
 
-        this.loadContent();
-      },
-      error: (error: any) => {
-        this.isSaving = false;
-        this.showMessage(
-          error?.error?.message ?? 'Failed to save mission guides content.',
-          'error'
-        );
-      },
-    });
+          this.decorativeIcon = null;
+
+          this.showMessage(
+            response?.message ??
+              (wasEditing
+                ? 'Mission guides content updated successfully.'
+                : 'Mission guides content created successfully.'),
+            'success'
+          );
+
+          this.loadContent();
+        },
+        error: (error: any) => {
+          this.showMessage(
+            error?.error?.message ??
+              'Failed to save mission guides content.',
+            'error'
+          );
+        },
+      });
   }
 
   deleteContent(): void {
@@ -327,29 +410,40 @@ export class PeopleGuidingOurMission implements OnInit, OnDestroy {
     this.isDeleting = true;
     this.message = '';
 
-    this.api.deleteHeritageMissionGuides().subscribe({
-      next: (response: any) => {
-        this.isDeleting = false;
-        this.clearAllPreviews();
-        this.title = 'The People Guiding Our Mission';
-        this.setDefaultPeople();
-        this.existingDecorativeIconUrl = null;
-        this.decorativeIcon = null;
-        this.isEditing = false;
+    this.api
+      .deleteHeritageMissionGuides()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isDeleting = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          this.clearAllPreviews();
 
-        this.showMessage(
-          response?.message ?? 'Mission guides content deleted successfully.',
-          'success'
-        );
-      },
-      error: (error: any) => {
-        this.isDeleting = false;
-        this.showMessage(
-          error?.error?.message ?? 'Failed to delete mission guides content.',
-          'error'
-        );
-      },
-    });
+          this.title = 'The People Guiding Our Mission';
+          this.setDefaultPeople();
+
+          this.decorativeIcon = null;
+          this.existingDecorativeIconUrl = null;
+          this.isEditing = false;
+
+          this.showMessage(
+            response?.message ??
+              'Mission guides content deleted successfully.',
+            'success'
+          );
+        },
+        error: (error: any) => {
+          this.showMessage(
+            error?.error?.message ??
+              'Failed to delete mission guides content.',
+            'error'
+          );
+        },
+      });
   }
 
   resetForm(): void {
@@ -365,34 +459,6 @@ export class PeopleGuidingOurMission implements OnInit, OnDestroy {
     this.title = 'The People Guiding Our Mission';
     this.setDefaultPeople();
     this.existingDecorativeIconUrl = null;
-  }
-
-  private extractPersonImageUrl(
-    person: any,
-    result: any,
-    index: number
-  ): string | null {
-    const image = person?.image;
-
-    return (
-      person?.imageUrl ??
-      person?.imageURL ??
-      (typeof image === 'string' ? image : image?.url) ??
-      result?.people?.[index]?.imageUrl ??
-      null
-    );
-  }
-
-  private extractDecorativeIconUrl(content: any, result: any): string | null {
-    const icon = content?.decorativeIcon;
-
-    return (
-      content?.decorativeIconUrl ??
-      content?.iconUrl ??
-      (typeof icon === 'string' ? icon : icon?.url) ??
-      result?.decorativeIconUrl ??
-      null
-    );
   }
 
   private clearPersonPreview(person?: MissionPerson): void {

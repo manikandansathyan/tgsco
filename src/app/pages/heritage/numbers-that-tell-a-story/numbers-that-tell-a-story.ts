@@ -1,6 +1,14 @@
+
+import {
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
 interface HeritageMetric {
@@ -15,13 +23,15 @@ interface HeritageMetric {
   templateUrl: './numbers-that-tell-a-story.html',
   styleUrl: './numbers-that-tell-a-story.css',
 })
-export class NumbersThatTellAStory implements OnInit {
+export class NumbersThatTellAStory implements OnInit, OnDestroy {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
 
   title = 'Numbers That Tell a Story';
   backgroundColor = '#000000';
 
   metrics: HeritageMetric[] = [];
+
   decorativeIcon: File | null = null;
   iconPreview: string | null = null;
   existingIconUrl: string | null = null;
@@ -37,6 +47,10 @@ export class NumbersThatTellAStory implements OnInit {
   ngOnInit(): void {
     this.setDefaultMetrics();
     this.loadHeritageNumbers();
+  }
+
+  ngOnDestroy(): void {
+    this.clearIconPreview();
   }
 
   private setDefaultMetrics(): void {
@@ -68,39 +82,61 @@ export class NumbersThatTellAStory implements OnInit {
     this.isLoading = true;
     this.message = '';
 
-    this.api.getHeritageNumbers().subscribe({
-      next: (response: any) => {
-        const result = response?.data ?? response;
-        const content = result?.content ?? result;
+    this.api
+      .getHeritageNumbers()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const data = response?.data ?? response;
+          const content = data?.content ?? {};
 
-        if (content && typeof content === 'object' && content.title) {
-          this.title = content.title ?? '';
-          this.backgroundColor = content.backgroundColor ?? '#000000';
-          this.existingIconUrl = this.extractIconUrl(content, result);
+          if (
+            content &&
+            typeof content === 'object' &&
+            content.title
+          ) {
+            this.title = content.title ?? '';
+            this.backgroundColor = content.backgroundColor ?? '#000000';
 
-          if (Array.isArray(content.metrics)) {
-            this.metrics = content.metrics.map((metric: any) => ({
-              label: metric?.label ?? '',
-              description: metric?.description ?? '',
-            }));
+            const images = Array.isArray(data?.images)
+              ? data.images
+              : [];
+
+            const iconImage = images.find(
+              (image: any) => image.field === 'decorativeIcon'
+            );
+
+            this.existingIconUrl = iconImage?.url ?? null;
+
+            if (Array.isArray(content.metrics)) {
+              this.metrics = content.metrics.map((metric: any) => ({
+                label: metric?.label ?? '',
+                description: metric?.description ?? '',
+              }));
+            }
+
+            this.isEditing = true;
+          } else {
+            this.isEditing = false;
+            this.existingIconUrl = null;
           }
 
-          this.isEditing = true;
-        } else {
-          this.isEditing = false;
-        }
-
-        this.isLoading = false;
-      },
-      error: (error: any) => {
-        this.isLoading = false;
-        this.showMessage(
-          error?.error?.message ??
-            'Unable to load Numbers That Tell a Story content.',
-          'error'
-        );
-      },
-    });
+          this.cdr.markForCheck();
+        },
+        error: (error: any) => {
+          this.showMessage(
+            error?.error?.message ??
+              'Unable to load Numbers That Tell a Story content.',
+            'error'
+          );
+        },
+      });
   }
 
   onIconSelected(event: Event): void {
@@ -122,14 +158,18 @@ export class NumbersThatTellAStory implements OnInit {
     }
 
     this.clearIconPreview();
+
     this.decorativeIcon = file;
     this.iconPreview = URL.createObjectURL(file);
+
     this.message = '';
+    this.cdr.markForCheck();
   }
 
   removeSelectedIcon(): void {
     this.decorativeIcon = null;
     this.clearIconPreview();
+    this.cdr.markForCheck();
   }
 
   saveHeritageNumbers(): void {
@@ -185,35 +225,46 @@ export class NumbersThatTellAStory implements OnInit {
     const wasEditing = this.isEditing;
 
     const request = wasEditing
-      ? this.api.updateHeritageNumbers(content, this.decorativeIcon ?? undefined)
-      : this.api.createHeritageNumbers(content, this.decorativeIcon ?? undefined);
-
-    request.subscribe({
-      next: (response: any) => {
-        this.isSaving = false;
-        this.isEditing = true;
-        this.decorativeIcon = null;
-        this.clearIconPreview();
-
-        this.showMessage(
-          response?.message ??
-            (wasEditing
-              ? 'Numbers That Tell a Story updated successfully.'
-              : 'Numbers That Tell a Story created successfully.'),
-          'success'
+      ? this.api.updateHeritageNumbers(
+          content,
+          this.decorativeIcon ?? undefined
+        )
+      : this.api.createHeritageNumbers(
+          content,
+          this.decorativeIcon ?? undefined
         );
 
-        this.loadHeritageNumbers();
-      },
-      error: (error: any) => {
-        this.isSaving = false;
-        this.showMessage(
-          error?.error?.message ??
-            'Failed to save Numbers That Tell a Story content.',
-          'error'
-        );
-      },
-    });
+    request
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isSaving = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          this.decorativeIcon = null;
+          this.clearIconPreview();
+
+          this.showMessage(
+            response?.message ??
+              (wasEditing
+                ? 'Numbers That Tell a Story updated successfully.'
+                : 'Numbers That Tell a Story created successfully.'),
+            'success'
+          );
+
+          this.loadHeritageNumbers();
+        },
+        error: (error: any) => {
+          this.showMessage(
+            error?.error?.message ??
+              'Failed to save Numbers That Tell a Story content.',
+            'error'
+          );
+        },
+      });
   }
 
   deleteHeritageNumbers(): void {
@@ -228,32 +279,42 @@ export class NumbersThatTellAStory implements OnInit {
     this.isDeleting = true;
     this.message = '';
 
-    this.api.deleteHeritageNumbers().subscribe({
-      next: (response: any) => {
-        this.isDeleting = false;
-        this.title = '';
-        this.backgroundColor = '#000000';
-        this.decorativeIcon = null;
-        this.existingIconUrl = null;
-        this.clearIconPreview();
-        this.setDefaultMetrics();
-        this.isEditing = false;
+    this.api
+      .deleteHeritageNumbers()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isDeleting = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          this.title = 'Numbers That Tell a Story';
+          this.backgroundColor = '#000000';
 
-        this.showMessage(
-          response?.message ??
-            'Numbers That Tell a Story content deleted successfully.',
-          'success'
-        );
-      },
-      error: (error: any) => {
-        this.isDeleting = false;
-        this.showMessage(
-          error?.error?.message ??
-            'Failed to delete Numbers That Tell a Story content.',
-          'error'
-        );
-      },
-    });
+          this.decorativeIcon = null;
+          this.existingIconUrl = null;
+
+          this.clearIconPreview();
+          this.setDefaultMetrics();
+
+          this.isEditing = false;
+
+          this.showMessage(
+            response?.message ??
+              'Numbers That Tell a Story content deleted successfully.',
+            'success'
+          );
+        },
+        error: (error: any) => {
+          this.showMessage(
+            error?.error?.message ??
+              'Failed to delete Numbers That Tell a Story content.',
+            'error'
+          );
+        },
+      });
   }
 
   resetForm(): void {
@@ -269,20 +330,8 @@ export class NumbersThatTellAStory implements OnInit {
       this.existingIconUrl = null;
       this.setDefaultMetrics();
     }
-  }
 
-  private extractIconUrl(content: any, result: any): string | null {
-    const icon = content?.decorativeIcon;
-
-    return (
-      content?.decorativeIconUrl ??
-      content?.iconUrl ??
-      (typeof icon === 'string' ? icon : icon?.url) ??
-      content?.imageUrl ??
-      result?.decorativeIconUrl ??
-      result?.iconUrl ??
-      null
-    );
+    this.cdr.markForCheck();
   }
 
   private clearIconPreview(): void {
@@ -299,5 +348,6 @@ export class NumbersThatTellAStory implements OnInit {
   ): void {
     this.message = message;
     this.messageType = type;
+    this.cdr.markForCheck();
   }
 }

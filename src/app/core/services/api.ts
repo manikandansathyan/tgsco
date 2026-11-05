@@ -11,7 +11,9 @@ export interface HeroImageUpload {
 })
 export class Api {
 
-  baseURL: string = 'https://tgsco.onrender.com/api/v1'
+  baseURL: string = 'https://tgscobackend.qmarkdesk.com/api/v1' //mainURL
+  // baseURL: string = 'https://tgsco.onrender.com/api/v1';
+
 
   constructor(private http: HttpClient) { }
 
@@ -2466,4 +2468,789 @@ export class Api {
   }
 
 
+  // COMMERCE MANAGEMENT \\
+
+  // ==================== ADMIN ORDERS APIs ====================
+
+  // 1. Get all orders with search, filters, sorting and pagination
+  getAdminOrders(filters: {
+    search?: string;
+    status?: string;
+    paymentStatus?: string;
+    from?: string;
+    to?: string;
+    sort?: 'newest' | 'oldest' | 'total';
+    page?: number;
+    limit?: number;
+  } = {}) {
+    let params = new HttpParams();
+
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, String(value));
+      }
+    });
+
+    return this.http.get(`${this.baseURL}/admin/orders`, {
+      ...this.appendToken(),
+      params,
+    });
+  }
+
+  // 2. Get order filter options
+  getAdminOrderFilters() {
+    return this.http.get(
+      `${this.baseURL}/admin/orders/filters`,
+      this.appendToken()
+    );
+  }
+
+  // 3. Get a single order by ID
+  getAdminOrderById(orderId: string) {
+    return this.http.get(
+      `${this.baseURL}/admin/orders/${encodeURIComponent(orderId)}`,
+      this.appendToken()
+    );
+  }
+
+  // 4. Update order status
+  updateAdminOrderStatus(
+    orderId: string,
+    payload: {
+      status: string;
+      message?: string;
+    }
+  ) {
+    return this.http.patch(
+      `${this.baseURL}/admin/orders/${encodeURIComponent(orderId)}/status`,
+      payload,
+      this.appendToken()
+    );
+  }
+
+  // 5. Create shipment
+  createAdminOrderShipment(
+    orderId: string,
+    payload: {
+      courier: string;
+      trackingNumber: string;
+      status: string;
+      shippedAt?: string;
+      estimatedDeliveryAt?: string;
+    }
+  ) {
+    return this.http.post(
+      `${this.baseURL}/admin/orders/${encodeURIComponent(orderId)}/shipment`,
+      payload,
+      this.appendToken()
+    );
+  }
+
+  // 6. Update shipment details
+  updateAdminOrderShipment(
+    orderId: string,
+    payload: {
+      courier?: string;
+      trackingNumber?: string;
+      status?: string;
+      shippedAt?: string;
+      estimatedDeliveryAt?: string;
+    }
+  ) {
+    return this.http.patch(
+      `${this.baseURL}/admin/orders/${encodeURIComponent(orderId)}/shipment`,
+      payload,
+      this.appendToken()
+    );
+  }
+
+  // 7. Update shipment status
+  updateAdminOrderShipmentStatus(
+    orderId: string,
+    payload: {
+      status: string;
+    }
+  ) {
+    return this.http.patch(
+      `${this.baseURL}/admin/orders/${encodeURIComponent(orderId)}/shipment/status`,
+      payload,
+      this.appendToken()
+    );
+  }
+
+  // 8. Add an order note
+  addAdminOrderNote(
+    orderId: string,
+    payload: {
+      message: string;
+    }
+  ) {
+    return this.http.post(
+      `${this.baseURL}/admin/orders/${encodeURIComponent(orderId)}/notes`,
+      payload,
+      this.appendToken()
+    );
+  }
+
+  // 9. Get order notes
+  getAdminOrderNotes(orderId: string) {
+    return this.http.get(
+      `${this.baseURL}/admin/orders/${encodeURIComponent(orderId)}/notes`,
+      this.appendToken()
+    );
+  }
+
+  // 10. Cancel an order
+  cancelAdminOrder(
+    orderId: string,
+    payload: {
+      reason: string;
+      refund?: {
+        amount: number;
+        status?: string;
+        reference?: string;
+      };
+    }
+  ) {
+    return this.http.post(
+      `${this.baseURL}/admin/orders/${encodeURIComponent(orderId)}/cancel`,
+      payload,
+      this.appendToken()
+    );
+  }
+
+  // 11. Get order invoice
+  getAdminOrderInvoice(orderId: string) {
+    return this.http.get(
+      `${this.baseURL}/admin/orders/${encodeURIComponent(orderId)}/invoice`,
+      this.appendToken()
+    );
+  }
+
+  // 12. Create a refund
+  createAdminOrderRefund(
+    orderId: string,
+    payload: {
+      amount: number;
+      reason: string;
+      notes?: Record<string, unknown>;
+    },
+    idempotencyKey: string
+  ) {
+    const headers = this.appendToken().headers.set(
+      'Idempotency-Key',
+      idempotencyKey
+    );
+
+    return this.http.post(
+      `${this.baseURL}/admin/orders/${encodeURIComponent(orderId)}/refunds`,
+      payload,
+      { headers }
+    );
+  }
+
+  // 13. Get a specific refund by order ID and refund ID
+  getAdminOrderRefund(orderId: string, refundId: string) {
+    return this.http.get(
+      `${this.baseURL}/admin/orders/${encodeURIComponent(orderId)}/refunds/${encodeURIComponent(refundId)}`,
+      this.appendToken()
+    );
+  }
+
+
+  // General Settings
+  getSettings() {
+    return this.http.get(
+      `${this.baseURL}/admin/settings`,
+      this.appendToken()
+    );
+  }
+
+  getSettingsMetadata() {
+    return this.http.get(
+      `${this.baseURL}/admin/settings/metadata`,
+      this.appendToken()
+    );
+  }
+
+  // Invoice Settings
+  getInvoiceSettings() {
+    return this.http.get(
+      `${this.baseURL}/admin/settings/invoice`,
+      this.appendToken()
+    );
+  }
+
+  updateInvoiceSettings(data: any) {
+    return this.http.put(
+      `${this.baseURL}/admin/settings/invoice`,
+      data,
+      this.appendToken()
+    );
+  }
+
+  // Shipping Settings
+  getShippingSettings() {
+    return this.http.get(
+      `${this.baseURL}/admin/settings/shipping`,
+      this.appendToken()
+    );
+  }
+
+  createShippingSetting(data: any) {
+    return this.http.post(
+      `${this.baseURL}/admin/settings/shipping`,
+      data,
+      this.appendToken()
+    );
+  }
+
+  updateShippingSetting(data: any) {
+    return this.http.patch(
+      `${this.baseURL}/admin/settings/shipping/`,
+      data,
+      this.appendToken()
+    );
+  }
+
+  deleteShippingSetting() {
+    return this.http.delete(
+      `${this.baseURL}/admin/settings/shipping/`,
+      this.appendToken()
+    );
+  }
+
+  // Packing Settings
+  getPackingSettings() {
+    return this.http.get(
+      `${this.baseURL}/admin/settings/packing`,
+      this.appendToken()
+    );
+  }
+
+  createPackingSetting(data: any) {
+    return this.http.post(
+      `${this.baseURL}/admin/settings/packing`,
+      data,
+      this.appendToken()
+    );
+  }
+
+  updatePackingSetting(data: any) {
+    return this.http.patch(
+      `${this.baseURL}/admin/settings/packing/`,
+      data,
+      this.appendToken()
+    );
+  }
+
+  deletePackingSetting() {
+    return this.http.delete(
+      `${this.baseURL}/admin/settings/packing/`,
+      this.appendToken()
+    );
+  }
+
+  // Additional Charges
+  createSettingCharge(data: any) {
+    return this.http.post(
+      `${this.baseURL}/admin/settings/charges`,
+      data,
+      this.appendToken()
+    );
+  }
+
+  updateSettingCharge(data: any) {
+    return this.http.patch(
+      `${this.baseURL}/admin/settings/charges/`,
+      data,
+      this.appendToken()
+    );
+  }
+
+  deleteSettingCharge() {
+    return this.http.delete(
+      `${this.baseURL}/admin/settings/charges/`,
+      this.appendToken()
+    );
+  }
+
+  // ==================== RETURNS & REFUNDS APIs ====================
+
+
+  /* 1. Get Order Cancellation and Return Policies */
+  getAdminOrderPolicies() {
+    return this.http.get(
+      `${this.baseURL}/admin/settings/order-policies`,
+      this.appendToken()
+    );
+  }
+
+  /* 2. Update Order Cancellation and Return Policies */
+  updateAdminOrderPolicies(data: {
+    cancellationAllowedUntil: string;
+    returnWindowDays: number;
+  }) {
+    return this.http.put(
+      `${this.baseURL}/admin/settings/order-policies`,
+      data,
+      this.appendToken()
+    );
+  }
+
+  /* 3. Get All Returns */
+  getAdminReturns() {
+    return this.http.get(
+      `${this.baseURL}/admin/returns`,
+      this.appendToken()
+    );
+  }
+
+  /* 4. Update Return Status - Approve */
+  approveAdminReturn(returnId: string) {
+    return this.http.patch(
+      `${this.baseURL}/admin/returns/${encodeURIComponent(returnId)}/status`,
+      {
+        status: 'approved',
+        message: 'Approved',
+      },
+      this.appendToken()
+    );
+  }
+
+  /* 5. Get Returns with Filters, Sorting and Pagination */
+  getAdminReturnsWithFilters(filters: {
+    status?: string;
+    reason?: string;
+    from?: string;
+    to?: string;
+    paymentMethod?: string;
+    paymentStatus?: string;
+    page?: number;
+    limit?: number;
+    sort?: 'newest' | 'oldest';
+  } = {}) {
+    let params = new HttpParams();
+
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, String(value));
+      }
+    });
+
+    return this.http.get(
+      `${this.baseURL}/admin/returns`,
+      {
+        ...this.appendToken(),
+        params,
+      }
+    );
+  }
+
+  /* 6. Get Available Return Filter Options */
+  getAdminReturnFilters() {
+    return this.http.get(
+      `${this.baseURL}/admin/returns/filters`,
+      this.appendToken()
+    );
+  }
+
+  /* 7. Get Returns List (Trailing Slash) */
+  getAdminReturnsList() {
+    return this.http.get(
+      `${this.baseURL}/admin/returns/`,
+      this.appendToken()
+    );
+  }
+
+  /* 8. Get Returns Associated with a Specific Order */
+  getAdminOrderReturns(
+    orderId: string,
+    page: number = 1,
+    limit: number = 20
+  ) {
+    const params = new HttpParams()
+      .set('page', String(page))
+      .set('limit', String(limit));
+
+    return this.http.get(
+      `${this.baseURL}/admin/orders/${encodeURIComponent(orderId)}/returns`,
+      {
+        ...this.appendToken(),
+        params,
+      }
+    );
+  }
+
+  /* 9. Update Return Status - Approve (Alternative Request) */
+  updateAdminReturnApproval(returnId: string) {
+    return this.http.patch(
+      `${this.baseURL}/admin/returns/${encodeURIComponent(returnId)}/status`,
+      {
+        status: 'approved',
+        message: 'Approved',
+      },
+      this.appendToken()
+    );
+  }
+
+  /* 10. Update Return Status - Refunded */
+  markAdminReturnAsRefunded(
+    returnId: string,
+    data: {
+      refundMethod: string;
+      refundReference: string;
+      refundAmount: number;
+      refundProcessedAt: string;
+      refundNotes: string;
+    }
+  ) {
+    return this.http.patch(
+      `${this.baseURL}/admin/returns/${encodeURIComponent(returnId)}/status`,
+      {
+        status: 'refunded',
+        ...data,
+      },
+      this.appendToken()
+    );
+  }
+
+  /* 11. Update Return Status - Completed */
+  completeAdminReturn(
+    returnId: string,
+    data: {
+      refundMethod: string;
+      refundReference: string;
+      refundAmount: number;
+      refundProcessedAt: string;
+      refundNotes: string;
+    }
+  ) {
+    return this.http.patch(
+      `${this.baseURL}/admin/returns/${encodeURIComponent(returnId)}/status`,
+      {
+        status: 'completed',
+        ...data,
+      },
+      this.appendToken()
+    );
+  }
+
+
+  // Inventory Management APIs
+
+  getAdminInventory(
+    search?: string,
+    status?: string,
+    active?: string,
+    sort?: string,
+    page?: number,
+    limit?: number
+  ) {
+    let params = new HttpParams();
+
+    if (search) params = params.set('search', search);
+    if (status) params = params.set('status', status);
+    if (active) params = params.set('active', active);
+    if (sort) params = params.set('sort', sort);
+    if (page !== undefined) params = params.set('page', page);
+    if (limit !== undefined) params = params.set('limit', limit);
+
+    return this.http.get(`${this.baseURL}/admin/inventory`, {
+      ...this.appendToken(),
+      params,
+    });
+  }
+
+  getAdminInventorySummary() {
+    return this.http.get(`${this.baseURL}/admin/inventory/summary`, {
+      ...this.appendToken(),
+    });
+  }
+
+  getAdminInventoryFilters() {
+    return this.http.get(`${this.baseURL}/admin/inventory/filters`, {
+      ...this.appendToken(),
+    });
+  }
+
+  getAdminInventoryReservations(
+    page?: number,
+    limit?: number,
+    productId?: string
+  ) {
+    let params = new HttpParams();
+
+    if (page !== undefined) params = params.set('page', page);
+    if (limit !== undefined) params = params.set('limit', limit);
+    if (productId) params = params.set('productId', productId);
+
+    return this.http.get(`${this.baseURL}/admin/inventory/reservations`, {
+      ...this.appendToken(),
+      params,
+    });
+  }
+
+  getAdminInventoryById(productId: string) {
+    return this.http.get(
+      `${this.baseURL}/admin/inventory/${encodeURIComponent(productId)}`,
+      {
+        ...this.appendToken(),
+      }
+    );
+  }
+
+  getAdminInventoryMovements(
+    productId: string,
+    movementType?: string,
+    from?: string,
+    to?: string,
+    page?: number,
+    limit?: number
+  ) {
+    let params = new HttpParams();
+
+    if (movementType) params = params.set('movementType', movementType);
+    if (from) params = params.set('from', from);
+    if (to) params = params.set('to', to);
+    if (page !== undefined) params = params.set('page', page);
+    if (limit !== undefined) params = params.set('limit', limit);
+
+    return this.http.get(
+      `${this.baseURL}/admin/inventory/${encodeURIComponent(productId)}/movements`,
+      {
+        ...this.appendToken(),
+        params,
+      }
+    );
+  }
+
+  adjustAdminInventory(
+    productId: string,
+    data: {
+      direction: 'increase' | 'decrease';
+      quantity: number;
+      reason: string;
+      note?: string;
+      referenceType?: string;
+      referenceId?: string;
+    }
+  ) {
+    return this.http.post(
+      `${this.baseURL}/admin/inventory/${encodeURIComponent(productId)}/adjust`,
+      data,
+      {
+        ...this.appendToken(),
+      }
+    );
+  }
+
+  restockAdminInventory(
+    productId: string,
+    data: {
+      quantity: number;
+      reason: string;
+      note?: string;
+      supplierName?: string;
+      supplierInvoiceNumber?: string;
+      unitCost?: number;
+      receivedAt?: string;
+      referenceId?: string;
+    }
+  ) {
+    return this.http.post(
+      `${this.baseURL}/admin/inventory/${encodeURIComponent(productId)}/restock`,
+      data,
+      {
+        ...this.appendToken(),
+      }
+    );
+  }
+
+  damageAdminInventory(
+    productId: string,
+    data: {
+      quantity: number;
+      reason: string;
+      note?: string;
+      referenceId?: string;
+    }
+  ) {
+    return this.http.post(
+      `${this.baseURL}/admin/inventory/${encodeURIComponent(productId)}/damage`,
+      data,
+      {
+        ...this.appendToken(),
+      }
+    );
+  }
+
+  returnAdminInventory(
+    productId: string,
+    data: {
+      quantity: number;
+      reason: string;
+      note?: string;
+      returnId?: string;
+    }
+  ) {
+    return this.http.post(
+      `${this.baseURL}/admin/inventory/${encodeURIComponent(productId)}/return`,
+      data,
+      {
+        ...this.appendToken(),
+      }
+    );
+  }
+
+  reconcileAdminInventory(
+    productId: string,
+    data: {
+      physicalQuantity: number;
+      reason: string;
+      note?: string;
+    }
+  ) {
+    return this.http.post(
+      `${this.baseURL}/admin/inventory/${encodeURIComponent(productId)}/reconcile`,
+      data,
+      {
+        ...this.appendToken(),
+      }
+    );
+  }
+
+  // Profile
+
+  getProfile() {
+    return this.http.get(`${this.baseURL}/profile`, {
+      ...this.appendToken(),
+    });
+  }
+
+  updateProfile(
+    data: {
+      currentPassword: string;
+      name: string;
+      email: string;
+      mobile: string;
+    }
+  ) {
+    return this.http.patch(`${this.baseURL}/profile`, data, {
+      ...this.appendToken(),
+    });
+  }
+
+  changeProfilePassword(
+    data: {
+      currentPassword: string;
+      newPassword: string;
+      confirmNewPassword: string;
+    }
+  ) {
+    return this.http.patch(`${this.baseURL}/profile/password`, data, {
+      ...this.appendToken(),
+    });
+  }
+
+
+  /* 1. Get All Notifications */
+  getNotifications(
+    status: string = 'all',
+    page: number = 1,
+    limit: number = 20
+  ) {
+    const params = new HttpParams()
+      .set('status', status)
+      .set('page', String(page))
+      .set('limit', String(limit));
+
+    return this.http.get(
+      `${this.baseURL}/notifications`,
+      {
+        ...this.appendToken(),
+        params,
+      }
+    );
+  }
+
+  /* 2. Get Unread Notifications Count */
+  getUnreadNotificationCount() {
+    return this.http.get(
+      `${this.baseURL}/notifications/unread-count`,
+      this.appendToken()
+    );
+  }
+
+  /* 3. Mark a Notification as Read */
+  markNotificationAsRead(notificationId: string) {
+    return this.http.patch(
+      `${this.baseURL}/notifications/${encodeURIComponent(notificationId)}/read`,
+      {},
+      this.appendToken()
+    );
+  }
+
+  /* 4. Mark All Notifications as Read */
+  markAllNotificationsAsRead() {
+    return this.http.patch(
+      `${this.baseURL}/notifications/read-all`,
+      {},
+      this.appendToken()
+    );
+  }
+
+  /* 5. Delete a Notification */
+  deleteNotification(notificationId: string) {
+    return this.http.delete(
+      `${this.baseURL}/notifications/${encodeURIComponent(notificationId)}`,
+      this.appendToken()
+    );
+  }
+
+  /* 6. Delete All Read Notifications */
+  deleteReadNotifications() {
+    return this.http.delete(
+      `${this.baseURL}/notifications/read`,
+      this.appendToken()
+    );
+  }
+
+
+  // Chronicles of Thread
+// Chronicles of Thread
+
+/* 1. Get Chronicles of Thread */
+getChroniclesOfThreadAPI() {
+  return this.http.get(
+    `${this.baseURL}/home-content/chronicles-of-thread`,
+    this.appendToken()
+  );
+}
+
+/* 2. Add Chronicles of Thread */
+addChroniclesOfThreadAPI(formData: FormData) {
+  return this.http.post(
+    `${this.baseURL}/home-content/chronicles-of-thread`,
+    formData,
+    this.appendToken()
+  );
+}
+
+/* 3. Update Chronicles of Thread */
+updateChroniclesOfThreadAPI(formData: FormData) {
+  return this.http.patch(
+    `${this.baseURL}/home-content/chronicles-of-thread`,
+    formData,
+    this.appendToken()
+  );
+}
+
+/* 4. Delete Chronicles of Thread */
+deleteChroniclesOfThreadAPI() {
+  return this.http.delete(
+    `${this.baseURL}/home-content/chronicles-of-thread`,
+    this.appendToken()
+  );
+}
 }

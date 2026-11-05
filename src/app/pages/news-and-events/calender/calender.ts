@@ -1,6 +1,14 @@
+
+import {
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
 interface CalendarEvent {
@@ -25,6 +33,7 @@ interface CalendarEvent {
 })
 export class Calender implements OnInit, OnDestroy {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
 
   sectionTitle = 'Events Calendar';
   items: CalendarEvent[] = [];
@@ -60,17 +69,31 @@ export class Calender implements OnInit, OnDestroy {
   }
 
   private extractData(response: any): any {
-    let data = response?.data ?? response ?? {};
+    const data = response?.data ?? response ?? {};
+    const content = this.parseContent(data.content);
 
-    if (data?.content !== undefined) {
-      const content = this.parseContent(data.content);
-      data = { ...data, ...content };
-    }
-
-    return data;
+    return {
+      ...data,
+      ...content,
+      images: data.images ?? content.images ?? [],
+    };
   }
 
-  private extractImageUrl(value: any): string {
+  private extractImageUrl(
+    value: any,
+    images: any[],
+    field: string
+  ): string {
+    // Find image URL from the API's sibling images array.
+    const matchingImage = images.find(
+      (image: any) => image.field === field
+    );
+
+    if (matchingImage?.url) {
+      return matchingImage.url;
+    }
+
+    // Fallback for older API response formats.
     const image =
       value?.imageUrl ??
       value?.imageURL ??
@@ -110,62 +133,89 @@ export class Calender implements OnInit, OnDestroy {
     this.message = '';
     this.errorMessage = '';
 
-    this.api.getEventsCalendar().subscribe({
-      next: (response: any) => {
-        const data = this.extractData(response);
+    this.api
+      .getEventsCalendar()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.loading = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const data = this.extractData(response);
 
-        this.clearPreviews();
+          const images = Array.isArray(data.images)
+            ? data.images
+            : [];
 
-        this.sectionTitle = data.title ?? 'Events Calendar';
+          this.clearPreviews();
 
-        this.items = Array.isArray(data.items)
-          ? data.items.map((item: any, index: number) => {
-              const fallbackId = `event-${index + 1}`;
+          this.sectionTitle = data.title ?? 'Events Calendar';
 
-              return {
-                id: item.id ?? fallbackId,
-                slug: item.slug ?? item.id ?? fallbackId,
-                day: item.day ?? '',
-                date: item.date ?? '',
-                title: item.title ?? 'EVENT',
-                description: item.description ?? '',
-                imageAlt: item.imageAlt ?? '',
-                imageFile: null,
-                imagePreview: '',
-                existingImageUrl: this.extractImageUrl(item),
-              };
-            })
-          : [];
+          this.items = Array.isArray(data.items)
+            ? data.items.map((item: any, index: number) => {
+                const fallbackId = `event-${index + 1}`;
+                const imageField =
+                  item.imageField ?? `items[${index}].image`;
 
-        this.existingCalendarIconUrl =
-          this.extractImageUrl({
-            image:
-              data.calendarIconUrl ??
-              data.calendarIcon ??
-              data.calendar_icon ??
-              data.icon,
-          });
+                return {
+                  id: item.id ?? fallbackId,
+                  slug: item.slug ?? item.id ?? fallbackId,
+                  day: item.day ?? '',
+                  date: item.date ?? '',
+                  title: item.title ?? 'EVENT',
+                  description: item.description ?? '',
+                  imageAlt: item.imageAlt ?? '',
+                  imageFile: null,
+                  imagePreview: '',
+                  existingImageUrl: this.extractImageUrl(
+                    item,
+                    images,
+                    imageField
+                  ),
+                };
+              })
+            : [];
 
-        this.calendarIconFile = null;
-        this.calendarIconPreview = '';
-        this.isEditMode = !!data.title || this.items.length > 0;
-        this.loading = false;
-      },
-      error: (error: any) => {
-        this.loading = false;
+          // Calendar icon is stored separately in data.images[].
+          this.existingCalendarIconUrl = this.extractImageUrl(
+            {
+              image:
+                data.calendarIconUrl ??
+                data.calendarIcon ??
+                data.calendar_icon ??
+                data.icon,
+            },
+            images,
+            data.calendarIconField ?? 'calendarIcon'
+          );
 
-        if (error.status === 404) {
-          this.isEditMode = false;
-          this.items = [];
-          this.message =
-            'No Events Calendar section found. You can create it below.';
-          return;
-        }
+          this.calendarIconFile = null;
+          this.calendarIconPreview = '';
 
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to load Events Calendar.';
-      },
-    });
+          this.isEditMode =
+            !!data.title || this.items.length > 0;
+
+          this.cdr.markForCheck();
+        },
+
+        error: (error: any) => {
+          if (error.status === 404) {
+            this.isEditMode = false;
+            this.items = [];
+            this.existingCalendarIconUrl = '';
+
+            this.message =
+              'No Events Calendar section found. You can create it below.';
+            return;
+          }
+
+          this.errorMessage =
+            error?.error?.message ?? 'Failed to load Events Calendar.';
+        },
+      });
   }
 
   addItem(): void {
@@ -198,6 +248,7 @@ export class Calender implements OnInit, OnDestroy {
     this.errorMessage = '';
 
     const item = this.items[index];
+
     this.revokeUrl(item.imagePreview);
 
     item.imageFile = file;
@@ -223,6 +274,7 @@ export class Calender implements OnInit, OnDestroy {
     }
 
     this.errorMessage = '';
+
     this.revokeUrl(this.calendarIconPreview);
 
     this.calendarIconFile = file;
@@ -261,7 +313,8 @@ export class Calender implements OnInit, OnDestroy {
       }
 
       if (!item.title.trim()) {
-        this.errorMessage = `Please enter a title for event ${index + 1}.`;
+        this.errorMessage =
+          `Please enter a title for event ${index + 1}.`;
         return;
       }
 
@@ -272,16 +325,20 @@ export class Calender implements OnInit, OnDestroy {
       }
 
       if (!item.imageFile && !item.existingImageUrl) {
-        this.errorMessage = `Please upload an image for event ${index + 1}.`;
+        this.errorMessage =
+          `Please upload an image for event ${index + 1}.`;
         return;
       }
     }
 
     const content = {
       title: this.sectionTitle.trim(),
+
       items: this.items.map((item, index) => ({
         id: item.id.trim() || `event-${index + 1}`,
-        slug: item.slug.trim() || this.makeSlug(item.id || item.title),
+        slug:
+          item.slug.trim() ||
+          this.makeSlug(item.id || item.title),
         day: item.day.trim().toUpperCase(),
         date: item.date.trim(),
         title: item.title.trim(),
@@ -289,6 +346,7 @@ export class Calender implements OnInit, OnDestroy {
         imageField: `items[${index}].image`,
         imageAlt: item.imageAlt.trim() || item.title.trim(),
       })),
+
       calendarIconField: 'calendarIcon',
     };
 
@@ -314,23 +372,30 @@ export class Calender implements OnInit, OnDestroy {
           this.calendarIconFile ?? undefined
         );
 
-    request.subscribe({
-      next: (response: any) => {
-        this.saving = false;
-        this.message =
-          response?.message ??
-          (this.isEditMode
-            ? 'Events Calendar updated successfully.'
-            : 'Events Calendar created successfully.');
+    request
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.saving = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          this.message =
+            response?.message ??
+            (this.isEditMode
+              ? 'Events Calendar updated successfully.'
+              : 'Events Calendar created successfully.');
 
-        this.loadEventsCalendar();
-      },
-      error: (error: any) => {
-        this.saving = false;
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to save Events Calendar.';
-      },
-    });
+          this.loadEventsCalendar();
+        },
+
+        error: (error: any) => {
+          this.errorMessage =
+            error?.error?.message ?? 'Failed to save Events Calendar.';
+        },
+      });
   }
 
   deleteEventsCalendar(): void {
@@ -346,26 +411,34 @@ export class Calender implements OnInit, OnDestroy {
     this.message = '';
     this.errorMessage = '';
 
-    this.api.deleteEventsCalendar().subscribe({
-      next: () => {
-        this.deleting = false;
-        this.clearPreviews();
+    this.api
+      .deleteEventsCalendar()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.deleting = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.clearPreviews();
 
-        this.sectionTitle = 'Events Calendar';
-        this.items = [];
-        this.calendarIconFile = null;
-        this.calendarIconPreview = '';
-        this.existingCalendarIconUrl = '';
-        this.isEditMode = false;
+          this.sectionTitle = 'Events Calendar';
+          this.items = [];
+          this.calendarIconFile = null;
+          this.calendarIconPreview = '';
+          this.existingCalendarIconUrl = '';
+          this.isEditMode = false;
 
-        this.message = 'Events Calendar section deleted successfully.';
-      },
-      error: (error: any) => {
-        this.deleting = false;
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to delete Events Calendar.';
-      },
-    });
+          this.message = 'Events Calendar section deleted successfully.';
+        },
+
+        error: (error: any) => {
+          this.errorMessage =
+            error?.error?.message ?? 'Failed to delete Events Calendar.';
+        },
+      });
   }
 
   resetForm(): void {
@@ -373,12 +446,15 @@ export class Calender implements OnInit, OnDestroy {
   }
 
   private clearPreviews(): void {
-    this.items.forEach((item) => this.revokeUrl(item.imagePreview));
+    this.items.forEach((item) => {
+      this.revokeUrl(item.imagePreview);
+    });
+
     this.revokeUrl(this.calendarIconPreview);
   }
 
   private revokeUrl(url: string): void {
-    if (url.startsWith('blob:')) {
+    if (url?.startsWith('blob:')) {
       URL.revokeObjectURL(url);
     }
   }

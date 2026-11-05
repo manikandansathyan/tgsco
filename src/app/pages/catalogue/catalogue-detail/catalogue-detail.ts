@@ -1,3 +1,4 @@
+
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectorRef,
@@ -50,6 +51,7 @@ export class CatalogueDetail implements OnInit, OnDestroy {
   imageFile: File | null = null;
   mainImageFile: File | null = null;
   galleryFiles: File[] = [];
+
   imagePreview = '';
   mainImagePreview = '';
   galleryPreviews: string[] = [];
@@ -77,9 +79,9 @@ export class CatalogueDetail implements OnInit, OnDestroy {
     craftStory: '',
     materialCare: '',
     shippingReturns: '',
-    categorySlugsText: '',
-    categoryIdsText: '',
-    typesText: '',
+    categorySlugsText: '[]',
+    categoryIdsText: '[]',
+    typesText: '[]',
     attributesText: '{}',
     bulkPricingText: '[]',
   };
@@ -151,13 +153,14 @@ export class CatalogueDetail implements OnInit, OnDestroy {
   }
 
   get formTitle(): string {
-    return `${this.isEditing ? 'Edit' : 'Create'} ${
+    const recordType =
       this.section === 'groups'
         ? 'Group'
         : this.section === 'categories'
           ? 'Category'
-          : 'Product'
-    }`;
+          : 'Product';
+
+    return `${this.isEditing ? 'Edit' : 'Create'} ${recordType}`;
   }
 
   private formatLabel(value: string): string {
@@ -184,17 +187,6 @@ export class CatalogueDetail implements OnInit, OnDestroy {
     }
 
     return [];
-  }
-
-  private extractRecord(response: any): any {
-    return (
-      response?.data?.group ||
-      response?.data?.category ||
-      response?.data?.product ||
-      response?.data?.item ||
-      response?.data ||
-      response
-    );
   }
 
   loadData(): void {
@@ -234,6 +226,7 @@ export class CatalogueDetail implements OnInit, OnDestroy {
 
             this.items = [];
             this.filteredItems = [];
+
             this.errorMessage =
               error?.error?.message ||
               (error?.name === 'TimeoutError'
@@ -258,6 +251,7 @@ export class CatalogueDetail implements OnInit, OnDestroy {
           item?.slug,
           item?.sku,
           item?.description,
+          item?.shortDescription,
         ].some((value) =>
           String(value || '').toLowerCase().includes(search),
         );
@@ -293,8 +287,49 @@ export class CatalogueDetail implements OnInit, OnDestroy {
     return `${item?.currency || 'INR'} ${item.price}`;
   }
 
+  getImageUrl(image: any): string {
+    if (!image) {
+      return '';
+    }
+
+    if (typeof image === 'string') {
+      return image;
+    }
+
+    return image?.url || image?.imageUrl || '';
+  }
+
+  getGalleryImageUrls(item: any): string[] {
+    if (!Array.isArray(item?.galleryImages)) {
+      return [];
+    }
+
+    return item.galleryImages
+      .map((image: any) => this.getImageUrl(image))
+      .filter((url: string) => !!url);
+  }
+
+  // Returns category names for the product details modal.
+  getCategoryNames(item: any): string {
+    if (Array.isArray(item?.categories) && item.categories.length) {
+      return item.categories
+        .map((category: any) => {
+          if (typeof category === 'string') {
+            return category;
+          }
+
+          return category?.name || category?.slug || '';
+        })
+        .filter(Boolean)
+        .join(', ') || item?.categorySlug || '—';
+    }
+
+    return item?.categorySlug || '—';
+  }
+
   openCreateForm(): void {
     this.resetForm();
+
     this.isEditing = false;
     this.selectedId = '';
     this.selectedItem = null;
@@ -324,20 +359,55 @@ export class CatalogueDetail implements OnInit, OnDestroy {
 
     this.clearPreviews();
 
+    const itemCategories = Array.isArray(item?.categories)
+      ? item.categories
+      : [];
+
+    const categorySlugs =
+      Array.isArray(item?.categorySlugs) && item.categorySlugs.length
+        ? item.categorySlugs
+        : itemCategories
+            .map((category: any) =>
+              typeof category === 'string' ? category : category?.slug,
+            )
+            .filter(Boolean);
+
+    const categoryIds =
+      Array.isArray(item?.categoryIds) && item.categoryIds.length
+        ? item.categoryIds
+        : itemCategories
+            .map((category: any) =>
+              typeof category === 'string'
+                ? ''
+                : category?._id || category?.id,
+            )
+            .filter(Boolean);
+
     this.form = {
       ...this.emptyForm,
       ...item,
+
       groupId:
         item?.groupId?._id ||
         item?.groupId?.id ||
         item?.groupId ||
+        item?.group ||
         '',
-      categorySlug: item?.categorySlug || item?.category?.slug || '',
-      categorySlugsText: JSON.stringify(item?.categorySlugs || []),
-      categoryIdsText: JSON.stringify(item?.categoryIds || []),
-      typesText: JSON.stringify(item?.types || []),
+
+      categorySlug:
+        item?.categorySlug ||
+        item?.category?.slug ||
+        itemCategories.find((category: any) =>
+          typeof category === 'object',
+        )?.slug ||
+        '',
+
+      categorySlugsText: JSON.stringify(categorySlugs, null, 2),
+      categoryIdsText: JSON.stringify(categoryIds, null, 2),
+      typesText: JSON.stringify(item?.types || [], null, 2),
       attributesText: JSON.stringify(item?.attributes || {}, null, 2),
       bulkPricingText: JSON.stringify(item?.bulkPricing || [], null, 2),
+
       active: item?.active !== false,
     };
 
@@ -345,23 +415,12 @@ export class CatalogueDetail implements OnInit, OnDestroy {
     this.mainImageFile = null;
     this.galleryFiles = [];
 
-    this.imagePreview =
-      typeof item?.image === 'string'
-        ? item.image
-        : item?.image?.url || item?.imageUrl || '';
+    this.imagePreview = this.getImageUrl(item?.image) || item?.imageUrl || '';
 
     this.mainImagePreview =
-      typeof item?.mainImage === 'string'
-        ? item.mainImage
-        : item?.mainImage?.url || item?.mainImageUrl || '';
+      this.getImageUrl(item?.mainImage) || item?.mainImageUrl || '';
 
-    this.galleryPreviews = Array.isArray(item?.galleryImages)
-      ? item.galleryImages
-          .map((image: any) =>
-            typeof image === 'string' ? image : image?.url || '',
-          )
-          .filter(Boolean)
-      : [];
+    this.galleryPreviews = this.getGalleryImageUrls(item);
 
     this.cdr.markForCheck();
   }
@@ -376,6 +435,11 @@ export class CatalogueDetail implements OnInit, OnDestroy {
   closeForm(): void {
     this.showForm = false;
     this.clearPreviews();
+
+    this.imageFile = null;
+    this.mainImageFile = null;
+    this.galleryFiles = [];
+
     this.cdr.markForCheck();
   }
 
@@ -393,6 +457,7 @@ export class CatalogueDetail implements OnInit, OnDestroy {
     this.galleryFiles = [];
 
     this.clearPreviews();
+
     this.errorMessage = '';
     this.successMessage = '';
 
@@ -468,7 +533,10 @@ export class CatalogueDetail implements OnInit, OnDestroy {
 
     this.errorMessage = '';
     this.galleryFiles = files;
-    this.galleryPreviews = files.map((file) => URL.createObjectURL(file));
+    this.galleryPreviews = [
+      ...this.getGalleryImageUrls(this.selectedItem),
+      ...files.map((file) => URL.createObjectURL(file)),
+    ];
 
     this.cdr.markForCheck();
   }
@@ -504,11 +572,13 @@ export class CatalogueDetail implements OnInit, OnDestroy {
       delete payload.craftStory;
       delete payload.materialCare;
       delete payload.shippingReturns;
+      delete payload.groupId;
     }
 
     if (this.section === 'categories') {
+      payload.group = payload.groupId || '';
+
       delete payload.groupId;
-      delete payload.subtitle;
       delete payload.sortOrder;
       delete payload.sku;
       delete payload.categorySlug;
@@ -529,33 +599,34 @@ export class CatalogueDetail implements OnInit, OnDestroy {
       delete payload.groupId;
       delete payload.sortOrder;
       delete payload.image;
+      delete payload.group;
 
       payload.categorySlugs = this.parseJson(
-        this.form.categorySlugsText,
+        this.form.categorySlugsText || '[]',
         [],
         'Category slugs',
       );
 
       payload.categoryIds = this.parseJson(
-        this.form.categoryIdsText,
+        this.form.categoryIdsText || '[]',
         [],
         'Category IDs',
       );
 
       payload.types = this.parseJson(
-        this.form.typesText,
+        this.form.typesText || '[]',
         [],
         'Types',
       );
 
       payload.attributes = this.parseJson(
-        this.form.attributesText,
+        this.form.attributesText || '{}',
         {},
         'Attributes',
       );
 
       payload.bulkPricing = this.parseJson(
-        this.form.bulkPricingText,
+        this.form.bulkPricingText || '[]',
         [],
         'Bulk pricing',
       );
@@ -596,7 +667,8 @@ export class CatalogueDetail implements OnInit, OnDestroy {
     try {
       payload = this.buildPayload();
     } catch (error: any) {
-      this.errorMessage = error?.message || 'Please check the JSON fields.';
+      this.errorMessage =
+        error?.message || 'Please check the JSON fields.';
       this.cdr.markForCheck();
       return;
     }
@@ -648,15 +720,24 @@ export class CatalogueDetail implements OnInit, OnDestroy {
         .subscribe({
           next: () => {
             this.showForm = false;
-            this.successMessage = `${
+
+            const recordType =
               savedSection === 'groups'
                 ? 'Group'
                 : savedSection === 'categories'
                   ? 'Category'
-                  : 'Product'
-            } ${wasEditing ? 'updated' : 'created'} successfully.`;
+                  : 'Product';
+
+            this.successMessage = `${recordType} ${
+              wasEditing ? 'updated' : 'created'
+            } successfully.`;
 
             this.clearPreviews();
+
+            this.imageFile = null;
+            this.mainImageFile = null;
+            this.galleryFiles = [];
+
             this.loadData();
             this.cdr.markForCheck();
           },
@@ -745,7 +826,7 @@ export class CatalogueDetail implements OnInit, OnDestroy {
     ];
 
     urls.forEach((url) => {
-      if (url.startsWith('blob:')) {
+      if (url?.startsWith('blob:')) {
         URL.revokeObjectURL(url);
       }
     });
@@ -755,4 +836,3 @@ export class CatalogueDetail implements OnInit, OnDestroy {
     this.galleryPreviews = [];
   }
 }
-

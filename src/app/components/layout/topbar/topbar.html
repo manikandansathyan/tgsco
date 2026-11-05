@@ -1,51 +1,231 @@
 <header class="topbar">
-  <button type="button" class="icon-button mobile-menu" aria-label="Open navigation" (click)="menuClick.emit()">
-    <svg lucideMenu [size]="22"></svg>
-  </button>
+  <div class="topbar-left">
+    <button
+      type="button"
+      class="icon-button mobile-menu"
+      aria-label="Open navigation"
+      (click)="menuClick.emit()"
+    >
+      <svg lucideMenu [size]="22"></svg>
+    </button>
 
-  <div class="breadcrumb">
-    @for (crumb of breadcrumbs; track crumb.url; let last = $last) {
-    @if (!$first) {
-    <svg lucideChevronRight [size]="16" class="breadcrumb-chevron"></svg>
-    }
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      @for (crumb of breadcrumbs; track crumb.url; let last = $last) {
+        @if (!$first) {
+          <svg
+            lucideChevronRight
+            [size]="16"
+            class="breadcrumb-chevron"
+          ></svg>
+        }
 
-    @if (last) {
-    <span class="breadcrumb-current" aria-current="page">
-      {{ crumb.label }}
-    </span>
-    } @else {
-    <a [routerLink]="crumb.url">{{ crumb.label }}</a>
-    }
-    }
+        @if (last) {
+          <span class="breadcrumb-current" aria-current="page">
+            {{ crumb.label }}
+          </span>
+        } @else {
+          <a class="breadcrumb-link" [routerLink]="crumb.url">
+            {{ crumb.label }}
+          </a>
+        }
+      }
+    </nav>
   </div>
 
   <div class="topbar-actions">
-    <button type="button" class="icon-button notification-button" aria-label="Notifications">
-      <svg lucideBell [size]="21"></svg>
-      <span class="notification-dot"></span>
-    </button>
+    <!-- Notifications -->
+    <div class="notification-wrapper">
+      <button
+        type="button"
+        class="notification-bell"
+        aria-label="Notifications"
+        (click)="toggleNotifications()"
+      >
+        <svg lucideBell [size]="20"></svg>
 
+        @if (unreadCount > 0) {
+          <span class="notification-badge">
+            {{ unreadCount > 99 ? '99+' : unreadCount }}
+          </span>
+        }
+      </button>
+
+      @if (showNotifications) {
+        <app-notifications
+          (close)="closeNotifications()"
+          (unreadCountChange)="onUnreadCountChange($event)"
+        ></app-notifications>
+      }
+    </div>
+
+    <span class="actions-divider" aria-hidden="true"></span>
+
+    <!-- Profile menu -->
     <div class="profile-menu-container">
-      <button type="button" class="profile-avatar" aria-label="Open profile menu"
-        [attr.aria-expanded]="isProfileMenuOpen" (click)="toggleProfileMenu()">
+      <button
+        type="button"
+        class="profile-avatar"
+        aria-label="Open profile menu"
+        aria-haspopup="menu"
+        [attr.aria-expanded]="isProfileMenuOpen"
+        (click)="toggleProfileMenu()"
+      >
         <img src="/logo.png" alt="Administrator" />
       </button>
 
       @if (isProfileMenuOpen) {
-      <div class="profile-dropdown">
-        <div class="dropdown-profile">
-          <strong>Administrator</strong>
-          <span>Super Admin</span>
+        <div class="profile-dropdown" role="menu">
+          <div class="dropdown-profile">
+            <strong>
+              {{ profile?.email || 'Administrator' }}
+            </strong>
+
+            <span>
+              {{ (profile?.role || 'Super Admin') | titlecase }}
+            </span>
+          </div>
+
+          <div class="dropdown-divider"></div>
+
+          <button
+            type="button"
+            class="dropdown-menu-item"
+            role="menuitem"
+            (click)="openProfileModal()"
+          >
+            <svg lucideShieldCheck [size]="18"></svg>
+            <span>Profile</span>
+          </button>
+
+          <button
+            type="button"
+            class="dropdown-logout"
+            role="menuitem"
+            (click)="logout()"
+            [disabled]="isLoggingOut"
+          >
+            <svg lucideLogOut [size]="18"></svg>
+
+            <span>
+              {{ isLoggingOut ? 'Logging out...' : 'Logout' }}
+            </span>
+          </button>
         </div>
-
-        <div class="dropdown-divider"></div>
-
-        <button type="button" class="dropdown-logout" (click)="logout()" [disabled]="isLoggingOut">
-          <svg lucideLogOut [size]="19"></svg>
-          <span>{{ isLoggingOut ? 'Logging out...' : 'Logout' }}</span>
-        </button>
-      </div>
       }
     </div>
   </div>
 </header>
+
+<!-- Profile modal -->
+@if (isProfileModalOpen) {
+  <div
+    class="profile-modal-backdrop"
+    (click)="closeProfileModal()"
+  >
+    <section
+      class="profile-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="profile-modal-title"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="profile-modal-header">
+        <div class="profile-modal-heading">
+          <h2 id="profile-modal-title">
+            Profile &amp; Security
+          </h2>
+
+          <p>View your account details</p>
+        </div>
+
+        <button
+          type="button"
+          class="modal-close-button"
+          aria-label="Close profile modal"
+          (click)="closeProfileModal()"
+        >
+          <svg lucideX [size]="20"></svg>
+        </button>
+      </div>
+
+      @if (isProfileLoading) {
+        <div class="profile-state">
+          <span class="profile-spinner"></span>
+          <p>Loading profile details...</p>
+        </div>
+      } @else if (profileError) {
+        <div class="profile-error">
+          <span>{{ profileError }}</span>
+
+          <button
+            type="button"
+            (click)="loadProfile()"
+          >
+            Try again
+          </button>
+        </div>
+      } @else if (profile) {
+        <div class="profile-modal-body">
+          <div class="profile-summary">
+            <div class="profile-initials">
+              {{ getInitials(profile.email) }}
+            </div>
+
+            <div class="profile-summary-text">
+              <h3>{{ profile.email }}</h3>
+              <span>{{ profile.role | titlecase }}</span>
+            </div>
+          </div>
+
+          <div class="profile-details">
+            <div class="profile-detail">
+              <span>Email Address</span>
+              <strong>
+                {{ profile.email || 'Not available' }}
+              </strong>
+            </div>
+
+            <div class="profile-detail">
+              <span>Role</span>
+              <strong>
+                {{ profile.role | titlecase }}
+              </strong>
+            </div>
+
+            <div class="profile-detail">
+              <span>Email Verified</span>
+
+              <strong
+                [class.verified]="profile.isVerified"
+                [class.unverified]="!profile.isVerified"
+              >
+                {{ profile.isVerified ? 'Verified' : 'Not verified' }}
+              </strong>
+            </div>
+
+            <div class="profile-detail">
+              <span>Account Created</span>
+              <strong>{{ formatDate(profile.createdAt) }}</strong>
+            </div>
+
+            <div class="profile-detail">
+              <span>Last Updated</span>
+              <strong>{{ formatDate(profile.updatedAt) }}</strong>
+            </div>
+          </div>
+
+          <div class="profile-security-note">
+            <svg lucideShieldCheck [size]="20"></svg>
+
+            <div>
+              <strong>Account Security</strong>
+              <p>
+                Keep your login credentials private and secure.
+              </p>
+            </div>
+          </div>
+        </div>
+      }
+    </section>
+  </div>
+}

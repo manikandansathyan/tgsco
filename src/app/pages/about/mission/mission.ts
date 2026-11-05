@@ -72,82 +72,92 @@ export class Mission implements OnInit {
     this.loadMission();
   }
 
-  loadMission(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+loadMission(): void {
+  this.isLoading = true;
+  this.errorMessage = '';
 
-    this.api.getMissionAPI()
-      .pipe(
-        timeout(60000),
-        finalize(() => {
-          this.isLoading = false;
-          this.cdr.markForCheck();
-        })
-      )
-      .subscribe({
-        next: (response: any) => {
-          const responseData = response?.data ?? response;
-          const data = responseData?.content ?? responseData;
+  this.api.getMissionAPI()
+    .pipe(
+      timeout(60000),
+      finalize(() => {
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      })
+    )
+    .subscribe({
+      next: (response: any) => {
+        const responseData = response?.data ?? response;
+        const data = responseData?.content ?? responseData;
 
-          if (!data || typeof data !== 'object') {
-            this.isExistingContent = false;
-            return;
-          }
-
-          const hasContent =
-            !!data.id ||
-            !!data._id ||
-            !!data.title ||
-            Array.isArray(data.cards);
-
-          this.isExistingContent = hasContent;
-
-          if (typeof data.title === 'string') {
-            this.title = data.title;
-          }
-
-          if (Array.isArray(data.cards)) {
-            this.cards = data.cards.map((card: any) => ({
-              icon: card?.icon ?? '',
-              text: card?.text ?? ''
-            }));
-          }
-
-          this.missionImageUrl = this.getImageUrl(
-            data.missionImageUrl ??
-            data.mission_image_url ??
-            data.missionImage ??
-            data.mission_image
-          );
-
-          this.missionSecondaryImageUrl = this.getImageUrl(
-            data.missionSecondaryImageUrl ??
-            data.mission_secondary_image_url ??
-            data.missionSecondaryImage ??
-            data.mission_secondary_image
-          );
-
-          this.missionImagePreview = this.missionImageUrl;
-          this.missionSecondaryImagePreview =
-            this.missionSecondaryImageUrl;
-
-          this.cdr.markForCheck();
-        },
-        error: (error: any) => {
-          console.error('Failed to load mission content:', error);
-
-          if (error?.status === 404) {
-            this.isExistingContent = false;
-          } else {
-            this.errorMessage =
-              error?.error?.message ||
-              'Unable to load mission content.';
-          }
-
-          this.cdr.markForCheck();
+        if (!data || typeof data !== 'object') {
+          this.isExistingContent = false;
+          return;
         }
-      });
-  }
+
+        this.isExistingContent = !!responseData?.id;
+
+        // Load title
+        this.title = data.title ?? 'Our Mission';
+
+        // Load mission cards
+        if (Array.isArray(data.cards)) {
+          this.cards = data.cards.map((card: any) => ({
+            icon: card?.icon ?? '',
+            text: card?.text ?? ''
+          }));
+        }
+
+        // Find images using their field names
+        const images = Array.isArray(responseData?.images)
+          ? responseData.images
+          : [];
+
+        const primaryImage = images.find(
+          (image: any) => image.field === 'missionImage'
+        );
+
+        const secondaryImage = images.find(
+          (image: any) => image.field === 'missionSecondaryImage'
+        );
+
+        // Set image URLs
+        this.missionImageUrl =
+          primaryImage?.url ??
+          this.getImageUrl(
+            data.missionImageUrl ??
+            data.missionImage
+          );
+
+        this.missionSecondaryImageUrl =
+          secondaryImage?.url ??
+          this.getImageUrl(
+            data.missionSecondaryImageUrl ??
+            data.missionSecondaryImage
+          );
+
+        // Set image previews
+        this.missionImagePreview = this.missionImageUrl;
+        this.missionSecondaryImagePreview =
+          this.missionSecondaryImageUrl;
+
+        this.cdr.markForCheck();
+      },
+
+      error: (error: any) => {
+        console.error('Failed to load mission content:', error);
+
+        if (error?.status === 404) {
+          this.isExistingContent = false;
+        } else {
+          this.errorMessage =
+            error?.error?.message ||
+            'Unable to load mission content.';
+        }
+
+        this.cdr.markForCheck();
+      }
+    });
+}
 
   private getImageUrl(value: any): string {
     if (typeof value === 'string') {

@@ -1,8 +1,13 @@
-
+import {
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { finalize, Subscription, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
 @Component({
@@ -14,11 +19,13 @@ import { Api } from '../../../core/services/api';
 })
 export class ContactHero implements OnInit, OnDestroy {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
   private subscriptions = new Subscription();
 
   title = 'CONTACT';
   breadcrumb = 'Home / Contact us';
-  intro = 'For any enquiries, or just to say hello, get in touch and contact us.';
+  intro =
+    'For any enquiries, or just to say hello, get in touch and contact us.';
 
   phoneLabel = 'PHONE';
   phoneValue = '+91 40 2323 XXXX';
@@ -61,35 +68,85 @@ export class ContactHero implements OnInit, OnDestroy {
   }
 
   private extractPayload(response: any): any {
-    let payload = response?.data ?? response;
+    const data = response?.data ?? response ?? {};
 
-    if (payload?.content) {
-      if (typeof payload.content === 'string') {
-        try {
-          payload = JSON.parse(payload.content);
-        } catch {
-          // Retain the original payload if content is not JSON.
-        }
-      } else if (typeof payload.content === 'object') {
-        payload = payload.content;
+    let content = data.content ?? {};
+
+    if (typeof content === 'string') {
+      try {
+        content = JSON.parse(content);
+      } catch {
+        content = {};
       }
     }
 
-    return payload;
+    if (!content || typeof content !== 'object') {
+      content = {};
+    }
+
+    return {
+      ...data,
+      ...content,
+      images: Array.isArray(data.images)
+        ? data.images
+        : Array.isArray(content.images)
+          ? content.images
+          : [],
+    };
   }
 
-  private extractImageUrl(value: any): string {
-    if (typeof value === 'string') return value;
-    if (!value || typeof value !== 'object') return '';
+  private extractImageUrl(data: any): string {
+    const images = Array.isArray(data?.images)
+      ? data.images
+      : [];
 
-    for (const key of ['url', 'imageUrl', 'image_url', 'heroImage', 'image', 'src']) {
+    const imageField = data?.imageField ?? 'heroImage';
+
+    const matchingImage = images.find(
+      (image: any) => image.field === imageField
+    );
+
+    if (matchingImage?.url) {
+      return matchingImage.url;
+    }
+
+    // Fallback for older API response formats.
+    const value =
+      data?.heroImageUrl ??
+      data?.heroImage ??
+      data?.image;
+
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (!value || typeof value !== 'object') {
+      return '';
+    }
+
+    for (const key of [
+      'url',
+      'imageUrl',
+      'image_url',
+      'heroImage',
+      'image',
+      'src',
+    ]) {
       const candidate = value[key];
 
-      if (typeof candidate === 'string') return candidate;
+      if (typeof candidate === 'string') {
+        return candidate;
+      }
 
       if (candidate && typeof candidate === 'object') {
-        const nested = this.extractImageUrl(candidate);
-        if (nested) return nested;
+        const nested = this.extractImageUrl({
+          images: [],
+          heroImageUrl: candidate,
+        });
+
+        if (nested) {
+          return nested;
+        }
       }
     }
 
@@ -102,52 +159,85 @@ export class ContactHero implements OnInit, OnDestroy {
     this.successMessage = '';
 
     this.subscriptions.add(
-      this.api.getContactHero().subscribe({
-        next: (response: any) => {
-          const data = this.extractPayload(response);
+      this.api
+        .getContactHero()
+        .pipe(
+          timeout(60000),
+          finalize(() => {
+            this.isLoading = false;
+            this.cdr.markForCheck();
+          })
+        )
+        .subscribe({
+          next: (response: any) => {
+            const data = this.extractPayload(response);
 
-          this.title = data?.title ?? 'CONTACT';
-          this.breadcrumb = data?.breadcrumb ?? 'Home / Contact us';
-          this.intro =
-            data?.intro ??
-            'For any enquiries, or just to say hello, get in touch and contact us.';
+            this.title = data?.title ?? 'CONTACT';
 
-          const details = data?.contactDetails ?? {};
+            this.breadcrumb =
+              data?.breadcrumb ?? 'Home / Contact us';
 
-          this.phoneLabel = details?.phone?.label ?? 'PHONE';
-          this.phoneValue = details?.phone?.value ?? '';
-          this.phoneIcon = details?.phone?.icon ?? 'phone';
+            this.intro =
+              data?.intro ??
+              'For any enquiries, or just to say hello, get in touch and contact us.';
 
-          this.emailLabel = details?.email?.label ?? 'EMAIL';
-          this.emailValue = details?.email?.value ?? '';
-          this.emailIcon = details?.email?.icon ?? 'email';
+            const details = data?.contactDetails ?? {};
 
-          this.addressLabel =
-            details?.officeAddress?.label ?? 'OFFICE ADDRESS';
-          this.addressValue = details?.officeAddress?.value ?? '';
-          this.addressIcon = details?.officeAddress?.icon ?? 'location';
+            this.phoneLabel =
+              details?.phone?.label ?? 'PHONE';
 
-          this.imageAlt =
-            data?.imageAlt ?? 'Handloom loom with woven textile';
+            this.phoneValue =
+              details?.phone?.value ?? '+91 40 2323 XXXX';
 
-          const image = this.extractImageUrl(
-            data?.heroImageUrl ?? data?.heroImage ?? data?.image
-          );
+            this.phoneIcon =
+              details?.phone?.icon ?? 'phone';
 
-          this.clearPreview();
-          this.imageUrl = image;
-          this.previewUrl = image;
-          this.selectedImage = null;
-          this.isEditMode = !!data && Object.keys(data).length > 0;
-          this.isLoading = false;
-        },
-        error: (error: any) => {
-          this.isLoading = false;
-          this.errorMessage =
-            error?.error?.message ??
-            'Unable to load Contact Hero content.';
-        },
-      })
+            this.emailLabel =
+              details?.email?.label ?? 'EMAIL';
+
+            this.emailValue =
+              details?.email?.value ??
+              'info@tgsco.telangana.gov.in';
+
+            this.emailIcon =
+              details?.email?.icon ?? 'email';
+
+            this.addressLabel =
+              details?.officeAddress?.label ?? 'OFFICE ADDRESS';
+
+            this.addressValue =
+              details?.officeAddress?.value ??
+              'Regional Office, Warangal, Telangana 506002';
+
+            this.addressIcon =
+              details?.officeAddress?.icon ?? 'location';
+
+            this.imageAlt =
+              data?.imageAlt ??
+              'Handloom loom with woven textile';
+
+            const image = this.extractImageUrl(data);
+
+            this.clearPreview();
+
+            this.imageUrl = image;
+            this.previewUrl = image;
+            this.selectedImage = null;
+
+            this.isEditMode =
+              !!data?.id ||
+              !!data?.title ||
+              !!data?.imageField;
+
+            this.cdr.markForCheck();
+          },
+
+          error: (error: any) => {
+            this.errorMessage =
+              error?.error?.message ??
+              'Unable to load Contact Hero content.';
+          },
+        })
     );
   }
 
@@ -155,7 +245,9 @@ export class ContactHero implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     if (!file.type.startsWith('image/')) {
       this.errorMessage = 'Please select a valid image file.';
@@ -164,16 +256,21 @@ export class ContactHero implements OnInit, OnDestroy {
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      this.errorMessage = 'The image size must not exceed 5 MB.';
+      this.errorMessage =
+        'The image size must not exceed 5 MB.';
       input.value = '';
       return;
     }
 
     this.clearPreview();
+
     this.selectedImage = file;
     this.previewUrl = URL.createObjectURL(file);
+
     this.errorMessage = '';
     this.successMessage = '';
+
+    this.cdr.markForCheck();
   }
 
   saveContactHero(): void {
@@ -185,7 +282,8 @@ export class ContactHero implements OnInit, OnDestroy {
       !this.breadcrumb.trim() ||
       !this.intro.trim()
     ) {
-      this.errorMessage = 'Please complete the title, breadcrumb, and intro.';
+      this.errorMessage =
+        'Please complete the title, breadcrumb, and intro.';
       return;
     }
 
@@ -194,7 +292,8 @@ export class ContactHero implements OnInit, OnDestroy {
       !this.emailValue.trim() ||
       !this.addressValue.trim()
     ) {
-      this.errorMessage = 'Please complete all contact details.';
+      this.errorMessage =
+        'Please complete all contact details.';
       return;
     }
 
@@ -207,55 +306,77 @@ export class ContactHero implements OnInit, OnDestroy {
       title: this.title.trim(),
       breadcrumb: this.breadcrumb.trim(),
       intro: this.intro.trim(),
+
       contactDetails: {
         phone: {
           label: this.phoneLabel.trim(),
           value: this.phoneValue.trim(),
           icon: this.phoneIcon.trim() || 'phone',
         },
+
         email: {
           label: this.emailLabel.trim(),
           value: this.emailValue.trim(),
           icon: this.emailIcon.trim() || 'email',
         },
+
         officeAddress: {
           label: this.addressLabel.trim(),
           value: this.addressValue.trim(),
           icon: this.addressIcon.trim() || 'location',
         },
       },
+
       imageField: 'heroImage',
-      imageAlt: this.imageAlt.trim() || this.title.trim(),
+      imageAlt:
+        this.imageAlt.trim() || this.title.trim(),
     };
 
     this.isSaving = true;
 
     const request = this.isEditMode
-      ? this.api.updateContactHero(content, this.selectedImage ?? undefined)
-      : this.api.createContactHero(content, this.selectedImage ?? undefined);
+      ? this.api.updateContactHero(
+          content,
+          this.selectedImage ?? undefined
+        )
+      : this.api.createContactHero(
+          content,
+          this.selectedImage ?? undefined
+        );
 
     this.subscriptions.add(
-      request.subscribe({
-        next: () => {
-          this.isSaving = false;
-          this.successMessage = this.isEditMode
-            ? 'Contact Hero updated successfully.'
-            : 'Contact Hero created successfully.';
+      request
+        .pipe(
+          timeout(60000),
+          finalize(() => {
+            this.isSaving = false;
+            this.cdr.markForCheck();
+          })
+        )
+        .subscribe({
+          next: () => {
+            this.successMessage = this.isEditMode
+              ? 'Contact Hero updated successfully.'
+              : 'Contact Hero created successfully.';
 
-          this.loadContactHero();
-        },
-        error: (error: any) => {
-          this.isSaving = false;
-          this.errorMessage =
-            error?.error?.message ??
-            'Unable to save Contact Hero content.';
-        },
-      })
+            this.loadContactHero();
+          },
+
+          error: (error: any) => {
+            this.errorMessage =
+              error?.error?.message ??
+              'Unable to save Contact Hero content.';
+          },
+        })
     );
   }
 
   deleteContactHero(): void {
-    if (!confirm('Are you sure you want to delete the Contact Hero content?')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete the Contact Hero content?'
+      )
+    ) {
       return;
     }
 
@@ -264,48 +385,69 @@ export class ContactHero implements OnInit, OnDestroy {
     this.successMessage = '';
 
     this.subscriptions.add(
-      this.api.deleteContactHero().subscribe({
-        next: () => {
-          this.isDeleting = false;
-          this.clearPreview();
+      this.api
+        .deleteContactHero()
+        .pipe(
+          timeout(60000),
+          finalize(() => {
+            this.isDeleting = false;
+            this.cdr.markForCheck();
+          })
+        )
+        .subscribe({
+          next: () => {
+            this.clearPreview();
 
-          this.title = 'CONTACT';
-          this.breadcrumb = 'Home / Contact us';
-          this.intro =
-            'For any enquiries, or just to say hello, get in touch and contact us.';
+            this.title = 'CONTACT';
+            this.breadcrumb = 'Home / Contact us';
 
-          this.phoneLabel = 'PHONE';
-          this.phoneValue = '+91 40 2323 XXXX';
-          this.phoneIcon = 'phone';
+            this.intro =
+              'For any enquiries, or just to say hello, get in touch and contact us.';
 
-          this.emailLabel = 'EMAIL';
-          this.emailValue = 'info@tgsco.telangana.gov.in';
-          this.emailIcon = 'email';
+            this.phoneLabel = 'PHONE';
+            this.phoneValue = '+91 40 2323 XXXX';
+            this.phoneIcon = 'phone';
 
-          this.addressLabel = 'OFFICE ADDRESS';
-          this.addressValue = 'Regional Office, Warangal, Telangana 506002';
-          this.addressIcon = 'location';
+            this.emailLabel = 'EMAIL';
+            this.emailValue =
+              'info@tgsco.telangana.gov.in';
+            this.emailIcon = 'email';
 
-          this.imageAlt = 'Handloom loom with woven textile';
-          this.imageUrl = '';
-          this.previewUrl = '';
-          this.selectedImage = null;
-          this.isEditMode = false;
+            this.addressLabel = 'OFFICE ADDRESS';
+            this.addressValue =
+              'Regional Office, Warangal, Telangana 506002';
+            this.addressIcon = 'location';
 
-          this.successMessage = 'Contact Hero deleted successfully.';
-        },
-        error: (error: any) => {
-          this.isDeleting = false;
-          this.errorMessage =
-            error?.error?.message ??
-            'Unable to delete Contact Hero content.';
-        },
-      })
+            this.imageAlt =
+              'Handloom loom with woven textile';
+
+            this.imageUrl = '';
+            this.previewUrl = '';
+            this.selectedImage = null;
+
+            this.isEditMode = false;
+
+            this.successMessage =
+              'Contact Hero deleted successfully.';
+
+            this.cdr.markForCheck();
+          },
+
+          error: (error: any) => {
+            this.errorMessage =
+              error?.error?.message ??
+              'Unable to delete Contact Hero content.';
+          },
+        })
     );
   }
 
   resetForm(): void {
-    if (confirm('Discard unsaved changes and reload the content?')) {
+    if (
+      confirm(
+        'Discard unsaved changes and reload the content?'
+      )
+    ) {
       this.loadContactHero();
     }
   }

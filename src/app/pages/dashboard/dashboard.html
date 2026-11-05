@@ -1,14 +1,17 @@
 
 <div class="dashboard">
+
+  <!-- Welcome -->
   <section class="welcome-section">
     <div>
       <div class="eyebrow">
         <span class="eyebrow-dot"></span>
         ADMINISTRATION OVERVIEW
       </div>
-      <h1>Good to see you, Administrator</h1>
+
+      <h1>{{ greeting }}, Administrator</h1>
       <p>Here's what's happening across your TGSCO platform.</p>
-    </div> 
+    </div>
 
     <div class="welcome-date">
       <svg lucideCalendarDays [size]="18"></svg>
@@ -16,9 +19,10 @@
     </div>
   </section>
 
+  <!-- Summary cards -->
   <section class="summary-grid">
-    @for (card of summaryCards; track card.title) {
-      <a class="summary-card" [routerLink]="card.route">
+    @for (card of summaryCards(); track card.title) {
+      <a class="summary-card" [ngClass]="card.color" [routerLink]="card.route">
         <div class="card-top">
           <div class="summary-icon" [ngClass]="card.color">
             @switch (card.title) {
@@ -36,23 +40,154 @@
               }
             }
           </div>
+
           <svg class="card-arrow" lucideArrowUpRight [size]="18"></svg>
         </div>
 
-        <div class="card-value">{{ card.value }}</div>
+        <div class="card-value" [class.is-empty]="card.value === null">
+          {{ card.value ?? '—' }}
+        </div>
+
         <h3>{{ card.title }}</h3>
         <p>{{ card.description }}</p>
       </a>
     }
   </section>
 
+  <!-- Recent notifications -->
+  <section class="panel notifications-panel">
+    <div class="panel-header notifications-header">
+      <div class="notifications-heading">
+        <div class="notification-heading-icon">
+          <svg lucideBell [size]="20"></svg>
+        </div>
+
+        <div>
+          <h2>Recent Notifications</h2>
+          <p>Stay updated with activity across your admin panel</p>
+        </div>
+      </div>
+
+      <div class="notification-header-actions">
+        @if (unreadCount() > 0) {
+          <span class="unread-count">
+            {{ unreadCount() }} unread
+          </span>
+        }
+
+        <button
+          type="button"
+          class="refresh-button"
+          aria-label="Refresh notifications"
+          title="Refresh notifications"
+          [disabled]="notificationsLoading()"
+          (click)="loadNotifications()"
+        >
+          <svg
+            lucideRefreshCw
+            [size]="16"
+            [class.spinning]="notificationsLoading()"
+          ></svg>
+        </button>
+      </div>
+    </div>
+
+    @if (notificationsLoading() && notifications().length === 0) {
+      <div class="notification-state">
+        <span class="notification-spinner"></span>
+        <p>Loading notifications...</p>
+      </div>
+    } @else if (notificationError()) {
+      <div class="notification-state notification-error">
+        <p>{{ notificationError() }}</p>
+
+        <button type="button" (click)="loadNotifications()">
+          Try again
+        </button>
+      </div>
+    } @else if (notifications().length === 0) {
+      <div class="notification-state">
+        <div class="notification-empty-icon">
+          <svg lucideInbox [size]="23"></svg>
+        </div>
+        <h3>You're all caught up!</h3>
+        <p>New notifications will appear here.</p>
+      </div>
+    } @else {
+      <div class="notification-list">
+        @for (item of notifications(); track getNotificationId(item)) {
+          <div
+            class="notification-item"
+            [class.unread]="isNotificationUnread(item)"
+          >
+            <div class="notification-item-icon">
+              <svg lucideBell [size]="18"></svg>
+            </div>
+
+            <div class="notification-item-content">
+              <div class="notification-title-row">
+                <h3>{{ getNotificationTitle(item) }}</h3>
+
+                @if (isNotificationUnread(item)) {
+                  <span class="unread-indicator" title="Unread"></span>
+                }
+              </div>
+
+              <p>{{ getNotificationMessage(item) }}</p>
+
+              <span class="notification-date">
+                <svg lucideClock [size]="13"></svg>
+                {{ getNotificationDate(item.createdAt) }}
+              </span>
+            </div>
+
+            @if (isNotificationUnread(item)) {
+              <button
+                type="button"
+                class="mark-read-button"
+                title="Mark as read"
+                aria-label="Mark notification as read"
+                [disabled]="markingNotificationId() === getNotificationId(item)"
+                (click)="markNotificationAsRead(item)"
+              >
+                @if (markingNotificationId() === getNotificationId(item)) {
+                  <span class="small-spinner"></span>
+                } @else {
+                  <svg lucideCheck [size]="17"></svg>
+                }
+              </button>
+            } @else {
+              <span class="read-label">
+                <svg lucideCheckCircle [size]="14"></svg>
+                Read
+              </span>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="notifications-footer">
+        <span>Showing latest {{ notifications().length }} notifications</span>
+
+        <span class="notifications-footer-status">
+          <svg lucideCheckCircle [size]="14"></svg>
+          {{ unreadCount() }} unread
+        </span>
+      </div>
+    }
+  </section>
+
+  <!-- Main dashboard grid -->
   <section class="dashboard-main-grid">
+
+    <!-- Content activity -->
     <div class="panel activity-panel">
       <div class="panel-header">
         <div>
           <h2>Content Activity</h2>
           <p>Weekly publishing overview</p>
         </div>
+
         <span class="panel-badge">
           <svg lucideActivity [size]="15"></svg>
           This week
@@ -66,12 +201,9 @@
 
       <div class="activity-chart">
         <div class="chart-y-labels">
-          <span>10</span>
-          <span>8</span>
-          <span>6</span>
-          <span>4</span>
-          <span>2</span>
-          <span>0</span>
+          @for (tick of yTicks(); track $index) {
+            <span>{{ tick }}</span>
+          }
         </div>
 
         <div class="chart-content">
@@ -82,7 +214,7 @@
           </div>
 
           <div class="chart-bars">
-            @for (item of activityData; track item.day) {
+            @for (item of activityData(); track item.day) {
               <div class="chart-day">
                 <div class="bar-pair">
                   <div
@@ -90,24 +222,33 @@
                     [style.height.%]="barHeight(item.blogs)"
                     [title]="'Blogs: ' + item.blogs"
                   ></div>
+
                   <div
                     class="bar news-bar"
                     [style.height.%]="barHeight(item.news)"
                     [title]="'News: ' + item.news"
                   ></div>
                 </div>
+
                 <span class="day-label">{{ item.day }}</span>
               </div>
             }
           </div>
+
+          @if (activityTotal() === 0) {
+            <div class="chart-empty">
+              No content published this week
+            </div>
+          }
         </div>
       </div>
 
       <div class="chart-footer">
         <div>
           <span class="footer-label">Total content entries</span>
-          <strong>{{ activityTotal }}</strong>
+          <strong>{{ activityTotal() }}</strong>
         </div>
+
         <div class="chart-footer-note">
           <svg lucideCheckCircle [size]="16"></svg>
           <span>Across 7 days</span>
@@ -115,6 +256,7 @@
       </div>
     </div>
 
+    <!-- Quick actions -->
     <div class="panel quick-actions-panel">
       <div class="panel-header">
         <div>
@@ -160,99 +302,122 @@
     </div>
   </section>
 
+  <!-- Recent content updates -->
   <section class="panel updates-panel">
     <div class="panel-header updates-header">
       <div>
         <h2>Recent Content Updates</h2>
         <p>Latest changes across your website content</p>
       </div>
+
       <a class="text-link" routerLink="/home/blog">
         View content
         <svg lucideArrowRight [size]="16"></svg>
       </a>
     </div>
 
-    <div class="updates-table-wrapper">
-      <table class="updates-table">
-        <thead>
-          <tr>
-            <th>CONTENT</th>
-            <th>CATEGORY</th>
-            <th>LAST UPDATED</th>
-            <th>STATUS</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (item of recentUpdates; track item.title) {
-            <tr>
-              <td>
-                <div class="content-title-cell">
-                  <div class="content-type-icon" [ngClass]="item.type">
-                    @switch (item.type) {
-                      @case ('collection') {
-                        <svg lucidePackage [size]="17"></svg>
-                      }
-                      @case ('blog') {
-                        <svg lucideFileText [size]="17"></svg>
-                      }
-                      @case ('news') {
-                        <svg lucideCalendarDays [size]="17"></svg>
-                      }
-                      @case ('page') {
-                        <svg lucideNewspaper [size]="17"></svg>
-                      }
-                    }
-                  </div>
-                  <span>{{ item.title }}</span>
-                </div>
-              </td>
-              <td><span class="category-label">{{ item.category }}</span></td>
-              <td>
-                <span class="update-date">
-                  <svg lucideClock [size]="14"></svg>
-                  {{ item.date }}
-                </span>
-              </td>
-              <td>
-                <span class="status-pill" [ngClass]="item.status.toLowerCase()">
-                  <span></span>
-                  {{ item.status }}
-                </span>
-              </td>
-              <td>
-                <a
-                  class="row-action"
-                  [routerLink]="item.route"
-                  [attr.aria-label]="'Manage ' + item.title"
-                >
-                  <svg lucideExternalLink [size]="16"></svg>
-                </a>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+    @if (recentUpdates().length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg lucideInbox [size]="22"></svg>
+        </div>
 
-    <div class="updates-mobile">
-      @for (item of recentUpdates; track item.title) {
-        <a class="mobile-update" [routerLink]="item.route">
-          <div class="mobile-update-main">
-            <strong>{{ item.title }}</strong>
-            <span>{{ item.category }} · {{ item.date }}</span>
-          </div>
-          <span class="status-pill" [ngClass]="item.status.toLowerCase()">
-            <span></span>
-            {{ item.status }}
-          </span>
-        </a>
-      }
-    </div>
+        <h3>No recent updates</h3>
+        <p>Changes to your website content will appear here.</p>
+      </div>
+    } @else {
+      <div class="updates-table-wrapper">
+        <table class="updates-table">
+          <thead>
+            <tr>
+              <th>CONTENT</th>
+              <th>CATEGORY</th>
+              <th>LAST UPDATED</th>
+              <th>STATUS</th>
+              <th></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (item of recentUpdates(); track item.title) {
+              <tr>
+                <td>
+                  <div class="content-title-cell">
+                    <div class="content-type-icon" [ngClass]="item.type">
+                      @switch (item.type) {
+                        @case ('collection') {
+                          <svg lucidePackage [size]="17"></svg>
+                        }
+                        @case ('blog') {
+                          <svg lucideFileText [size]="17"></svg>
+                        }
+                        @case ('news') {
+                          <svg lucideCalendarDays [size]="17"></svg>
+                        }
+                        @case ('page') {
+                          <svg lucideNewspaper [size]="17"></svg>
+                        }
+                      }
+                    </div>
+
+                    <span>{{ item.title }}</span>
+                  </div>
+                </td>
+
+                <td>
+                  <span class="category-label">{{ item.category }}</span>
+                </td>
+
+                <td>
+                  <span class="update-date">
+                    <svg lucideClock [size]="14"></svg>
+                    {{ item.date }}
+                  </span>
+                </td>
+
+                <td>
+                  <span class="status-pill" [ngClass]="item.status.toLowerCase()">
+                    <span></span>
+                    {{ item.status }}
+                  </span>
+                </td>
+
+                <td>
+                  <a
+                    class="row-action"
+                    [routerLink]="item.route"
+                    [attr.aria-label]="'Manage ' + item.title"
+                  >
+                    <svg lucideExternalLink [size]="16"></svg>
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="updates-mobile">
+        @for (item of recentUpdates(); track item.title) {
+          <a class="mobile-update" [routerLink]="item.route">
+            <div class="mobile-update-main">
+              <strong>{{ item.title }}</strong>
+              <span>{{ item.category }} · {{ item.date }}</span>
+            </div>
+
+            <span class="status-pill" [ngClass]="item.status.toLowerCase()">
+              <span></span>
+              {{ item.status }}
+            </span>
+          </a>
+        }
+      </div>
+    }
   </section>
 
   <footer class="dashboard-footer">
     <span>TGSCO Admin Panel</span>
     <span>Content management overview</span>
   </footer>
+
 </div>

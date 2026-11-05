@@ -1,6 +1,14 @@
+
+import {
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
 interface CraftRole {
@@ -21,11 +29,13 @@ interface CraftRole {
   templateUrl: './chain-of-craft.html',
   styleUrl: './chain-of-craft.css',
 })
-export class ChainOfCraft implements OnInit {
+export class ChainOfCraft implements OnInit, OnDestroy {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
 
   eyebrow = 'A Chain of Craft';
-  title = 'Every TGSCO product passes through many hands before it reaches yours';
+  title =
+    'Every TGSCO product passes through many hands before it reaches yours';
 
   roles: CraftRole[] = [];
   selectedImages: Record<number, File> = {};
@@ -41,6 +51,10 @@ export class ChainOfCraft implements OnInit {
   ngOnInit(): void {
     this.setDefaultRoles();
     this.loadChainOfCraft();
+  }
+
+  ngOnDestroy(): void {
+    this.clearAllPreviews();
   }
 
   private setDefaultRoles(): void {
@@ -108,55 +122,74 @@ export class ChainOfCraft implements OnInit {
     this.isLoading = true;
     this.message = '';
 
-    this.api.getChainOfCraft().subscribe({
-      next: (response: any) => {
-        const result = response?.data ?? response;
-        const content = result?.content ?? result;
+    this.api
+      .getChainOfCraft()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const data = response?.data ?? response;
+          const content = data?.content ?? {};
 
-        if (content && typeof content === 'object' && content.title) {
-          this.eyebrow = content.eyebrow ?? 'A Chain of Craft';
-          this.title = content.title ?? '';
+          if (
+            content &&
+            typeof content === 'object' &&
+            Array.isArray(content.roles)
+          ) {
+            this.eyebrow = content.eyebrow ?? '';
+            this.title = content.title ?? '';
 
-          if (Array.isArray(content.roles)) {
-            const defaults = this.roles;
+            const images = Array.isArray(data?.images)
+              ? data.images
+              : [];
 
-            this.roles = content.roles.map((role: any, index: number) => {
-              const defaultRole = defaults[index] ?? {
-                eyebrow: '',
-                title: '',
-                description: '',
-                color: '#C51F32',
-                imageAlt: '',
-                imageField: `roles[${index}].image`,
-                imageUrl: null,
-                imagePreview: null,
-              };
+            this.clearAllPreviews();
 
-              return {
-                ...defaultRole,
-                ...role,
-                imageField: `roles[${index}].image`,
-                imageUrl: this.extractImageUrl(role),
-                imagePreview: null,
-              };
-            });
+            this.roles = content.roles.map(
+              (role: any, index: number): CraftRole => {
+                const imageField = `roles[${index}].image`;
+
+                const matchedImage = images.find(
+                  (image: any) => image.field === imageField
+                );
+
+                return {
+                  eyebrow: role.eyebrow ?? '',
+                  title: role.title ?? '',
+                  description: role.description ?? '',
+                  color: role.color ?? '#C51F32',
+                  imageField,
+                  imageAlt: role.imageAlt ?? '',
+                  imageUrl: matchedImage?.url ?? null,
+                  imagePreview: null,
+                };
+              }
+            );
+
+            this.isEditing = true;
+          } else {
+            this.isEditing = false;
+            this.eyebrow = 'A Chain of Craft';
+            this.title =
+              'Every TGSCO product passes through many hands before it reaches yours';
+            this.setDefaultRoles();
           }
 
-          this.isEditing = true;
-        } else {
-          this.isEditing = false;
-        }
-
-        this.isLoading = false;
-      },
-      error: (error: any) => {
-        this.isLoading = false;
-        this.showMessage(
-          error?.error?.message ?? 'Unable to load Chain of Craft content.',
-          'error'
-        );
-      },
-    });
+          this.cdr.markForCheck();
+        },
+        error: (error: any) => {
+          this.showMessage(
+            error?.error?.message ??
+              'Unable to load Chain of Craft content.',
+            'error'
+          );
+        },
+      });
   }
 
   onImageSelected(event: Event, index: number): void {
@@ -181,12 +214,16 @@ export class ChainOfCraft implements OnInit {
 
     this.selectedImages[index] = file;
     this.roles[index].imagePreview = URL.createObjectURL(file);
+
     this.message = '';
+    this.cdr.markForCheck();
   }
 
   removeSelectedImage(index: number): void {
     delete this.selectedImages[index];
     this.clearRolePreview(index);
+
+    this.cdr.markForCheck();
   }
 
   saveChainOfCraft(): void {
@@ -196,7 +233,10 @@ export class ChainOfCraft implements OnInit {
     }
 
     if (this.roles.length !== 7) {
-      this.showMessage('Chain of Craft must contain all seven roles.', 'error');
+      this.showMessage(
+        'Chain of Craft must contain all seven roles.',
+        'error'
+      );
       return;
     }
 
@@ -246,33 +286,39 @@ export class ChainOfCraft implements OnInit {
       ? this.api.updateChainOfCraft(content, this.selectedImages)
       : this.api.createChainOfCraft(content, this.selectedImages);
 
-    request.subscribe({
-      next: (response: any) => {
-        const wasEditing = this.isEditing;
+    request
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isSaving = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const wasEditing = this.isEditing;
 
-        this.isSaving = false;
-        this.isEditing = true;
-        this.clearAllPreviews();
-        this.selectedImages = {};
+          this.clearAllPreviews();
+          this.selectedImages = {};
 
-        this.showMessage(
-          response?.message ??
-            (wasEditing
-              ? 'Chain of Craft updated successfully.'
-              : 'Chain of Craft created successfully.'),
-          'success'
-        );
+          this.showMessage(
+            response?.message ??
+              (wasEditing
+                ? 'Chain of Craft updated successfully.'
+                : 'Chain of Craft created successfully.'),
+            'success'
+          );
 
-        this.loadChainOfCraft();
-      },
-      error: (error: any) => {
-        this.isSaving = false;
-        this.showMessage(
-          error?.error?.message ?? 'Failed to save Chain of Craft content.',
-          'error'
-        );
-      },
-    });
+          this.loadChainOfCraft();
+        },
+        error: (error: any) => {
+          this.showMessage(
+            error?.error?.message ??
+              'Failed to save Chain of Craft content.',
+            'error'
+          );
+        },
+      });
   }
 
   deleteChainOfCraft(): void {
@@ -287,29 +333,41 @@ export class ChainOfCraft implements OnInit {
     this.isDeleting = true;
     this.message = '';
 
-    this.api.deleteChainOfCraft().subscribe({
-      next: (response: any) => {
-        this.isDeleting = false;
-        this.clearAllPreviews();
-        this.selectedImages = {};
-        this.eyebrow = '';
-        this.title = '';
-        this.isEditing = false;
-        this.setDefaultRoles();
+    this.api
+      .deleteChainOfCraft()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isDeleting = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          this.clearAllPreviews();
+          this.selectedImages = {};
 
-        this.showMessage(
-          response?.message ?? 'Chain of Craft content deleted successfully.',
-          'success'
-        );
-      },
-      error: (error: any) => {
-        this.isDeleting = false;
-        this.showMessage(
-          error?.error?.message ?? 'Failed to delete Chain of Craft content.',
-          'error'
-        );
-      },
-    });
+          this.eyebrow = 'A Chain of Craft';
+          this.title =
+            'Every TGSCO product passes through many hands before it reaches yours';
+
+          this.isEditing = false;
+          this.setDefaultRoles();
+
+          this.showMessage(
+            response?.message ??
+              'Chain of Craft content deleted successfully.',
+            'success'
+          );
+        },
+        error: (error: any) => {
+          this.showMessage(
+            error?.error?.message ??
+              'Failed to delete Chain of Craft content.',
+            'error'
+          );
+        },
+      });
   }
 
   resetForm(): void {
@@ -321,20 +379,12 @@ export class ChainOfCraft implements OnInit {
       this.loadChainOfCraft();
     } else {
       this.eyebrow = 'A Chain of Craft';
-      this.title = 'Every TGSCO product passes through many hands before it reaches yours';
+      this.title =
+        'Every TGSCO product passes through many hands before it reaches yours';
       this.setDefaultRoles();
     }
-  }
 
-  private extractImageUrl(role: any): string | null {
-    return (
-      role?.imageUrl ??
-      role?.imageURL ??
-      role?.image?.url ??
-      (typeof role?.image === 'string' ? role.image : null) ??
-      role?.imagePath ??
-      null
-    );
+    this.cdr.markForCheck();
   }
 
   private clearRolePreview(index: number): void {
@@ -347,7 +397,9 @@ export class ChainOfCraft implements OnInit {
   }
 
   private clearAllPreviews(): void {
-    this.roles.forEach((_, index) => this.clearRolePreview(index));
+    this.roles.forEach((_, index) => {
+      this.clearRolePreview(index);
+    });
   }
 
   private showMessage(
@@ -356,5 +408,6 @@ export class ChainOfCraft implements OnInit {
   ): void {
     this.message = message;
     this.messageType = type;
+    this.cdr.markForCheck();
   }
 }

@@ -1,10 +1,11 @@
 
 <div class="initiatives-page">
+
   <header class="page-header">
     <div>
       <span class="eyebrow">WEBSITE MANAGEMENT</span>
-      <h1>Government Initiatives</h1>
-      <p>Manage government schemes and initiatives displayed on your website.</p>
+      <h1>Current Government Schemes</h1>
+      <p>Manage government schemes and their information displayed on your website.</p>
     </div>
 
     <div class="header-actions">
@@ -37,161 +38,493 @@
   </div>
 
   <div class="loading-state" *ngIf="isLoading">
-    Loading Government Initiatives...
+    Loading Government Schemes...
   </div>
 
   <ng-container *ngIf="!isLoading">
+
+    <!-- Section Title -->
+
     <section class="content-card">
       <div class="section-heading">
         <div>
           <h2>Section Content</h2>
-          <p>Edit the main heading and introduction.</p>
+          <p>Manage the main heading displayed above the schemes.</p>
         </div>
       </div>
 
       <div class="form-group">
-        <label for="initiativeTitle">Title</label>
+        <label for="sectionTitle">Section Title</label>
+
         <input
-          id="initiativeTitle"
+          id="sectionTitle"
           type="text"
           [(ngModel)]="content.title"
           placeholder="Enter section title"
         />
       </div>
-
-      <div class="form-group">
-        <label for="initiativeDescription">Description</label>
-        <textarea
-          id="initiativeDescription"
-          rows="5"
-          [(ngModel)]="content.description"
-          placeholder="Enter section description"
-        ></textarea>
-      </div>
     </section>
 
-    <section class="content-card">
-      <div class="section-heading">
-        <div>
-          <h2>Initiative Image</h2>
-          <p>Upload the image associated with this section.</p>
-        </div>
-      </div>
-
-      <div class="image-upload-group">
-        <div class="image-preview" *ngIf="initiativeImageUrl">
-          <img
-            [src]="initiativeImageUrl"
-            alt="Government initiatives preview"
-          />
-        </div>
-
-        <div class="image-placeholder" *ngIf="!initiativeImageUrl">
-          <span>No initiative image selected</span>
-        </div>
-
-        <label for="initiativeImageFile" class="file-label">
-          Choose Image
-        </label>
-
-        <input
-          id="initiativeImageFile"
-          type="file"
-          accept="image/*"
-          (change)="onInitiativeImageSelected($event)"
-        />
-
-        <small>
-          {{ initiativeImageFile?.name || 'Select an image to upload' }}
-        </small>
-      </div>
-    </section>
+    <!-- Schemes -->
 
     <section class="content-card">
+
       <div class="section-heading">
         <div>
           <h2>Government Schemes</h2>
-          <p>Add or remove the initiatives shown on the page.</p>
+          <p>Manage scheme details, images, benefits and application information.</p>
         </div>
 
         <button
           type="button"
           class="secondary-button"
-          (click)="addInitiative()"
+          (click)="addScheme()"
         >
-          + Add Initiative
+          + Add Scheme
         </button>
       </div>
 
       <div
-        class="initiative-row"
-        *ngFor="let initiative of content.initiatives; let i = index"
+        class="scheme-editor"
+        *ngFor="let scheme of content.schemes; let i = index"
       >
-        <div class="initiative-number">{{ i + 1 }}</div>
 
-        <div class="form-group initiative-input">
-          <label [for]="'initiative' + i">
-            Initiative {{ i + 1 }}
-          </label>
+        <div class="scheme-header">
+          <div>
+            <span class="scheme-number">SCHEME {{ i + 1 }}</span>
+            <h3>{{ scheme.title || 'New Scheme' }}</h3>
+          </div>
 
-          <input
-            [id]="'initiative' + i"
-            type="text"
-            [(ngModel)]="content.initiatives[i]"
-            placeholder="Enter initiative name"
-          />
+          <button
+            type="button"
+            class="remove-button"
+            (click)="removeScheme(i)"
+          >
+            Remove Scheme
+          </button>
         </div>
 
+        <!-- Basic Details -->
+
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label [for]="'schemeTitle' + i">Scheme Title</label>
+
+            <input
+              [id]="'schemeTitle' + i"
+              type="text"
+              [(ngModel)]="scheme.title"
+              (ngModelChange)="createSlug(scheme)"
+              placeholder="Enter scheme title"
+            />
+          </div>
+
+          <div class="form-group">
+            <label [for]="'schemeSlug' + i">Slug</label>
+
+            <input
+              [id]="'schemeSlug' + i"
+              type="text"
+              [(ngModel)]="scheme.slug"
+              placeholder="scheme-slug"
+            />
+          </div>
+
+          <div class="form-group">
+            <label [for]="'schemeCategory' + i">Category</label>
+
+            <input
+              [id]="'schemeCategory' + i"
+              type="text"
+              [(ngModel)]="scheme.category"
+              placeholder="Scheme"
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label [for]="'schemeDescription' + i">Description</label>
+
+            <textarea
+              [id]="'schemeDescription' + i"
+              rows="4"
+              [(ngModel)]="scheme.description"
+              placeholder="Enter scheme description"
+            ></textarea>
+          </div>
+
+        </div>
+
+        <!-- Scheme Image -->
+
+        <div class="subsection">
+          <h4>Scheme Image</h4>
+
+          <div class="image-upload-group">
+
+            <div class="image-preview" *ngIf="scheme.imageUrl">
+              <img
+                [src]="scheme.imageUrl"
+                [alt]="scheme.imageAlt || scheme.title"
+              />
+            </div>
+
+            <div class="image-placeholder" *ngIf="!scheme.imageUrl">
+              <span>No scheme image available</span>
+            </div>
+
+            <div class="form-group">
+              <label [for]="'schemeImage' + i">Upload Image</label>
+
+              <input
+                [id]="'schemeImage' + i"
+                type="file"
+                accept="image/*"
+                (change)="onSchemeImageSelected($event, i)"
+              />
+
+              <small>
+                {{ scheme.imageFile?.name || 'Choose an image to upload' }}
+              </small>
+            </div>
+
+            <div class="form-group">
+              <label [for]="'schemeImageAlt' + i">Image Alt Text</label>
+
+              <input
+                [id]="'schemeImageAlt' + i"
+                type="text"
+                [(ngModel)]="scheme.imageAlt"
+                placeholder="Describe the image"
+              />
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Who Can Apply -->
+
+        <div class="subsection" *ngIf="scheme.whoCanApply as who">
+
+          <div class="section-heading">
+            <div>
+              <h4>Who Can Apply</h4>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Heading</label>
+
+            <input
+              type="text"
+              [(ngModel)]="who.heading"
+            />
+          </div>
+
+          <div
+            class="repeat-row"
+            *ngFor="let item of who.items; let j = index"
+          >
+            <div class="form-group">
+              <label>Eligibility {{ j + 1 }}</label>
+
+              <input
+                type="text"
+                [(ngModel)]="who.items[j]"
+                placeholder="Enter eligibility information"
+              />
+            </div>
+
+            <button
+              type="button"
+              class="remove-button"
+              (click)="removeStringItem(who.items, j)"
+            >
+              Remove
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="addStringItem(who.items)"
+          >
+            + Add Eligibility
+          </button>
+
+        </div>
+
+        <!-- Scheme Benefits -->
+
+        <div class="subsection" *ngIf="scheme.schemeBenefits as benefits">
+
+          <h4>Scheme Benefits</h4>
+
+          <div class="form-grid">
+
+            <div class="form-group">
+              <label>Heading</label>
+
+              <input
+                type="text"
+                [(ngModel)]="benefits.heading"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Introduction</label>
+
+              <input
+                type="text"
+                [(ngModel)]="benefits.intro"
+              />
+            </div>
+
+          </div>
+
+          <h5>Contribution Plans</h5>
+
+          <div
+            class="plan-row"
+            *ngFor="let plan of benefits.contributionPlans; let j = index"
+          >
+
+            <div class="form-group">
+              <label>Monthly Contribution</label>
+
+              <input
+                type="text"
+                [(ngModel)]="plan.monthlyContribution"
+                placeholder="₹4,500"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Purchase Value</label>
+
+              <input
+                type="text"
+                [(ngModel)]="plan.purchaseValue"
+                placeholder="₹7,200 worth of products"
+              />
+            </div>
+
+            <button
+              type="button"
+              class="remove-button"
+              (click)="removeContributionPlan(scheme, j)"
+            >
+              Remove
+            </button>
+
+          </div>
+
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="addContributionPlan(scheme)"
+          >
+            + Add Contribution Plan
+          </button>
+
+          <h5>Instalment Benefits</h5>
+
+          <div
+            class="repeat-row"
+            *ngFor="let item of benefits.instalmentBenefits; let j = index"
+          >
+            <div class="form-group">
+              <label>Benefit {{ j + 1 }}</label>
+
+              <input
+                type="text"
+                [(ngModel)]="benefits.instalmentBenefits[j]"
+                placeholder="Enter benefit"
+              />
+            </div>
+
+            <button
+              type="button"
+              class="remove-button"
+              (click)="removeStringItem(benefits.instalmentBenefits, j)"
+            >
+              Remove
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="addStringItem(benefits.instalmentBenefits)"
+          >
+            + Add Benefit
+          </button>
+
+        </div>
+
+        <!-- How to Apply -->
+
+        <div class="subsection" *ngIf="scheme.howToApply as application">
+
+          <h4>How to Apply</h4>
+
+          <div class="form-group">
+            <label>Heading</label>
+
+            <input
+              type="text"
+              [(ngModel)]="application.heading"
+            />
+          </div>
+
+          <div
+            class="repeat-row"
+            *ngFor="let step of application.steps; let j = index"
+          >
+            <div class="form-group">
+              <label>Step {{ j + 1 }}</label>
+
+              <input
+                type="text"
+                [(ngModel)]="application.steps[j]"
+                placeholder="Enter application step"
+              />
+            </div>
+
+            <button
+              type="button"
+              class="remove-button"
+              (click)="removeStringItem(application.steps, j)"
+            >
+              Remove
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="addStringItem(application.steps)"
+          >
+            + Add Step
+          </button>
+
+        </div>
+
+        <!-- Documents Required -->
+
+        <div class="subsection" *ngIf="scheme.documentsRequired as documents">
+
+          <h4>Documents Required</h4>
+
+          <div class="form-group">
+            <label>Heading</label>
+
+            <input
+              type="text"
+              [(ngModel)]="documents.heading"
+            />
+          </div>
+
+          <div
+            class="repeat-row"
+            *ngFor="let item of documents.items; let j = index"
+          >
+            <div class="form-group">
+              <label>Document {{ j + 1 }}</label>
+
+              <input
+                type="text"
+                [(ngModel)]="documents.items[j]"
+                placeholder="Enter required document"
+              />
+            </div>
+
+            <button
+              type="button"
+              class="remove-button"
+              (click)="removeStringItem(documents.items, j)"
+            >
+              Remove
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="addStringItem(documents.items)"
+          >
+            + Add Document
+          </button>
+
+        </div>
+
+        <!-- Membership Benefits -->
+
+        <div
+          class="subsection"
+          *ngIf="scheme.membershipBenefits as membership"
+        >
+
+          <h4>Membership Benefits</h4>
+
+          <div class="form-group">
+            <label>Heading</label>
+
+            <input
+              type="text"
+              [(ngModel)]="membership.heading"
+            />
+          </div>
+
+          <div
+            class="repeat-row"
+            *ngFor="let item of membership.items; let j = index"
+          >
+            <div class="form-group">
+              <label>Membership Benefit {{ j + 1 }}</label>
+
+              <input
+                type="text"
+                [(ngModel)]="membership.items[j]"
+                placeholder="Enter membership benefit"
+              />
+            </div>
+
+            <button
+              type="button"
+              class="remove-button"
+              (click)="removeStringItem(membership.items, j)"
+            >
+              Remove
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="addStringItem(membership.items)"
+          >
+            + Add Membership Benefit
+          </button>
+
+        </div>
+
+      </div>
+
+      <div class="empty-state" *ngIf="content.schemes.length === 0">
+        <p>No schemes added yet.</p>
         <button
           type="button"
-          class="remove-button"
-          (click)="removeInitiative(i)"
-          [disabled]="content.initiatives.length <= 1"
-          aria-label="Remove initiative"
+          class="secondary-button"
+          (click)="addScheme()"
         >
-          Remove
+          + Add First Scheme
         </button>
       </div>
+
     </section>
 
-    <section class="content-card">
-      <div class="section-heading">
-        <div>
-          <h2>Call-to-Action Button</h2>
-          <p>Configure the button that links visitors to the schemes page.</p>
-        </div>
-      </div>
-
-      <div class="button-fields">
-        <div class="form-group">
-          <label for="buttonLabel">Button Label</label>
-          <input
-            id="buttonLabel"
-            type="text"
-            [(ngModel)]="content.button.label"
-            placeholder="Explore Schemes"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="buttonUrl">Button URL</label>
-          <input
-            id="buttonUrl"
-            type="text"
-            [(ngModel)]="content.button.url"
-            placeholder="/initiatives"
-          />
-        </div>
-      </div>
-
-      <div class="button-preview">
-        <span>Button Preview</span>
-        <button type="button" class="preview-button" disabled>
-          {{ content.button.label || 'Button Label' }}
-        </button>
-        <small>Destination: {{ content.button.url || 'Not set' }}</small>
-      </div>
-    </section>
+    <!-- Bottom Save -->
 
     <div class="bottom-actions">
       <button
@@ -200,8 +533,15 @@
         (click)="saveGovernmentInitiatives()"
         [disabled]="isSaving || isDeleting"
       >
-        {{ isSaving ? 'Saving...' : (isExistingContent ? 'Update Government Initiatives' : 'Create Government Initiatives') }}
+        {{
+          isSaving
+            ? 'Saving...'
+            : (isExistingContent
+                ? 'Update Government Schemes'
+                : 'Create Government Schemes')
+        }}
       </button>
     </div>
+
   </ng-container>
 </div>

@@ -1,4 +1,3 @@
-
 <div class="detail-page">
   <header class="page-header">
     <div class="heading-content">
@@ -11,11 +10,7 @@
       <p>{{ pageDescription }}</p>
     </div>
 
-    <button
-      class="primary-button"
-      type="button"
-      (click)="openCreateForm()"
-    >
+    <button class="primary-button" type="button" (click)="openCreateForm()">
       + Create New
     </button>
   </header>
@@ -34,30 +29,18 @@
     <div class="listing-toolbar">
       <div class="search-box">
         <span>⌕</span>
-        <input
-          type="search"
-          [(ngModel)]="searchTerm"
-          (ngModelChange)="applyFilters()"
-          placeholder="Search by name, slug, or SKU..."
-        />
+        <input type="search" [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()"
+          placeholder="Search by name, slug, or SKU..." />
       </div>
 
-      <select
-        *ngIf="section !== 'groups'"
-        [(ngModel)]="statusFilter"
-        (ngModelChange)="applyFilters()"
-        aria-label="Filter by status"
-      >
+      <select *ngIf="section !== 'groups'" [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()"
+        aria-label="Filter by status">
         <option value="all">All statuses</option>
         <option value="active">Active</option>
         <option value="inactive">Inactive</option>
       </select>
 
-      <button
-        class="secondary-button"
-        type="button"
-        (click)="loadData()"
-      >
+      <button class="secondary-button" type="button" (click)="loadData()">
         ↻ Refresh
       </button>
     </div>
@@ -117,43 +100,25 @@
             </td>
 
             <td *ngIf="section !== 'groups'">
-              <span
-                class="status-pill"
-                [class.inactive]="item.active === false"
-              >
+              <span class="status-pill" [class.inactive]="item.active === false">
                 {{ item.active === false ? 'Inactive' : 'Active' }}
               </span>
             </td>
 
             <td>
               <div class="row-actions">
-                <button
-                  class="icon-button view-button"
-                  type="button"
-                  title="View details"
-                  aria-label="View details"
-                  (click)="viewItem(item)"
-                >
+                <button class="icon-button view-button" type="button" title="View details" aria-label="View details"
+                  (click)="viewItem(item)">
                   ◉
                 </button>
 
-                <button
-                  class="icon-button edit-button"
-                  type="button"
-                  title="Edit"
-                  aria-label="Edit"
-                  (click)="editItem(item)"
-                >
+                <button class="icon-button edit-button" type="button" title="Edit" aria-label="Edit"
+                  (click)="editItem(item)">
                   ✎
                 </button>
 
-                <button
-                  class="icon-button delete-button"
-                  type="button"
-                  title="Delete"
-                  aria-label="Delete"
-                  (click)="deleteItem(item)"
-                >
+                <button class="icon-button delete-button" type="button" title="Delete" aria-label="Delete"
+                  (click)="deleteItem(item)">
                   ×
                 </button>
               </div>
@@ -161,24 +126,17 @@
           </tr>
 
           <tr *ngIf="filteredItems.length === 0">
-            <td
-              [attr.colspan]="
+            <td [attr.colspan]="
                 section === 'products'
-                  ? 6
+                  ? 7
                   : section === 'categories'
-                    ? 4
+                    ? 5
                     : 4
-              "
-              class="empty-state"
-            >
+              " class="empty-state">
               <div class="empty-icon">▤</div>
               <h3>No records found</h3>
               <p>Try changing your search or create a new record.</p>
-              <button
-                class="primary-button"
-                type="button"
-                (click)="openCreateForm()"
-              >
+              <button class="primary-button" type="button" (click)="openCreateForm()">
                 + Create New
               </button>
             </td>
@@ -194,13 +152,8 @@
 </div>
 
 <div *ngIf="showForm" class="modal-backdrop" (click)="closeForm()">
-  <section
-    class="form-modal"
-    role="dialog"
-    aria-modal="true"
-    [attr.aria-label]="formTitle"
-    (click)="$event.stopPropagation()"
-  >
+  <section class="form-modal" role="dialog" aria-modal="true" [attr.aria-label]="formTitle"
+    (click)="$event.stopPropagation()">
     <header class="modal-header">
       <div>
         <span class="eyebrow">CATALOGUE MANAGEMENT</span>
@@ -208,12 +161,7 @@
         <p>Enter the details below and save your changes.</p>
       </div>
 
-      <button
-        class="modal-close"
-        type="button"
-        aria-label="Close"
-        (click)="closeForm()"
-      >
+      <button class="modal-close" type="button" aria-label="Close" (click)="closeForm()">
         ×
       </button>
     </header>
@@ -223,57 +171,28 @@
         <div class="form-grid">
           <label class="form-field">
             <span>Name <b>*</b></span>
-            <input
-              type="text"
-              name="name"
-              [(ngModel)]="form.name"
-              placeholder="Enter name"
-              required
-            />
+            <input type="text" name="name" [(ngModel)]="form.name" placeholder="Enter name" required />
           </label>
 
           <label class="form-field">
             <span>Slug <b>*</b></span>
-            <input
-              type="text"
-              name="slug"
-              [(ngModel)]="form.slug"
-              placeholder="example-slug"
-              required
-            />
+            <input type="text" name="slug" [(ngModel)]="form.slug" placeholder="example-slug" required />
           </label>
 
-          <label
-            class="form-field full-width"
-            *ngIf="section !== 'products'"
-          >
+          <label class="form-field full-width" *ngIf="section !== 'products'">
             <span>Description</span>
-            <textarea
-              name="description"
-              [(ngModel)]="form.description"
-              rows="3"
-              placeholder="Enter description"
-            ></textarea>
+            <textarea name="description" [(ngModel)]="form.description" rows="3"
+              placeholder="Enter description"></textarea>
           </label>
 
           <label class="form-field" *ngIf="section === 'groups'">
             <span>Sort Order</span>
-            <input
-              type="number"
-              name="sortOrder"
-              [(ngModel)]="form.sortOrder"
-              min="0"
-            />
+            <input type="number" name="sortOrder" [(ngModel)]="form.sortOrder" min="0" />
           </label>
 
           <label class="form-field" *ngIf="section === 'groups'">
             <span>Subtitle</span>
-            <input
-              type="text"
-              name="subtitle"
-              [(ngModel)]="form.subtitle"
-              placeholder="Enter subtitle"
-            />
+            <input type="text" name="subtitle" [(ngModel)]="form.subtitle" placeholder="Enter subtitle" />
           </label>
 
           <label class="form-field" *ngIf="section === 'categories'">
@@ -288,74 +207,39 @@
 
           <label class="form-field" *ngIf="section === 'categories'">
             <span>Group ID</span>
-            <input
-              type="text"
-              name="groupId"
-              [(ngModel)]="form.groupId"
-              placeholder="Enter group ID if required"
-            />
+            <input type="text" name="groupId" [(ngModel)]="form.groupId" placeholder="Enter group ID if required" />
           </label>
 
           <ng-container *ngIf="section === 'products'">
             <label class="form-field">
               <span>SKU</span>
-              <input
-                type="text"
-                name="sku"
-                [(ngModel)]="form.sku"
-                placeholder="Product SKU"
-              />
+              <input type="text" name="sku" [(ngModel)]="form.sku" placeholder="Product SKU" />
             </label>
 
             <label class="form-field">
               <span>Category Slug</span>
-              <input
-                type="text"
-                name="categorySlug"
-                [(ngModel)]="form.categorySlug"
-                placeholder="Primary category slug"
-              />
+              <input type="text" name="categorySlug" [(ngModel)]="form.categorySlug"
+                placeholder="Primary category slug" />
             </label>
 
             <label class="form-field full-width">
               <span>Short Description</span>
-              <textarea
-                name="shortDescription"
-                [(ngModel)]="form.shortDescription"
-                rows="2"
-              ></textarea>
+              <textarea name="shortDescription" [(ngModel)]="form.shortDescription" rows="2"></textarea>
             </label>
 
             <label class="form-field">
               <span>Price <b>*</b></span>
-              <input
-                type="number"
-                name="price"
-                [(ngModel)]="form.price"
-                min="0"
-                required
-              />
+              <input type="number" name="price" [(ngModel)]="form.price" min="0" required />
             </label>
 
             <label class="form-field">
               <span>Original Price</span>
-              <input
-                type="number"
-                name="originalPrice"
-                [(ngModel)]="form.originalPrice"
-                min="0"
-              />
+              <input type="number" name="originalPrice" [(ngModel)]="form.originalPrice" min="0" />
             </label>
 
             <label class="form-field">
               <span>Discount (%)</span>
-              <input
-                type="number"
-                name="discountPercent"
-                [(ngModel)]="form.discountPercent"
-                min="0"
-                max="100"
-              />
+              <input type="number" name="discountPercent" [(ngModel)]="form.discountPercent" min="0" max="100" />
             </label>
 
             <label class="form-field">
@@ -368,108 +252,59 @@
 
             <label class="form-field">
               <span>Stock Quantity</span>
-              <input
-                type="number"
-                name="stockQuantity"
-                [(ngModel)]="form.stockQuantity"
-                min="0"
-              />
+              <input type="number" name="stockQuantity" [(ngModel)]="form.stockQuantity" min="0" />
             </label>
 
             <label class="form-field">
               <span>Product Type</span>
-              <input
-                type="text"
-                name="type"
-                [(ngModel)]="form.type"
-                placeholder="Enter product type"
-              />
+              <input type="text" name="type" [(ngModel)]="form.type" placeholder="Enter product type" />
             </label>
 
             <label class="form-field full-width">
               <span>Overview</span>
-              <textarea
-                name="overview"
-                [(ngModel)]="form.overview"
-                rows="3"
-              ></textarea>
+              <textarea name="overview" [(ngModel)]="form.overview" rows="3"></textarea>
             </label>
 
             <label class="form-field full-width">
               <span>Craft Story</span>
-              <textarea
-                name="craftStory"
-                [(ngModel)]="form.craftStory"
-                rows="3"
-              ></textarea>
+              <textarea name="craftStory" [(ngModel)]="form.craftStory" rows="3"></textarea>
             </label>
 
             <label class="form-field full-width">
               <span>Material Care</span>
-              <textarea
-                name="materialCare"
-                [(ngModel)]="form.materialCare"
-                rows="2"
-              ></textarea>
+              <textarea name="materialCare" [(ngModel)]="form.materialCare" rows="2"></textarea>
             </label>
 
             <label class="form-field full-width">
               <span>Shipping and Returns</span>
-              <textarea
-                name="shippingReturns"
-                [(ngModel)]="form.shippingReturns"
-                rows="2"
-              ></textarea>
+              <textarea name="shippingReturns" [(ngModel)]="form.shippingReturns" rows="2"></textarea>
             </label>
 
             <label class="form-field full-width">
               <span>Category Slugs (JSON array)</span>
-              <textarea
-                name="categorySlugsText"
-                [(ngModel)]="form.categorySlugsText"
-                rows="2"
-                placeholder='["category-slug"]'
-              ></textarea>
+              <textarea name="categorySlugsText" [(ngModel)]="form.categorySlugsText" rows="2"
+                placeholder='["category-slug"]'></textarea>
             </label>
 
             <label class="form-field full-width">
               <span>Category IDs (JSON array)</span>
-              <textarea
-                name="categoryIdsText"
-                [(ngModel)]="form.categoryIdsText"
-                rows="2"
-                placeholder='["category-id"]'
-              ></textarea>
+              <textarea name="categoryIdsText" [(ngModel)]="form.categoryIdsText" rows="2"
+                placeholder='["category-id"]'></textarea>
             </label>
 
             <label class="form-field full-width">
               <span>Types (JSON array)</span>
-              <textarea
-                name="typesText"
-                [(ngModel)]="form.typesText"
-                rows="2"
-                placeholder='["weaves"]'
-              ></textarea>
+              <textarea name="typesText" [(ngModel)]="form.typesText" rows="2" placeholder='["weaves"]'></textarea>
             </label>
 
             <label class="form-field full-width">
               <span>Attributes (JSON object)</span>
-              <textarea
-                name="attributesText"
-                [(ngModel)]="form.attributesText"
-                rows="4"
-                placeholder="{}"
-              ></textarea>
+              <textarea name="attributesText" [(ngModel)]="form.attributesText" rows="4" placeholder="{}"></textarea>
             </label>
 
             <label class="form-field full-width">
               <span>Bulk Pricing (JSON array)</span>
-              <textarea
-                name="bulkPricingText"
-                [(ngModel)]="form.bulkPricingText"
-                rows="4"
-                placeholder="[]"
-              ></textarea>
+              <textarea name="bulkPricingText" [(ngModel)]="form.bulkPricingText" rows="4" placeholder="[]"></textarea>
             </label>
           </ng-container>
 
@@ -479,98 +314,65 @@
               <b *ngIf="section === 'products' && !isEditing">*</b>
             </span>
 
-            <input
-              type="file"
-              accept="image/*"
-              (change)="
+            <input type="file" accept="image/*" (change)="
                 onImageSelected(
                   $event,
                   section === 'products' ? 'mainImage' : 'image'
                 )
-              "
-            />
+              " />
 
             <small>Image files only. Maximum 5 MB.</small>
 
-            <img
-              *ngIf="section === 'products' && mainImagePreview"
-              class="image-preview"
-              [src]="mainImagePreview"
-              alt="Main product preview"
-            />
+            <img *ngIf="section === 'products' && mainImagePreview" class="image-preview" [src]="mainImagePreview"
+              alt="Main product preview" />
 
-            <img
-              *ngIf="section !== 'products' && imagePreview"
-              class="image-preview"
-              [src]="imagePreview"
-              alt="Catalogue image preview"
-            />
+            <img *ngIf="section !== 'products' && imagePreview" class="image-preview" [src]="imagePreview"
+              alt="Catalogue image preview" />
           </label>
 
           <label class="form-field full-width" *ngIf="section === 'products'">
             <span>Gallery Images</span>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              (change)="onGallerySelected($event)"
-            />
-            <small>Select gallery images. Each image must be at most 5 MB.</small>
+
+            <input type="file" accept="image/*" multiple (change)="onGallerySelected($event)" />
+
+            <small>
+              Select gallery images. Each image must be at most 5 MB.
+            </small>
 
             <div class="gallery-previews" *ngIf="galleryPreviews.length">
-              <img
-                *ngFor="let preview of galleryPreviews"
-                [src]="preview"
-                alt="Gallery preview"
-              />
+              <img *ngFor="let preview of galleryPreviews" [src]="preview" alt="Gallery preview" />
             </div>
           </label>
 
           <label class="checkbox-field" *ngIf="section !== 'groups'">
-            <input
-              type="checkbox"
-              name="active"
-              [(ngModel)]="form.active"
-            />
+            <input type="checkbox" name="active" [(ngModel)]="form.active" />
             <span>Active</span>
           </label>
         </div>
       </div>
 
       <footer class="modal-footer">
-        <button
-          class="secondary-button"
-          type="button"
-          (click)="closeForm()"
-          [disabled]="saving"
-        >
+        <button class="secondary-button" type="button" (click)="closeForm()" [disabled]="saving">
           Cancel
         </button>
 
-        <button
-          class="primary-button"
-          type="submit"
-          [disabled]="saving"
-        >
-          {{ saving ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Record' }}
+        <button class="primary-button" type="submit" [disabled]="saving">
+          {{
+          saving
+          ? 'Saving...'
+          : isEditing
+          ? 'Save Changes'
+          : 'Create Record'
+          }}
         </button>
       </footer>
     </form>
   </section>
 </div>
 
-<div
-  *ngIf="showDetails && selectedItem"
-  class="modal-backdrop"
-  (click)="closeDetails()"
->
-  <section
-    class="details-modal"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Catalogue record details"
-    (click)="$event.stopPropagation()"
-  >
+<div *ngIf="showDetails && selectedItem" class="modal-backdrop" (click)="closeDetails()">
+  <section class="details-modal" role="dialog" aria-modal="true" aria-label="Catalogue record details"
+    (click)="$event.stopPropagation()">
     <header class="modal-header">
       <div>
         <span class="eyebrow">RECORD DETAILS</span>
@@ -578,33 +380,27 @@
         <p>{{ selectedItem.slug || 'No slug available' }}</p>
       </div>
 
-      <button
-        class="modal-close"
-        type="button"
-        aria-label="Close"
-        (click)="closeDetails()"
-      >
+      <button class="modal-close" type="button" aria-label="Close" (click)="closeDetails()">
         ×
       </button>
     </header>
 
     <div class="details-body">
-      <img
-        *ngIf="
-          selectedItem.image?.url ||
+      <img *ngIf="
+          getImageUrl(selectedItem.image) ||
           selectedItem.imageUrl ||
-          selectedItem.mainImage?.url ||
+          getImageUrl(selectedItem.mainImage) ||
           selectedItem.mainImageUrl
-        "
-        class="details-image"
-        [src]="
-          selectedItem.image?.url ||
+        " class="details-image" [src]="
+          getImageUrl(selectedItem.image) ||
           selectedItem.imageUrl ||
-          selectedItem.mainImage?.url ||
+          getImageUrl(selectedItem.mainImage) ||
           selectedItem.mainImageUrl
-        "
-        alt="Catalogue record"
-      />
+        " alt="Catalogue record" />
+
+      <div class="gallery-previews" *ngIf="section === 'products' && getGalleryImageUrls(selectedItem).length">
+        <img *ngFor="let imageUrl of getGalleryImageUrls(selectedItem)" [src]="imageUrl" alt="Product gallery image" />
+      </div>
 
       <div class="detail-row">
         <span>Name</span>
@@ -618,7 +414,13 @@
 
       <div class="detail-row">
         <span>Description</span>
-        <strong>{{ selectedItem.description || selectedItem.shortDescription || '—' }}</strong>
+        <strong>
+          {{
+          selectedItem.description ||
+          selectedItem.shortDescription ||
+          '—'
+          }}
+        </strong>
       </div>
 
       <div class="detail-row" *ngIf="section === 'products'">
@@ -636,31 +438,44 @@
         <strong>{{ selectedItem.stockQuantity ?? '—' }}</strong>
       </div>
 
+
+      <div class="detail-row" *ngIf="section === 'products'">
+        <span>Categories</span>
+        <strong>{{ getCategoryNames(selectedItem) }}</strong>
+      </div>
+
+
       <div class="detail-row" *ngIf="section === 'categories'">
         <span>Type</span>
         <strong>{{ getItemType(selectedItem) }}</strong>
       </div>
 
+      <div class="detail-row" *ngIf="section === 'categories'">
+        <span>Group</span>
+        <strong>
+          {{
+          selectedItem.group?.name ||
+          selectedItem.group ||
+          selectedItem.groupId ||
+          '—'
+          }}
+        </strong>
+      </div>
+
       <div class="detail-row" *ngIf="section !== 'groups'">
         <span>Status</span>
-        <strong>{{ selectedItem.active === false ? 'Inactive' : 'Active' }}</strong>
+        <strong>
+          {{ selectedItem.active === false ? 'Inactive' : 'Active' }}
+        </strong>
       </div>
     </div>
 
     <footer class="modal-footer">
-      <button
-        class="secondary-button"
-        type="button"
-        (click)="closeDetails()"
-      >
+      <button class="secondary-button" type="button" (click)="closeDetails()">
         Close
       </button>
 
-      <button
-        class="primary-button"
-        type="button"
-        (click)="editItem(selectedItem)"
-      >
+      <button class="primary-button" type="button" (click)="editItem(selectedItem)">
         ✎ Edit Record
       </button>
     </footer>

@@ -1,0 +1,223 @@
+<div class="settings-page">
+  <div class="page-header">
+    <div>
+      <h1>Profile &amp; Security</h1>
+      <p>Manage your administrator account and security settings.</p>
+    </div>
+    <button type="button" class="refresh-button" (click)="loadProfile()" [disabled]="isLoading">
+      <span>↻</span> Refresh
+    </button>
+  </div>
+
+  @if (isLoading) {
+    <div class="loading-card">
+      <span class="loading-spinner"></span>
+      <p>Loading your profile...</p>
+    </div>
+  } @else if (profileError && !profile.id) {
+    <div class="alert alert-error">
+      <span>{{ profileError }}</span>
+      <button type="button" (click)="loadProfile()">Try again</button>
+    </div>
+  } @else {
+    <div class="profile-overview card">
+      <div class="avatar">{{ getInitials(profile.email) }}</div>
+      <div class="overview-info">
+        <h2>{{ profile.email || 'Administrator' }}</h2>
+        <p>{{ profile.role || 'Admin' }}</p>
+        <div class="overview-badges">
+          <span class="status-badge" [class.status-verified]="profile.isVerified">
+            <span class="status-dot"></span>
+            {{ profile.isVerified ? 'Email verified' : 'Email not verified' }}
+          </span>
+          <span class="role-badge">{{ profile.role || 'Admin' }}</span>
+        </div>
+      </div>
+      <div class="account-id">
+        <span>Account ID</span>
+        <strong>{{ profile.id || 'Not available' }}</strong>
+      </div>
+    </div>
+
+    <div class="settings-grid">
+      <section class="card settings-card">
+        <div class="section-heading">
+          <div class="section-icon">
+            <span>♙</span>
+          </div>
+          <div>
+            <h2>Personal Information</h2>
+            <p>Update your administrator profile details.</p>
+          </div>
+        </div>
+
+        @if (profileError) {
+          <div class="alert alert-error">{{ profileError }}</div>
+        }
+
+        @if (profileSuccess) {
+          <div class="alert alert-success">{{ profileSuccess }}</div>
+        }
+
+        <form (ngSubmit)="updateProfile()">
+          <div class="form-group">
+            <label for="profile-name">Full Name</label>
+            <input
+              id="profile-name"
+              type="text"
+              name="name"
+              [(ngModel)]="profileForm.name"
+              placeholder="Enter your full name"
+              autocomplete="name"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="profile-email">Email Address</label>
+            <input
+              id="profile-email"
+              type="email"
+              name="email"
+              [(ngModel)]="profileForm.email"
+              placeholder="Enter your email address"
+              autocomplete="email"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="profile-mobile">Mobile Number</label>
+            <input
+              id="profile-mobile"
+              type="tel"
+              name="mobile"
+              [(ngModel)]="profileForm.mobile"
+              placeholder="Enter your mobile number"
+              autocomplete="tel"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="profile-current-password">Current Password</label>
+            <input
+              id="profile-current-password"
+              type="password"
+              name="profileCurrentPassword"
+              [(ngModel)]="profileForm.currentPassword"
+              placeholder="Enter your current password to save changes"
+              autocomplete="current-password"
+              required
+            />
+            <small>Required to verify your identity before updating your profile.</small>
+          </div>
+
+          <button type="submit" class="primary-button" [disabled]="isSavingProfile">
+            {{ isSavingProfile ? 'Saving Changes...' : 'Save Changes' }}
+          </button>
+        </form>
+      </section>
+
+      <section class="card settings-card">
+        <div class="section-heading">
+          <div class="section-icon security-icon">
+            <span>♧</span>
+          </div>
+          <div>
+            <h2>Change Password</h2>
+            <p>Keep your administrator account secure.</p>
+          </div>
+        </div>
+
+        @if (passwordError) {
+          <div class="alert alert-error">{{ passwordError }}</div>
+        }
+
+        @if (passwordSuccess) {
+          <div class="alert alert-success">{{ passwordSuccess }}</div>
+        }
+
+        <form (ngSubmit)="changePassword()">
+          <div class="form-group">
+            <label for="password-current">Current Password</label>
+            <input
+              id="password-current"
+              type="password"
+              name="passwordCurrent"
+              [(ngModel)]="passwordForm.currentPassword"
+              placeholder="Enter current password"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password-new">New Password</label>
+            <input
+              id="password-new"
+              type="password"
+              name="newPassword"
+              [(ngModel)]="passwordForm.newPassword"
+              placeholder="Enter new password"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            />
+            <small>Use at least 8 characters.</small>
+          </div>
+
+          <div class="form-group">
+            <label for="password-confirm">Confirm New Password</label>
+            <input
+              id="password-confirm"
+              type="password"
+              name="confirmNewPassword"
+              [(ngModel)]="passwordForm.confirmNewPassword"
+              placeholder="Re-enter new password"
+              autocomplete="new-password"
+              required
+            />
+          </div>
+
+          <div class="password-guidance">
+            <span class="guidance-icon">ⓘ</span>
+            <p>Choose a strong password that you do not use for other accounts.</p>
+          </div>
+
+          <button type="submit" class="primary-button" [disabled]="isChangingPassword">
+            {{ isChangingPassword ? 'Updating Password...' : 'Update Password' }}
+          </button>
+        </form>
+      </section>
+    </div>
+
+    <section class="card account-activity">
+      <div class="section-heading">
+        <div class="section-icon activity-icon">
+          <span>◷</span>
+        </div>
+        <div>
+          <h2>Account Information</h2>
+          <p>Account creation and last update details.</p>
+        </div>
+      </div>
+
+      <div class="activity-grid">
+        <div class="activity-item">
+          <span>Account Created</span>
+          <strong>{{ formatDate(profile.createdAt) }}</strong>
+        </div>
+        <div class="activity-item">
+          <span>Last Updated</span>
+          <strong>{{ formatDate(profile.updatedAt) }}</strong>
+        </div>
+        <div class="activity-item">
+          <span>Email Verification</span>
+          <strong [class.text-success]="profile.isVerified" [class.text-danger]="!profile.isVerified">
+            {{ profile.isVerified ? 'Verified' : 'Not verified' }}
+          </strong>
+        </div>
+      </div>
+    </section>
+  }
+</div>

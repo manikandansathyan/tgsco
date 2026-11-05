@@ -74,95 +74,98 @@ export class Story implements OnInit {
     };
   }
 
-  loadWhoWeAre(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+ loadWhoWeAre(): void {
+  this.isLoading = true;
+  this.errorMessage = '';
 
-    this.api
-      .getWhoWeAreAPI()
-      .pipe(
-        timeout(60000),
-        finalize(() => {
-          this.isLoading = false;
-          this.cdr.markForCheck();
-        })
-      )
-      .subscribe({
-        next: (response: any) => {
-          const responseData = response?.data ?? response;
-          const data = responseData?.content ?? responseData;
+  this.api
+    .getWhoWeAreAPI()
+    .pipe(
+      timeout(60000),
+      finalize(() => {
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      })
+    )
+    .subscribe({
+      next: (response: any) => {
+        const responseData = response?.data ?? response;
+        const data = responseData?.content ?? responseData;
 
-          if (
-            data &&
-            typeof data === 'object' &&
-            !Array.isArray(data)
-          ) {
-            this.content = {
-              title: data.title ?? 'Who We Are',
-              paragraphs: Array.isArray(data.paragraphs)
-                ? [...data.paragraphs]
-                : this.getDefaultContent().paragraphs,
-              quote: data.quote ?? '',
-              supportingText: data.supportingText ?? '',
-              button: {
-                label: data.button?.label ?? 'Learn More',
-                url: data.button?.url ?? '/about'
-              },
-              videoUrl: data.videoUrl ?? '',
-              videoAlt: data.videoAlt ?? ''
-            };
+        if (
+          data &&
+          typeof data === 'object' &&
+          !Array.isArray(data)
+        ) {
+          this.content = {
+            title: data.title ?? 'Who We Are',
 
-            this.primaryImageUrl =
-              data.primaryImageUrl ??
-              data.primary_image_url ??
-              data.primaryImage?.url ??
-              data.primaryImage ??
-              data.primary_image ??
-              data.imageUrl ??
-              data.image ??
-              '';
+            paragraphs: Array.isArray(data.paragraphs)
+              ? [...data.paragraphs]
+              : this.getDefaultContent().paragraphs,
 
-            const imageValue =
-              data.primaryImageUrl ??
-              data.primary_image_url ??
-              data.primaryImage?.url ??
-              data.primaryImage ??
-              data.primary_image ??
-              data.imageUrl ??
-              data.image ??
-              '';
+            quote: data.quote ?? '',
+            supportingText: data.supportingText ?? '',
 
-            this.primaryImageUrl =
-              typeof imageValue === 'string'
-                ? imageValue
-                : typeof imageValue?.url === 'string'
-                  ? imageValue.url
-                  : '';
+            button: {
+              label: data.button?.label ?? 'Learn More',
+              url: data.button?.url ?? '/about'
+            },
 
-            this.primaryImagePreview = this.primaryImageUrl;
+            videoUrl: data.videoUrl ?? '',
+            videoAlt: data.videoAlt ?? ''
+          };
 
-            this.primaryImagePreview = this.primaryImageUrl;
-            this.isExistingContent = true;
-          } else {
-            this.content = this.getDefaultContent();
-            this.isExistingContent = false;
-          }
+          // Find primary image from the API images array
+          const matchedImage = Array.isArray(responseData?.images)
+            ? responseData.images.find(
+                (image: any) => image.field === 'primaryImage'
+              )
+            : null;
 
-          this.primaryImage = null;
-          this.successMessage = '';
-          this.cdr.markForCheck();
-        },
-        error: (error: any) => {
-          console.error('Failed to load Who We Are content:', error);
+          // Fallback for older response formats
+          const fallbackImage =
+            data.primaryImageUrl ??
+            data.primary_image_url ??
+            data.primaryImage ??
+            data.primary_image ??
+            data.imageUrl ??
+            data.image ??
+            '';
 
-          this.errorMessage =
-            error?.error?.message ??
-            'Unable to load Who We Are content. Please try again.';
+          this.primaryImageUrl =
+            matchedImage?.url ??
+            (typeof fallbackImage === 'string'
+              ? fallbackImage
+              : fallbackImage?.url ?? '');
 
-          this.cdr.markForCheck();
+          this.primaryImagePreview = this.primaryImageUrl;
+
+          this.isExistingContent = !!responseData?.id;
+        } else {
+          this.content = this.getDefaultContent();
+          this.primaryImageUrl = '';
+          this.primaryImagePreview = '';
+          this.isExistingContent = false;
         }
-      });
-  }
+
+        this.primaryImage = null;
+        this.successMessage = '';
+
+        this.cdr.markForCheck();
+      },
+
+      error: (error: any) => {
+        console.error('Failed to load Who We Are content:', error);
+
+        this.errorMessage =
+          error?.error?.message ??
+          'Unable to load Who We Are content. Please try again.';
+
+        this.cdr.markForCheck();
+      }
+    });
+}
 
   addParagraph(): void {
     this.content.paragraphs.push('');

@@ -3,13 +3,13 @@
   display: block;
   min-width: 0;
   font-family: Inter, Arial, sans-serif;
-  color: #292820;
+  color: #292b32;
 }
 
 .detail-page {
   min-height: 100%;
   padding: 28px;
-  background: #f8f7f2;
+  background: #f8f7f8;
   box-sizing: border-box;
 }
 
@@ -31,7 +31,7 @@
   padding: 0;
   background: none;
   border: none;
-  color: #68765a;
+  color: #c51f32;
   font: inherit;
   font-size: 12px;
   font-weight: 600;
@@ -39,13 +39,13 @@
 }
 
 .back-button:hover {
-  color: #35462d;
+  color: #a91829;
 }
 
 .eyebrow {
   display: block;
   margin-bottom: 8px;
-  color: #898573;
+  color: #8c8588;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.3px;
@@ -60,7 +60,7 @@
 
 .page-header p {
   margin: 8px 0 0;
-  color: #858477;
+  color: #85818a;
   font-size: 13px;
   line-height: 1.6;
 }
@@ -81,23 +81,25 @@
 }
 
 .primary-button {
-  background: #536746;
-  border: 1px solid #536746;
+  background: #c51f32;
+  border: 1px solid #c51f32;
   color: #fff;
 }
 
 .primary-button:hover:not(:disabled) {
-  background: #435638;
+  background: #a91829;
+  border-color: #a91829;
 }
 
 .secondary-button {
   background: #fff;
-  border: 1px solid #e5e2d8;
-  color: #484638;
+  border: 1px solid #e5dfe2;
+  color: #48434a;
 }
 
 .secondary-button:hover:not(:disabled) {
-  background: #f2f0e8;
+  background: #fff0f2;
+  border-color: #e9c3ca;
 }
 
 button:disabled {
@@ -126,21 +128,21 @@ button:disabled {
 }
 
 .success-alert {
-  background: #edf4e9;
-  border: 1px solid #d8e7d0;
-  color: #49663d;
+  background: #edf7f0;
+  border: 1px solid #d3e8d9;
+  color: #327348;
 }
 
 .error-alert {
-  background: #fbefed;
-  border: 1px solid #f0d8d3;
-  color: #9a463a;
+  background: #fff0f1;
+  border: 1px solid #f0cdd2;
+  color: #a91829;
 }
 
 .listing-card {
   overflow: hidden;
   background: #fff;
-  border: 1px solid #e8e5dc;
+  border: 1px solid #e8e2e5;
   border-radius: 11px;
 }
 
@@ -149,7 +151,7 @@ button:disabled {
   align-items: center;
   gap: 12px;
   padding: 18px 20px;
-  border-bottom: 1px solid #eeece5;
+  border-bottom: 1px solid #eee8eb;
 }
 
 .search-box {
@@ -161,14 +163,14 @@ button:disabled {
   min-width: 0;
   height: 39px;
   padding: 0 12px;
-  border: 1px solid #e6e3da;
+  border: 1px solid #e6dfe3;
   border-radius: 7px;
   background: #fff;
   box-sizing: border-box;
 }
 
 .search-box > span {
-  color: #918d7d;
+  color: #91878c;
   font-size: 22px;
 }
 
@@ -178,25 +180,25 @@ button:disabled {
   border: none;
   outline: none;
   background: transparent;
-  color: #343328;
+  color: #343039;
   font: inherit;
   font-size: 12px;
 }
 
 .search-box input::placeholder {
-  color: #aaa697;
+  color: #aaa1a5;
 }
 
 .listing-toolbar select {
   height: 39px;
   padding: 0 30px 0 11px;
   background: #fff;
-  border: 1px solid #e6e3da;
+  border: 1px solid #e6dfe3;
   border-radius: 7px;
-  color: #5b594c;
+  color: #5b555b;
   font: inherit;
   font-size: 12px;
-  outline-color: #879679;
+  outline-color: #c51f32;
 }
 
 .table-wrapper {
@@ -212,12 +214,12 @@ table {
 }
 
 thead {
-  background: #faf9f5;
+  background: #fff5f6;
 }
 
 th {
   padding: 14px 17px;
-  color: #777565;
+  color: #777078;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -227,13 +229,13 @@ th {
 
 td {
   padding: 14px 17px;
-  border-top: 1px solid #f0eee8;
-  color: #686658;
+  border-top: 1px solid #f0eaed;
+  color: #68616a;
   vertical-align: middle;
 }
 
 tbody tr:hover {
-  background: #fcfbf8;
+  background: #fffafb;
 }
 
 .name-cell {
@@ -241,7 +243,7 @@ tbody tr:hover {
 }
 
 .record-name {
-  color: #302f26;
+  color: #302b32;
   font-weight: 600;
   line-height: 1.5;
 }
@@ -250,7 +252,7 @@ tbody tr:hover {
   max-width: 260px;
   margin-top: 4px;
   overflow: hidden;
-  color: #969183;
+  color: #969097;
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -269,19 +271,19 @@ tbody tr:hover {
 }
 
 .type-pill {
-  background: #f2f0e8;
-  color: #68634f;
+  background: #fbe8eb;
+  color: #a91829;
   text-transform: capitalize;
 }
 
 .status-pill {
-  background: #edf4e9;
-  color: #4e7041;
+  background: #edf7f0;
+  color: #327348;
 }
 
 .status-pill.inactive {
-  background: #f8e9e6;
-  color: #a34d42;
+  background: #fff0f1;
+  color: #a91829;
 }
 
 .actions-heading {
@@ -302,7 +304,7 @@ tbody tr:hover {
   justify-content: center;
   width: 30px;
   height: 30px;
-  border: 1px solid #e8e5dc;
+  border: 1px solid #e8e2e5;
   border-radius: 6px;
   background: #fff;
   font-size: 15px;
@@ -310,28 +312,31 @@ tbody tr:hover {
 }
 
 .view-button {
-  color: #68765a;
+  color: #c51f32;
 }
 
 .view-button:hover {
-  background: #edf2e8;
+  background: #fff0f2;
+  border-color: #efc7ce;
 }
 
 .edit-button {
-  color: #92733c;
+  color: #8a5c1b;
 }
 
 .edit-button:hover {
-  background: #f8f0df;
+  background: #fff6e8;
+  border-color: #efdfc3;
 }
 
 .delete-button {
-  color: #a34d42;
+  color: #b42335;
   font-size: 20px;
 }
 
 .delete-button:hover {
-  background: #fbefed;
+  background: #fff0f1;
+  border-color: #f0cdd2;
 }
 
 .empty-state {
@@ -341,26 +346,26 @@ tbody tr:hover {
 
 .empty-icon {
   margin-bottom: 12px;
-  color: #a6a18e;
+  color: #b9aeb3;
   font-size: 28px;
 }
 
 .empty-state h3 {
   margin: 0;
-  color: #454336;
+  color: #454047;
   font-size: 15px;
 }
 
 .empty-state p {
   margin: 8px 0 18px;
-  color: #918d7d;
+  color: #918890;
   font-size: 12px;
 }
 
 .table-footer {
   padding: 14px 20px;
-  border-top: 1px solid #eeece5;
-  color: #898573;
+  border-top: 1px solid #eee8eb;
+  color: #89818a;
   font-size: 11px;
 }
 
@@ -371,7 +376,7 @@ tbody tr:hover {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  color: #858477;
+  color: #85818a;
   font-size: 12px;
 }
 
@@ -382,8 +387,8 @@ tbody tr:hover {
 .loader {
   width: 27px;
   height: 27px;
-  border: 3px solid #e5e8df;
-  border-top-color: #536746;
+  border: 3px solid #f0dfe3;
+  border-top-color: #c51f32;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -403,7 +408,7 @@ tbody tr:hover {
   justify-content: center;
   padding: 20px;
   overflow-y: auto;
-  background: rgb(33 32 26 / 48%);
+  background: rgb(33 25 28 / 48%);
   box-sizing: border-box;
 }
 
@@ -414,9 +419,9 @@ tbody tr:hover {
   max-height: calc(100vh - 40px);
   overflow-y: auto;
   background: #fff;
-  border: 1px solid #e8e5dc;
+  border: 1px solid #e8e2e5;
   border-radius: 12px;
-  box-shadow: 0 18px 55px rgb(31 30 24 / 18%);
+  box-shadow: 0 18px 55px rgb(31 24 27 / 18%);
 }
 
 .details-modal {
@@ -429,19 +434,19 @@ tbody tr:hover {
   justify-content: space-between;
   gap: 20px;
   padding: 23px 25px;
-  border-bottom: 1px solid #eeece5;
+  border-bottom: 1px solid #eee8eb;
 }
 
 .modal-header h2 {
   margin: 0;
-  color: #302f26;
+  color: #302b32;
   font-size: 21px;
   font-weight: 700;
 }
 
 .modal-header p {
   margin: 7px 0 0;
-  color: #858477;
+  color: #85818a;
   font-size: 12px;
   line-height: 1.6;
 }
@@ -453,16 +458,18 @@ tbody tr:hover {
   flex-shrink: 0;
   width: 32px;
   height: 32px;
-  border: 1px solid #e8e5dc;
+  border: 1px solid #e8e2e5;
   border-radius: 7px;
   background: #fff;
-  color: #777565;
+  color: #777078;
   font-size: 22px;
   cursor: pointer;
 }
 
 .modal-close:hover {
-  background: #f5f3ec;
+  background: #fff0f2;
+  border-color: #efc7ce;
+  color: #c51f32;
 }
 
 .form-body {
@@ -480,13 +487,13 @@ tbody tr:hover {
   flex-direction: column;
   gap: 8px;
   min-width: 0;
-  color: #4b493c;
+  color: #4b454d;
   font-size: 12px;
   font-weight: 600;
 }
 
 .form-field > span b {
-  color: #b74e42;
+  color: #c51f32;
 }
 
 .full-width {
@@ -500,11 +507,11 @@ tbody tr:hover {
   min-height: 40px;
   padding: 10px 12px;
   box-sizing: border-box;
-  border: 1px solid #e3e0d6;
+  border: 1px solid #e3dce0;
   border-radius: 7px;
   outline: none;
   background: #fff;
-  color: #39382e;
+  color: #39333b;
   font-family: inherit;
   font-size: 12px;
   font-weight: 400;
@@ -519,24 +526,24 @@ tbody tr:hover {
 .form-field input:focus,
 .form-field select:focus,
 .form-field textarea:focus {
-  border-color: #849576;
-  box-shadow: 0 0 0 3px rgb(83 103 70 / 9%);
+  border-color: #c51f32;
+  box-shadow: 0 0 0 3px rgb(197 31 50 / 9%);
 }
 
 .form-field input[type='file'] {
   width: 100%;
   padding: 12px;
-  border: 1px dashed #d9d5c9;
+  border: 1px dashed #e0c6cc;
   border-radius: 7px;
-  background: #faf9f5;
-  color: #777565;
+  background: #fff8f9;
+  color: #777078;
   box-sizing: border-box;
   font-family: inherit;
   font-size: 11px;
 }
 
 .form-field small {
-  color: #918d7d;
+  color: #918890;
   font-size: 10px;
   font-weight: 400;
 }
@@ -545,7 +552,7 @@ tbody tr:hover {
   width: 120px;
   height: 100px;
   margin-top: 5px;
-  border: 1px solid #e8e5dc;
+  border: 1px solid #e8e2e5;
   border-radius: 7px;
   object-fit: cover;
 }
@@ -559,7 +566,7 @@ tbody tr:hover {
 .gallery-previews img {
   width: 78px;
   height: 78px;
-  border: 1px solid #e8e5dc;
+  border: 1px solid #e8e2e5;
   border-radius: 7px;
   object-fit: cover;
 }
@@ -569,7 +576,7 @@ tbody tr:hover {
   align-items: center;
   gap: 9px;
   grid-column: 1 / -1;
-  color: #4b493c;
+  color: #4b454d;
   font-size: 12px;
   cursor: pointer;
 }
@@ -577,7 +584,7 @@ tbody tr:hover {
 .checkbox-field input {
   width: 16px;
   height: 16px;
-  accent-color: #536746;
+  accent-color: #c51f32;
 }
 
 .modal-footer {
@@ -585,8 +592,8 @@ tbody tr:hover {
   justify-content: flex-end;
   gap: 10px;
   padding: 17px 25px;
-  border-top: 1px solid #eeece5;
-  background: #fdfcf9;
+  border-top: 1px solid #eee8eb;
+  background: #fffafb;
 }
 
 .details-body {
@@ -599,7 +606,7 @@ tbody tr:hover {
   width: 140px;
   height: 130px;
   margin-bottom: 20px;
-  border: 1px solid #e8e5dc;
+  border: 1px solid #e8e2e5;
   border-radius: 8px;
   object-fit: cover;
 }
@@ -609,7 +616,7 @@ tbody tr:hover {
   grid-template-columns: 130px minmax(0, 1fr);
   gap: 15px;
   padding: 13px 0;
-  border-bottom: 1px solid #f0eee8;
+  border-bottom: 1px solid #f0eaed;
   font-size: 12px;
   line-height: 1.6;
 }
@@ -619,12 +626,12 @@ tbody tr:hover {
 }
 
 .detail-row span {
-  color: #898573;
+  color: #89818a;
 }
 
 .detail-row strong {
   overflow-wrap: anywhere;
-  color: #38372c;
+  color: #38313a;
   font-weight: 600;
 }
 

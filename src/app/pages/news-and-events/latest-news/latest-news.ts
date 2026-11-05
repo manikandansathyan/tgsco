@@ -1,6 +1,13 @@
+import {
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
 interface NewsItem {
@@ -24,6 +31,7 @@ interface NewsItem {
 })
 export class LatestNews implements OnInit, OnDestroy {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
 
   sectionTitle = 'Latest News';
   items: NewsItem[] = [];
@@ -45,7 +53,9 @@ export class LatestNews implements OnInit, OnDestroy {
   }
 
   private parseContent(value: any): any {
-    if (typeof value !== 'string') return value ?? {};
+    if (typeof value !== 'string') {
+      return value ?? {};
+    }
 
     try {
       return JSON.parse(value);
@@ -55,24 +65,40 @@ export class LatestNews implements OnInit, OnDestroy {
   }
 
   private extractData(response: any): any {
-    let data = response?.data ?? response ?? {};
+    const data = response?.data ?? response ?? {};
+    const content = this.parseContent(data.content);
 
-    if (data?.content !== undefined) {
-      const content = this.parseContent(data.content);
-      data = { ...data, ...content };
-    }
-
-    return data;
+    return {
+      ...data,
+      ...content,
+      images: data.images ?? [],
+    };
   }
 
-  private extractImageUrl(item: any): string {
+  private extractImageUrl(item: any, images: any[], index: number): string {
+    // Use the imageField supplied by the API.
+    const imageField =
+      item?.imageField ?? `items[${index}].image`;
+
+    // Find the matching image from the separate images array.
+    const imageData = images.find(
+      (image: any) => image.field === imageField
+    );
+
+    if (imageData?.url) {
+      return imageData.url;
+    }
+
+    // Fallback for older API response formats.
     const image =
       item?.imageUrl ??
       item?.imageURL ??
       item?.image_url ??
       item?.image;
 
-    if (typeof image === 'string') return image;
+    if (typeof image === 'string') {
+      return image;
+    }
 
     return (
       image?.url ??
@@ -102,49 +128,72 @@ export class LatestNews implements OnInit, OnDestroy {
     this.message = '';
     this.errorMessage = '';
 
-    this.api.getLatestNews().subscribe({
-      next: (response: any) => {
-        const data = this.extractData(response);
+    this.api
+      .getLatestNews()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.loading = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const data = this.extractData(response);
 
-        this.clearImagePreviews();
+          this.clearImagePreviews();
 
-        this.sectionTitle = data.title ?? 'Latest News';
+          this.sectionTitle = data.title ?? 'Latest News';
 
-        this.items = Array.isArray(data.items)
-          ? data.items.map((item: any, index: number) => {
-              const imageUrl = this.extractImageUrl(item);
-              const defaultId = `latest-news-${index + 1}`;
+          const uploadedImages = Array.isArray(data.images)
+            ? data.images
+            : [];
 
-              return {
-                id: item.id ?? defaultId,
-                slug: item.slug ?? item.id ?? defaultId,
-                title: item.title ?? '',
-                description: item.description ?? '',
-                date: item.date ?? '',
-                imageAlt: item.imageAlt ?? '',
-                imageFile: null,
-                imagePreview: '',
-                existingImageUrl: imageUrl,
-              };
-            })
-          : [];
+          this.items = Array.isArray(data.items)
+            ? data.items.map((item: any, index: number) => {
+                const imageUrl = this.extractImageUrl(
+                  item,
+                  uploadedImages,
+                  index
+                );
 
-        this.isEditMode = !!data.title || this.items.length > 0;
-        this.loading = false;
-      },
-      error: (error: any) => {
-        this.loading = false;
+                const defaultId = `latest-news-${index + 1}`;
 
-        if (error.status === 404) {
-          this.isEditMode = false;
-          this.message = 'No latest news content found. You can create it below.';
-          return;
-        }
+                return {
+                  id: item.id ?? defaultId,
+                  slug: item.slug ?? item.id ?? defaultId,
+                  title: item.title ?? '',
+                  description: item.description ?? '',
+                  date: item.date ?? '',
+                  imageAlt: item.imageAlt ?? '',
+                  imageFile: null,
+                  imagePreview: '',
+                  existingImageUrl: imageUrl,
+                };
+              })
+            : [];
 
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to load latest news.';
-      },
-    });
+          this.isEditMode = !!(
+            data.id ||
+            data.title ||
+            this.items.length > 0
+          );
+        },
+
+        error: (error: any) => {
+          if (error.status === 404) {
+            this.isEditMode = false;
+            this.items = [];
+            this.message =
+              'No latest news content found. You can create it below.';
+            return;
+          }
+
+          this.errorMessage =
+            error?.error?.message ??
+            'Failed to load latest news.';
+        },
+      });
   }
 
   addItem(): void {
@@ -152,7 +201,11 @@ export class LatestNews implements OnInit, OnDestroy {
   }
 
   removeItem(index: number): void {
-    this.revokeUrl(this.items[index]?.imagePreview);
+    if (index < 0 || index >= this.items.length) {
+      return;
+    }
+
+    this.revokeUrl(this.items[index].imagePreview);
     this.items.splice(index, 1);
   }
 
@@ -174,10 +227,14 @@ export class LatestNews implements OnInit, OnDestroy {
       return;
     }
 
-    this.errorMessage = '';
     const item = this.items[index];
 
+    if (!item) return;
+
+    this.errorMessage = '';
+
     this.revokeUrl(item.imagePreview);
+
     item.imageFile = file;
     item.imagePreview = URL.createObjectURL(file);
   }
@@ -218,15 +275,18 @@ export class LatestNews implements OnInit, OnDestroy {
       }
 
       if (!item.imageFile && !item.existingImageUrl) {
-        this.errorMessage = `Please upload an image for item ${index + 1}.`;
+        this.errorMessage =
+          `Please upload an image for item ${index + 1}.`;
         return;
       }
     }
 
     const content = {
       title: this.sectionTitle.trim(),
+
       items: this.items.map((item, index) => {
-        const slug = item.slug.trim() || this.makeSlug(item.title);
+        const slug =
+          item.slug.trim() || this.makeSlug(item.title);
 
         return {
           id: item.id.trim() || `latest-news-${index + 1}`,
@@ -254,27 +314,39 @@ export class LatestNews implements OnInit, OnDestroy {
       ? this.api.updateLatestNews(content, itemImages)
       : this.api.createLatestNews(content, itemImages);
 
-    request.subscribe({
-      next: (response: any) => {
-        this.saving = false;
-        this.message =
-          response?.message ??
-          (this.isEditMode
-            ? 'Latest news updated successfully.'
-            : 'Latest news created successfully.');
+    request
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.saving = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          this.message =
+            response?.message ??
+            (this.isEditMode
+              ? 'Latest news updated successfully.'
+              : 'Latest news created successfully.');
 
-        this.loadLatestNews();
-      },
-      error: (error: any) => {
-        this.saving = false;
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to save latest news.';
-      },
-    });
+          this.loadLatestNews();
+        },
+
+        error: (error: any) => {
+          this.errorMessage =
+            error?.error?.message ??
+            'Failed to save latest news.';
+        },
+      });
   }
 
   deleteLatestNews(): void {
-    if (!confirm('Are you sure you want to delete the entire Latest News section?')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete the entire Latest News section?'
+      )
+    ) {
       return;
     }
 
@@ -282,22 +354,33 @@ export class LatestNews implements OnInit, OnDestroy {
     this.message = '';
     this.errorMessage = '';
 
-    this.api.deleteLatestNews().subscribe({
-      next: () => {
-        this.deleting = false;
-        this.clearImagePreviews();
+    this.api
+      .deleteLatestNews()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.deleting = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.clearImagePreviews();
 
-        this.sectionTitle = 'Latest News';
-        this.items = [];
-        this.isEditMode = false;
-        this.message = 'Latest News section deleted successfully.';
-      },
-      error: (error: any) => {
-        this.deleting = false;
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to delete latest news.';
-      },
-    });
+          this.sectionTitle = 'Latest News';
+          this.items = [];
+          this.isEditMode = false;
+
+          this.message =
+            'Latest News section deleted successfully.';
+        },
+
+        error: (error: any) => {
+          this.errorMessage =
+            error?.error?.message ??
+            'Failed to delete latest news.';
+        },
+      });
   }
 
   resetForm(): void {
@@ -305,11 +388,13 @@ export class LatestNews implements OnInit, OnDestroy {
   }
 
   private clearImagePreviews(): void {
-    this.items.forEach((item) => this.revokeUrl(item.imagePreview));
+    this.items.forEach((item) => {
+      this.revokeUrl(item.imagePreview);
+    });
   }
 
   private revokeUrl(url: string): void {
-    if (url.startsWith('blob:')) {
+    if (url?.startsWith('blob:')) {
       URL.revokeObjectURL(url);
     }
   }

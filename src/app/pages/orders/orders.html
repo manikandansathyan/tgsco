@@ -1,0 +1,374 @@
+
+<div class="orders-page">
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">ORDER MANAGEMENT</p>
+      <h1>Orders</h1>
+      <p class="page-description">
+        View, search and manage customer orders.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="refresh-button"
+      (click)="loadOrders()"
+      [disabled]="loading"
+    >
+      <span class="refresh-icon">↻</span>
+      Refresh
+    </button>
+  </div>
+
+  <section class="summary-card">
+    <div class="summary-icon">▤</div>
+    <div>
+      <p class="summary-label">Orders matching filters</p>
+      <h2>{{ total }}</h2>
+    </div>
+  </section>
+
+  <section class="orders-card">
+    <div class="section-header">
+      <div>
+        <h2>All Orders</h2>
+        <p>Search and filter your orders below.</p>
+      </div>
+
+      <span class="result-count">
+        {{ total }} {{ total === 1 ? 'order' : 'orders' }}
+      </span>
+    </div>
+
+    <form class="filters-form" (ngSubmit)="applyFilters()">
+      <div class="search-field">
+        <label for="orderSearch">Search orders</label>
+        <div class="search-input-wrap">
+          <span class="search-icon">⌕</span>
+          <input
+            id="orderSearch"
+            type="text"
+            name="search"
+            [(ngModel)]="search"
+            placeholder="Order number, customer..."
+          />
+        </div>
+      </div>
+
+      <div class="filter-field">
+        <label for="orderStatus">Order status</label>
+        <select
+          id="orderStatus"
+          name="status"
+          [(ngModel)]="status"
+        >
+          <option value="">All statuses</option>
+          <option *ngFor="let item of statusOptions" [value]="item">
+            {{ formatStatus(item) }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="paymentStatus">Payment status</label>
+        <select
+          id="paymentStatus"
+          name="paymentStatus"
+          [(ngModel)]="paymentStatus"
+        >
+          <option value="">All payments</option>
+          <option
+            *ngFor="let item of paymentStatusOptions"
+            [value]="item"
+          >
+            {{ formatStatus(item) }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="sortOrders">Sort by</label>
+        <select
+          id="sortOrders"
+          name="sort"
+          [(ngModel)]="sort"
+        >
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="total">Order total</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="fromDate">From date</label>
+        <input
+          id="fromDate"
+          type="date"
+          name="from"
+          [(ngModel)]="from"
+        />
+      </div>
+
+      <div class="filter-field">
+        <label for="toDate">To date</label>
+        <input
+          id="toDate"
+          type="date"
+          name="to"
+          [(ngModel)]="to"
+        />
+      </div>
+
+      <div class="filter-actions">
+        <button
+          type="submit"
+          class="apply-button"
+          [disabled]="loading"
+        >
+          Apply Filters
+        </button>
+
+        <button
+          type="button"
+          class="reset-button"
+          (click)="resetFilters()"
+          [disabled]="loading"
+        >
+          Reset
+        </button>
+      </div>
+    </form>
+
+    <div *ngIf="errorMessage" class="error-message" role="alert">
+      <span>{{ errorMessage }}</span>
+      <button
+        type="button"
+        (click)="loadOrders()"
+        [disabled]="loading"
+      >
+        Try again
+      </button>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>ORDER</th>
+            <th>CUSTOMER</th>
+            <th>ITEMS</th>
+            <th>DATE</th>
+            <th>ORDER STATUS</th>
+            <th>PAYMENT</th>
+            <th class="amount-column">TOTAL</th>
+            <th class="action-column">ACTION</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngIf="loading">
+            <td colspan="8" class="state-cell">
+              <span class="loading-spinner"></span>
+              Loading orders...
+            </td>
+          </tr>
+
+          <tr *ngIf="!loading && !errorMessage && orders.length === 0">
+            <td colspan="8" class="state-cell">
+              <div class="empty-state">
+                <div class="empty-icon">▤</div>
+                <h3>No orders found</h3>
+                <p>Try changing your search or filter criteria.</p>
+
+                <button
+                  type="button"
+                  class="reset-button"
+                  (click)="resetFilters()"
+                >
+                  Clear filters
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <tr
+            *ngFor="let order of orders; trackBy: trackByOrder"
+            class="order-row"
+          >
+            <td>
+              <span class="order-number">
+                #{{ getOrderNumber(order) }}
+              </span>
+
+              <span class="order-id" *ngIf="getOrderId(order)">
+                ID: {{ getOrderId(order) }}
+              </span>
+            </td>
+
+            <td>
+              <div class="customer-cell">
+                <div class="customer-avatar">
+                  {{
+                    (getCustomerName(order) !== '—'
+                      ? getCustomerName(order).charAt(0)
+                      : 'C'
+                    ).toUpperCase()
+                  }}
+                </div>
+
+                <div class="customer-info">
+                  <span class="customer-name">
+                    {{ getCustomerName(order) }}
+                  </span>
+
+                  <span
+                    class="customer-email"
+                    *ngIf="getCustomerEmail(order)"
+                  >
+                    {{ getCustomerEmail(order) }}
+                  </span>
+
+                  <span
+                    class="customer-email"
+                    *ngIf="!getCustomerEmail(order) && getCustomerMobile(order)"
+                  >
+                    {{ getCustomerMobile(order) }}
+                  </span>
+                </div>
+              </div>
+            </td>
+
+            <td>
+              <div class="items-cell">
+                <span class="items-count">
+                  {{ getItemCount(order) }}
+                  {{ getItemCount(order) === 1 ? 'item' : 'items' }}
+                </span>
+
+                <span class="items-summary" [title]="getItemSummary(order)">
+                  {{ getItemSummary(order) }}
+                </span>
+              </div>
+            </td>
+
+            <td>
+              <span
+                class="date-value"
+                *ngIf="getOrderDate(order); else noDate"
+              >
+                {{ getOrderDate(order) | date: 'dd MMM yyyy' }}
+              </span>
+
+              <ng-template #noDate>
+                <span class="muted-value">—</span>
+              </ng-template>
+            </td>
+
+            <td>
+              <span
+                class="status-badge"
+                [ngClass]="'status-' + getOrderStatus(order).toLowerCase()"
+              >
+                {{ formatStatus(getOrderStatus(order)) }}
+              </span>
+
+              <span
+                class="return-status"
+                *ngIf="getReturnStatus(order) !== 'none'"
+              >
+                Return: {{ formatStatus(getReturnStatus(order)) }}
+              </span>
+            </td>
+
+            <td>
+              <div class="payment-cell">
+                <span
+                  class="status-badge"
+                  [ngClass]="'payment-' + getPaymentStatus(order).toLowerCase()"
+                >
+                  {{ formatStatus(getPaymentStatus(order)) }}
+                </span>
+
+                <span class="payment-method">
+                  {{ formatStatus(getPaymentMethod(order)) }}
+                </span>
+              </div>
+            </td>
+
+            <td class="amount-column">
+              <span *ngIf="getOrderTotal(order) !== null; else noTotal">
+                {{
+                  formatCurrency(
+                    getOrderTotal(order),
+                    getOrderCurrency(order)
+                  )
+                }}
+              </span>
+
+              <ng-template #noTotal>
+                <span class="muted-value">—</span>
+              </ng-template>
+            </td>
+
+            <td class="action-column">
+              <button
+                type="button"
+                class="view-button"
+                (click)="viewOrder(order)"
+                [disabled]="!getOrderId(order)"
+                [attr.aria-label]="'View order ' + getOrderNumber(order)"
+              >
+                View Details
+                <span aria-hidden="true">→</span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <div class="pagination-info">
+        <label for="pageLimit">Rows per page</label>
+
+        <select
+          id="pageLimit"
+          [ngModel]="limit"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="changeLimit($event)"
+          [disabled]="loading"
+        >
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="20">20</option>
+          <option [ngValue]="50">50</option>
+        </select>
+
+        <span>
+          Page {{ page }} of {{ totalPages }}
+        </span>
+
+        <span class="pagination-total">
+          {{ total }} total
+        </span>
+      </div>
+
+      <div class="pagination-buttons">
+        <button
+          type="button"
+          (click)="changePage(page - 1)"
+          [disabled]="loading || page <= 1"
+        >
+          ← Previous
+        </button>
+
+        <button
+          type="button"
+          (click)="changePage(page + 1)"
+          [disabled]="loading || page >= totalPages"
+        >
+          Next →
+        </button>
+      </div>
+    </div>
+  </section>
+</div>

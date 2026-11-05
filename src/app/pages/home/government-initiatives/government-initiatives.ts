@@ -10,14 +10,48 @@ import { FormsModule } from '@angular/forms';
 import { finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
+interface ContributionPlan {
+  monthlyContribution: string;
+  purchaseValue: string;
+}
+
+interface SchemeSection {
+  heading: string;
+  items: string[];
+}
+
+interface GovernmentScheme {
+  title: string;
+  slug: string;
+  category: string;
+  description: string;
+  imageField: string;
+  imageAlt: string;
+  imageUrl: string;
+  imageFile: File | null;
+
+  whoCanApply?: SchemeSection;
+
+  schemeBenefits?: {
+    heading: string;
+    intro: string;
+    contributionPlans: ContributionPlan[];
+    instalmentBenefits: string[];
+  };
+
+  howToApply?: {
+    heading: string;
+    steps: string[];
+  };
+
+  documentsRequired?: SchemeSection;
+
+  membershipBenefits?: SchemeSection;
+}
+
 interface GovernmentInitiativesContent {
   title: string;
-  description: string;
-  initiatives: string[];
-  button: {
-    label: string;
-    url: string;
-  };
+  schemes: GovernmentScheme[];
 }
 
 @Component({
@@ -39,9 +73,6 @@ export class GovernmentInitiatives implements OnInit {
   successMessage = '';
   errorMessage = '';
 
-  initiativeImageFile: File | null = null;
-  initiativeImageUrl = '';
-
   content: GovernmentInitiativesContent = this.getDefaultContent();
 
   ngOnInit(): void {
@@ -50,17 +81,52 @@ export class GovernmentInitiatives implements OnInit {
 
   private getDefaultContent(): GovernmentInitiativesContent {
     return {
-      title: "Backing the Backbone of Telangana's Textile Story",
-      description:
-        'Through close integration with State and Central Welfare schemes, TGSCO provides active healthcare coverage, thrift-fund savings assistance, yarn subsidies, and modern skill-development workshops to thousands of independent artisans, turning handloom into a sustainable lifestyle.',
-      initiatives: [
-        'Chenetha Mithra (Yarn Subsidy Scheme)',
-        'Nethanna Bima (Weaver Insurance Scheme)',
-        'National Handloom Development Programme Partner',
-      ],
-      button: {
-        label: 'Explore Schemes',
-        url: '/initiatives',
+      title: 'Current Government Schemes',
+      schemes: [],
+    };
+  }
+
+  private getDefaultScheme(): GovernmentScheme {
+    return {
+      title: '',
+      slug: '',
+      category: 'Scheme',
+      description: '',
+      imageField: '',
+      imageAlt: '',
+      imageUrl: '',
+      imageFile: null,
+
+      whoCanApply: {
+        heading: 'Who Can Apply',
+        items: [''],
+      },
+
+      schemeBenefits: {
+        heading: 'Scheme Benefits',
+        intro: '',
+        contributionPlans: [
+          {
+            monthlyContribution: '',
+            purchaseValue: '',
+          },
+        ],
+        instalmentBenefits: [''],
+      },
+
+      howToApply: {
+        heading: 'How to Apply',
+        steps: [''],
+      },
+
+      documentsRequired: {
+        heading: 'Documents Required',
+        items: [''],
+      },
+
+      membershipBenefits: {
+        heading: 'Membership Benefits',
+        items: [''],
       },
     };
   }
@@ -88,51 +154,140 @@ export class GovernmentInitiatives implements OnInit {
             typeof savedContent === 'object' &&
             typeof savedContent.title === 'string'
           ) {
-            const defaults = this.getDefaultContent();
+            const returnedImages: any[] = Array.isArray(data?.images)
+              ? data.images
+              : [];
+
+            const savedSchemes: any[] = Array.isArray(
+              savedContent.schemes
+            )
+              ? savedContent.schemes
+              : [];
 
             this.content = {
-              title: savedContent.title ?? defaults.title,
-              description:
-                savedContent.description ?? defaults.description,
-              initiatives: Array.isArray(savedContent.initiatives)
-                ? [...savedContent.initiatives]
-                : [...defaults.initiatives],
-              button: {
-                label:
-                  savedContent.button?.label ?? defaults.button.label,
-                url: savedContent.button?.url ?? defaults.button.url,
-              },
+              title: savedContent.title,
+              schemes: savedSchemes.map(
+                (scheme: any, index: number) => {
+                  const imageField =
+                    scheme.imageField || `schemes[${index}].image`;
+
+                  const matchedImage = returnedImages.find(
+                    (image: any) => image.field === imageField
+                  );
+
+                  return {
+                    title: scheme.title ?? '',
+                    slug: scheme.slug ?? '',
+                    category: scheme.category ?? 'Scheme',
+                    description: scheme.description ?? '',
+                    imageField,
+                    imageAlt: scheme.imageAlt ?? '',
+                    imageUrl:
+                      matchedImage?.url ??
+                      this.getImageUrl(
+                        scheme.imageUrl ?? scheme.image
+                      ),
+                    imageFile: null,
+
+                    whoCanApply: scheme.whoCanApply
+                      ? {
+                          heading:
+                            scheme.whoCanApply.heading ?? '',
+                          items: Array.isArray(
+                            scheme.whoCanApply.items
+                          )
+                            ? [...scheme.whoCanApply.items]
+                            : [],
+                        }
+                      : undefined,
+
+                    schemeBenefits: scheme.schemeBenefits
+                      ? {
+                          heading:
+                            scheme.schemeBenefits.heading ?? '',
+                          intro:
+                            scheme.schemeBenefits.intro ?? '',
+                          contributionPlans: Array.isArray(
+                            scheme.schemeBenefits.contributionPlans
+                          )
+                            ? scheme.schemeBenefits.contributionPlans.map(
+                                (plan: any) => ({
+                                  monthlyContribution:
+                                    plan.monthlyContribution ?? '',
+                                  purchaseValue:
+                                    plan.purchaseValue ?? '',
+                                })
+                              )
+                            : [],
+                          instalmentBenefits: Array.isArray(
+                            scheme.schemeBenefits.instalmentBenefits
+                          )
+                            ? [...scheme.schemeBenefits.instalmentBenefits]
+                            : [],
+                        }
+                      : undefined,
+
+                    howToApply: scheme.howToApply
+                      ? {
+                          heading:
+                            scheme.howToApply.heading ?? '',
+                          steps: Array.isArray(
+                            scheme.howToApply.steps
+                          )
+                            ? [...scheme.howToApply.steps]
+                            : [],
+                        }
+                      : undefined,
+
+                    documentsRequired: scheme.documentsRequired
+                      ? {
+                          heading:
+                            scheme.documentsRequired.heading ?? '',
+                          items: Array.isArray(
+                            scheme.documentsRequired.items
+                          )
+                            ? [...scheme.documentsRequired.items]
+                            : [],
+                        }
+                      : undefined,
+
+                    membershipBenefits: scheme.membershipBenefits
+                      ? {
+                          heading:
+                            scheme.membershipBenefits.heading ?? '',
+                          items: Array.isArray(
+                            scheme.membershipBenefits.items
+                          )
+                            ? [...scheme.membershipBenefits.items]
+                            : [],
+                        }
+                      : undefined,
+                  };
+                }
+              ),
             };
 
-            this.initiativeImageUrl = this.getImageUrl(
-              savedContent.initiativeImageUrl ??
-                savedContent.initiativeImage ??
-                savedContent.initiative_image ??
-                data?.initiativeImageUrl ??
-                data?.initiativeImage
-            );
-
-            this.initiativeImageFile = null;
-            this.isExistingContent = true;
+            this.isExistingContent = !!data?.id;
           } else {
             this.content = this.getDefaultContent();
-            this.initiativeImageUrl = '';
-            this.initiativeImageFile = null;
             this.isExistingContent = false;
           }
 
           this.cdr.markForCheck();
         },
+
         error: (error) => {
           console.error(
-            'Failed to load Government Initiatives:',
+            'Failed to load Government Schemes:',
             error
           );
 
           this.content = this.getDefaultContent();
           this.isExistingContent = false;
+
           this.errorMessage =
-            'Could not load saved content. Check the API response before creating new content.';
+            'Could not load saved government schemes. Please try again.';
+
           this.cdr.markForCheck();
         },
       });
@@ -144,27 +299,32 @@ export class GovernmentInitiatives implements OnInit {
     }
 
     if (image && typeof image === 'object') {
-      return image.url ?? image.secure_url ?? image.path ?? '';
+      return (
+        image.url ??
+        image.secure_url ??
+        image.path ??
+        ''
+      );
     }
 
     return '';
   }
 
-  addInitiative(): void {
-    this.content.initiatives.push('');
-  }
-
-  removeInitiative(index: number): void {
-    if (this.content.initiatives.length <= 1) {
-      this.errorMessage = 'At least one initiative is required.';
-      return;
-    }
-
-    this.content.initiatives.splice(index, 1);
+  addScheme(): void {
+    this.content.schemes.push(this.getDefaultScheme());
     this.errorMessage = '';
   }
 
-  onInitiativeImageSelected(event: Event): void {
+  removeScheme(index: number): void {
+    if (!confirm('Are you sure you want to remove this scheme?')) {
+      return;
+    }
+
+    this.content.schemes.splice(index, 1);
+    this.errorMessage = '';
+  }
+
+  onSchemeImageSelected(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
@@ -178,10 +338,65 @@ export class GovernmentInitiatives implements OnInit {
       return;
     }
 
+    const scheme = this.content.schemes[index];
+
+    if (scheme.imageUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(scheme.imageUrl);
+    }
+
+    scheme.imageFile = file;
+    scheme.imageUrl = URL.createObjectURL(file);
+
     this.errorMessage = '';
-    this.initiativeImageFile = file;
-    this.initiativeImageUrl = URL.createObjectURL(file);
     this.cdr.markForCheck();
+  }
+
+  addStringItem(items: string[]): void {
+    items.push('');
+  }
+
+  removeStringItem(items: string[], index: number): void {
+    if (items.length <= 1) {
+      this.errorMessage = 'At least one item is required.';
+      return;
+    }
+
+    items.splice(index, 1);
+    this.errorMessage = '';
+  }
+
+  addContributionPlan(scheme: GovernmentScheme): void {
+    if (!scheme.schemeBenefits) {
+      return;
+    }
+
+    scheme.schemeBenefits.contributionPlans.push({
+      monthlyContribution: '',
+      purchaseValue: '',
+    });
+  }
+
+  removeContributionPlan(
+    scheme: GovernmentScheme,
+    index: number
+  ): void {
+    const plans = scheme.schemeBenefits?.contributionPlans;
+
+    if (!plans || plans.length <= 1) {
+      this.errorMessage = 'At least one contribution plan is required.';
+      return;
+    }
+
+    plans.splice(index, 1);
+    this.errorMessage = '';
+  }
+
+  createSlug(scheme: GovernmentScheme): void {
+    scheme.slug = scheme.title
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
   }
 
   saveGovernmentInitiatives(): void {
@@ -189,58 +404,117 @@ export class GovernmentInitiatives implements OnInit {
     this.errorMessage = '';
 
     if (!this.content.title.trim()) {
-      this.errorMessage = 'Please enter a title.';
+      this.errorMessage = 'Please enter the section title.';
       return;
     }
 
-    if (!this.content.description.trim()) {
-      this.errorMessage = 'Please enter a description.';
+    if (this.content.schemes.length === 0) {
+      this.errorMessage = 'Please add at least one scheme.';
       return;
     }
 
-    if (
-      this.content.initiatives.some(
-        (initiative) => !initiative.trim()
-      )
-    ) {
-      this.errorMessage =
-        'Please fill in every initiative or remove empty entries.';
-      return;
+    for (let i = 0; i < this.content.schemes.length; i++) {
+      const scheme = this.content.schemes[i];
+
+      if (!scheme.title.trim()) {
+        this.errorMessage = `Please enter the title for Scheme ${i + 1}.`;
+        return;
+      }
+
+      if (!scheme.slug.trim()) {
+        this.errorMessage = `Please enter the slug for Scheme ${i + 1}.`;
+        return;
+      }
+
+      if (!scheme.description.trim()) {
+        this.errorMessage = `Please enter the description for Scheme ${i + 1}.`;
+        return;
+      }
     }
 
-    if (!this.content.button.label.trim()) {
-      this.errorMessage = 'Please enter the button label.';
-      return;
-    }
-
-    if (!this.content.button.url.trim()) {
-      this.errorMessage = 'Please enter the button URL.';
-      return;
-    }
-
-    const payload: GovernmentInitiativesContent = {
+    const payload = {
       title: this.content.title.trim(),
-      description: this.content.description.trim(),
-      initiatives: this.content.initiatives.map((initiative) =>
-        initiative.trim()
-      ),
-      button: {
-        label: this.content.button.label.trim(),
-        url: this.content.button.url.trim(),
-      },
+      schemes: this.content.schemes.map((scheme) => {
+        const savedScheme: any = {
+          title: scheme.title.trim(),
+          slug: scheme.slug.trim(),
+          category: scheme.category.trim(),
+          description: scheme.description.trim(),
+          imageField: scheme.imageField,
+          imageAlt: scheme.imageAlt.trim(),
+        };
+
+        if (scheme.whoCanApply) {
+          savedScheme.whoCanApply = {
+            heading: scheme.whoCanApply.heading,
+            items: scheme.whoCanApply.items.filter(
+              (item) => item.trim()
+            ),
+          };
+        }
+
+        if (scheme.schemeBenefits) {
+          savedScheme.schemeBenefits = {
+            heading: scheme.schemeBenefits.heading,
+            intro: scheme.schemeBenefits.intro,
+            contributionPlans:
+              scheme.schemeBenefits.contributionPlans,
+            instalmentBenefits:
+              scheme.schemeBenefits.instalmentBenefits.filter(
+                (item) => item.trim()
+              ),
+          };
+        }
+
+        if (scheme.howToApply) {
+          savedScheme.howToApply = {
+            heading: scheme.howToApply.heading,
+            steps: scheme.howToApply.steps.filter(
+              (step) => step.trim()
+            ),
+          };
+        }
+
+        if (scheme.documentsRequired) {
+          savedScheme.documentsRequired = {
+            heading: scheme.documentsRequired.heading,
+            items: scheme.documentsRequired.items.filter(
+              (item) => item.trim()
+            ),
+          };
+        }
+
+        if (scheme.membershipBenefits) {
+          savedScheme.membershipBenefits = {
+            heading: scheme.membershipBenefits.heading,
+            items: scheme.membershipBenefits.items.filter(
+              (item) => item.trim()
+            ),
+          };
+        }
+
+        return savedScheme;
+      }),
     };
+
+    const formData = new FormData();
+
+    formData.append('content', JSON.stringify(payload));
+
+    this.content.schemes.forEach((scheme, index) => {
+      if (scheme.imageFile) {
+        formData.append(
+          `schemes[${index}].image`,
+          scheme.imageFile
+        );
+      }
+    });
 
     this.isSaving = true;
 
     const request$ = this.isExistingContent
-      ? this.api.updateGovernmentInitiativesAPI(
-          payload,
-          this.initiativeImageFile
-        )
-      : this.api.addGovernmentInitiativesAPI(
-          payload,
-          this.initiativeImageFile
-        );
+      ? this.api.updateGovernmentInitiativesAPI(formData)
+      : this.api.addGovernmentInitiativesAPI(formData);
 
     request$
       .pipe(
@@ -252,23 +526,24 @@ export class GovernmentInitiatives implements OnInit {
       )
       .subscribe({
         next: (response: any) => {
-          this.isExistingContent = true;
           this.successMessage =
             response?.message ??
-            'Government Initiatives saved successfully.';
+            'Government schemes saved successfully.';
 
-          this.initiativeImageFile = null;
+          this.loadGovernmentInitiatives();
           this.cdr.markForCheck();
         },
+
         error: (error) => {
           console.error(
-            'Failed to save Government Initiatives:',
+            'Failed to save Government Schemes:',
             error
           );
 
           this.errorMessage =
             error?.error?.message ??
-            'Failed to save Government Initiatives. Please try again.';
+            'Failed to save government schemes. Please try again.';
+
           this.cdr.markForCheck();
         },
       });
@@ -281,7 +556,7 @@ export class GovernmentInitiatives implements OnInit {
 
     if (
       !confirm(
-        'Are you sure you want to delete Government Initiatives content?'
+        'Are you sure you want to delete all government schemes?'
       )
     ) {
       return;
@@ -303,22 +578,24 @@ export class GovernmentInitiatives implements OnInit {
       .subscribe({
         next: () => {
           this.content = this.getDefaultContent();
-          this.initiativeImageUrl = '';
-          this.initiativeImageFile = null;
           this.isExistingContent = false;
+
           this.successMessage =
-            'Government Initiatives deleted successfully.';
+            'Government schemes deleted successfully.';
+
           this.cdr.markForCheck();
         },
+
         error: (error) => {
           console.error(
-            'Failed to delete Government Initiatives:',
+            'Failed to delete Government Schemes:',
             error
           );
 
           this.errorMessage =
             error?.error?.message ??
-            'Failed to delete Government Initiatives. Please try again.';
+            'Failed to delete government schemes. Please try again.';
+
           this.cdr.markForCheck();
         },
       });

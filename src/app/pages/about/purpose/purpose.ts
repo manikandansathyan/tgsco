@@ -49,78 +49,80 @@ export class Purpose implements OnInit {
     this.loadPurpose();
   }
 
-  loadPurpose(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+loadPurpose(): void {
+  this.isLoading = true;
+  this.errorMessage = '';
 
-    this.api.getPurposeAPI()
-      .pipe(
-        timeout(60000),
-        finalize(() => {
-          this.isLoading = false;
-          this.cdr.markForCheck();
-        })
-      )
-      .subscribe({
-        next: (response: any) => {
-          const responseData = response?.data ?? response;
-          const data = responseData?.content ?? responseData;
+  this.api.getPurposeAPI()
+    .pipe(
+      timeout(60000),
+      finalize(() => {
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      })
+    )
+    .subscribe({
+      next: (response: any) => {
+        const responseData = response?.data ?? response;
+        const data = responseData?.content ?? responseData;
 
-          if (!data || typeof data !== 'object') {
-            this.isExistingContent = false;
-            return;
-          }
+        if (!data || typeof data !== 'object') {
+          this.isExistingContent = false;
+          return;
+        }
 
-          this.isExistingContent = Boolean(
-            data.id ||
-            data._id ||
-            data.label ||
-            data.title ||
-            Array.isArray(data.points)
+        this.isExistingContent = !!responseData?.id;
+
+        // Load section label and title
+        this.label = data.label ?? 'Our Purpose';
+        this.title = data.title ?? '';
+
+        // Load purpose points
+        if (Array.isArray(data.points)) {
+          this.points = data.points.map(
+            (point: unknown) => String(point ?? '')
+          );
+        }
+
+        // Find purpose image from the images array
+        const images = Array.isArray(responseData?.images)
+          ? responseData.images
+          : [];
+
+        const purposeImage = images.find(
+          (image: any) => image.field === 'purposeImage'
+        );
+
+        // Set image URL and preview
+        this.purposeImageUrl =
+          purposeImage?.url ??
+          this.getImageUrl(
+            data.purposeImageUrl ??
+            data.purposeImage ??
+            data.imageUrl ??
+            data.image
           );
 
-          if (typeof data.label === 'string') {
-            this.label = data.label;
-          }
+        this.purposeImagePreview = this.purposeImageUrl;
 
-          if (typeof data.title === 'string') {
-            this.title = data.title;
-          }
+        this.cdr.markForCheck();
+      },
 
-          if (Array.isArray(data.points)) {
-            this.points = data.points.map(
-              (point: unknown) => String(point ?? '')
-            );
-          }
+      error: (error: any) => {
+        console.error('Failed to load purpose content:', error);
 
-          const imageValue =
-            data.purposeImageUrl ??
-            data.purpose_image_url ??
-            data.purposeImage ??
-            data.purpose_image ??
-            data.imageUrl ??
-            data.image;
-
-          this.purposeImageUrl = this.getImageUrl(imageValue);
-          this.purposeImagePreview = this.purposeImageUrl;
-
-          this.cdr.markForCheck();
-        },
-        error: (error: any) => {
-          console.error('Failed to load purpose content:', error);
-
-          if (error?.status === 404) {
-            this.isExistingContent = false;
-          } else {
-            this.errorMessage =
-              error?.error?.message ||
-              'Unable to load purpose content.';
-          }
-
-          this.cdr.markForCheck();
+        if (error?.status === 404) {
+          this.isExistingContent = false;
+        } else {
+          this.errorMessage =
+            error?.error?.message ||
+            'Unable to load purpose content.';
         }
-      });
-  }
+
+        this.cdr.markForCheck();
+      }
+    });
+}
 
   private getImageUrl(value: any): string {
     if (typeof value === 'string') {

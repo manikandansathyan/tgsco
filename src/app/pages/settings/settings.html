@@ -1,0 +1,767 @@
+<div class="settings-page">
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">STORE CONFIGURATION</p>
+      <h1>Settings</h1>
+      <p class="page-description">
+        Manage your business details, invoices, shipping, packing, order policies and additional charges.
+      </p>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div class="alert alert-error" *ngIf="errorMessage">
+    <span>{{ errorMessage }}</span>
+    <button type="button" (click)="errorMessage = ''">×</button>
+  </div>
+
+  <div class="alert alert-success" *ngIf="successMessage">
+    <span>{{ successMessage }}</span>
+    <button type="button" (click)="successMessage = ''">×</button>
+  </div>
+
+  <section class="settings-card">
+
+    <!-- Tabs -->
+    <nav class="settings-tabs" aria-label="Settings sections">
+      <button *ngFor="let tab of tabs" type="button" [class.active]="activeTab === tab.id" (click)="setTab(tab.id)">
+        {{ tab.label }}
+      </button>
+    </nav>
+
+    <div class="tab-content">
+
+      <!-- Loading -->
+      <div class="loading-card" *ngIf="loading">
+        <span class="loading-spinner"></span>
+        <span>Loading settings...</span>
+      </div>
+
+      <ng-container *ngIf="!loading">
+
+        <!-- ===================================== -->
+        <!-- GENERAL SETTINGS -->
+        <!-- ===================================== -->
+        <section *ngIf="activeTab === 'general'">
+
+          <div class="section-heading">
+            <div>
+              <h2>General Settings</h2>
+              <p>Manage your store configuration and order policies.</p>
+            </div>
+
+            <button type="button" class="secondary-button" (click)="loadGeneralSettings()" [disabled]="loading">
+              Refresh
+            </button>
+          </div>
+
+          <!-- Overview Cards -->
+          <div class="overview-grid">
+
+            <div class="overview-card">
+              <span class="overview-label">Configuration</span>
+              <strong>{{ objectEntries(generalSettings).length }}</strong>
+              <span class="overview-subtext">
+                Settings properties returned by the API
+              </span>
+            </div>
+
+            <div class="overview-card">
+              <span class="overview-label">Metadata Fields</span>
+              <strong>{{ objectEntries(metadata).length }}</strong>
+              <span class="overview-subtext">
+                Available metadata properties
+              </span>
+            </div>
+
+            <div class="overview-card">
+              <span class="overview-label">Shipping Rules</span>
+              <strong>{{ shippingRules.length }}</strong>
+              <span class="overview-subtext">
+                Configured shipping rules
+              </span>
+            </div>
+
+            <div class="overview-card">
+              <span class="overview-label">Packing Rules</span>
+              <strong>{{ packingRules.length }}</strong>
+              <span class="overview-subtext">
+                Configured packing rules
+              </span>
+            </div>
+
+          </div>
+
+          <!-- Order Policies -->
+          <div class="information-block">
+
+            <div class="block-heading">
+              <div>
+                <h3>Order Policies</h3>
+                <p>
+                  Current cancellation and return policy configuration.
+                </p>
+              </div>
+
+              <span class="status-badge status-active">
+                Configured
+              </span>
+            </div>
+
+            <ng-container *ngIf="generalSettings?.orderPolicies as policies">
+
+              <div class="information-row">
+                <span>Policy Key</span>
+                <strong>{{ policies.key || '—' }}</strong>
+              </div>
+
+              <div class="information-row">
+                <span>Cancellation Allowed Until</span>
+                <strong>
+                  {{ formatLabel(policies.cancellationAllowedUntil || '—') }}
+                </strong>
+              </div>
+
+              <div class="information-row">
+                <span>Return Window</span>
+                <strong>
+                  {{ policies.returnWindowDays ?? 0 }}
+                  {{ policies.returnWindowDays === 1 ? 'day' : 'days' }}
+                </strong>
+              </div>
+
+            </ng-container>
+
+            <div class="empty-state" *ngIf="!generalSettings?.orderPolicies">
+              No order policy configuration was returned by the API.
+            </div>
+
+          </div>
+
+          <!-- General Configuration -->
+          <div class="information-block">
+
+            <h3>General Configuration</h3>
+
+            <div class="empty-state" *ngIf="!objectEntries(generalSettings).length">
+              No general settings were returned by the API.
+            </div>
+
+            <ng-container *ngFor="let entry of objectEntries(generalSettings)">
+              <div class="information-row" *ngIf="entry.key !== 'orderPolicies'">
+                <span>{{ formatLabel(entry.key) }}</span>
+                <strong class="break-value">
+                  {{ displayValue(entry.value) }}
+                </strong>
+              </div>
+            </ng-container>
+
+          </div>
+
+          <!-- Metadata -->
+          <!-- <div class="information-block metadata-block">
+
+            <h3>Settings Metadata</h3>
+
+            <div class="empty-state" *ngIf="!objectEntries(metadata).length">
+              No metadata was returned by the API.
+            </div>
+
+            <div class="information-row" *ngFor="let entry of objectEntries(metadata)">
+              <span>{{ formatLabel(entry.key) }}</span>
+              <strong class="break-value">
+                {{ displayValue(entry.value) }}
+              </strong>
+            </div>
+
+          </div> -->
+
+        </section>
+
+        <!-- ===================================== -->
+        <!-- INVOICE SETTINGS -->
+        <!-- ===================================== -->
+        <section *ngIf="activeTab === 'invoice'">
+
+          <div class="section-heading">
+            <div>
+              <h2>Invoice Settings</h2>
+              <p>
+                Configure business information and details displayed on invoices.
+              </p>
+              <small class="section-note">
+                No saved invoice configuration was returned.
+                Enter the details below and save your invoice settings.
+              </small>
+            </div>
+          </div>
+
+          <form (ngSubmit)="saveInvoiceSettings()">
+
+            <!-- Business Information -->
+            <div class="form-section">
+
+              <h3>Business Information</h3>
+
+              <div class="form-grid">
+
+                <div class="form-field">
+                  <label for="legalBusinessName">
+                    Legal Business Name
+                  </label>
+                  <input id="legalBusinessName" name="legalBusinessName" [(ngModel)]="invoiceSettings.legalBusinessName"
+                    required />
+                </div>
+
+                <div class="form-field">
+                  <label for="displayBusinessName">
+                    Display Business Name
+                  </label>
+                  <input id="displayBusinessName" name="displayBusinessName"
+                    [(ngModel)]="invoiceSettings.displayBusinessName" required />
+                </div>
+
+                <div class="form-field">
+                  <label for="gstin">GSTIN</label>
+                  <input id="gstin" name="gstin" [(ngModel)]="invoiceSettings.gstin" />
+                </div>
+
+                <div class="form-field">
+                  <label for="pan">PAN</label>
+                  <input id="pan" name="pan" [(ngModel)]="invoiceSettings.pan" />
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Seller Address -->
+            <div class="form-section">
+
+              <h3>Seller Address</h3>
+
+              <div class="form-grid">
+
+                <div class="form-field">
+                  <label for="line1">Address Line 1</label>
+                  <input id="line1" name="line1" [(ngModel)]="invoiceSettings.sellerAddress.line1" required />
+                </div>
+
+                <div class="form-field">
+                  <label for="line2">Address Line 2</label>
+                  <input id="line2" name="line2" [(ngModel)]="invoiceSettings.sellerAddress.line2" />
+                </div>
+
+                <div class="form-field">
+                  <label for="city">City</label>
+                  <input id="city" name="city" [(ngModel)]="invoiceSettings.sellerAddress.city" required />
+                </div>
+
+                <div class="form-field">
+                  <label for="state">State</label>
+                  <input id="state" name="state" [(ngModel)]="invoiceSettings.sellerAddress.state" required />
+                </div>
+
+                <div class="form-field">
+                  <label for="postalCode">Postal Code</label>
+                  <input id="postalCode" name="postalCode" [(ngModel)]="invoiceSettings.sellerAddress.postalCode"
+                    required />
+                </div>
+
+                <div class="form-field">
+                  <label for="country">Country</label>
+                  <input id="country" name="country" [(ngModel)]="invoiceSettings.sellerAddress.country" required />
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="form-section">
+
+              <h3>Contact Information</h3>
+
+              <div class="form-grid">
+
+                <div class="form-field">
+                  <label for="contactPhone">Phone</label>
+                  <input id="contactPhone" name="contactPhone" type="tel" [(ngModel)]="invoiceSettings.contact.phone" />
+                </div>
+
+                <div class="form-field">
+                  <label for="contactEmail">Email</label>
+                  <input id="contactEmail" name="contactEmail" type="email"
+                    [(ngModel)]="invoiceSettings.contact.email" />
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Invoice Configuration -->
+            <div class="form-section">
+
+              <h3>Invoice Configuration</h3>
+
+              <div class="form-grid">
+
+                <div class="form-field">
+                  <label for="invoicePrefix">Invoice Prefix</label>
+                  <input id="invoicePrefix" name="invoicePrefix" [(ngModel)]="invoiceSettings.invoicePrefix" required />
+                </div>
+
+                <div class="form-field">
+                  <label for="financialYear">Financial Year</label>
+                  <input id="financialYear" name="financialYear" [(ngModel)]="invoiceSettings.financialYear"
+                    placeholder="2026-27" required />
+                </div>
+
+                <div class="form-field">
+                  <label for="nextSequence">
+                    Next Sequence Number
+                  </label>
+                  <input id="nextSequence" name="nextSequence" type="number" min="1"
+                    [(ngModel)]="invoiceSettings.nextSequence" required />
+                </div>
+
+                <div class="form-field toggle-field">
+                  <label for="invoiceActive">
+                    Invoice Settings Active
+                  </label>
+
+                  <label class="toggle-control">
+                    <input id="invoiceActive" name="invoiceActive" type="checkbox"
+                      [(ngModel)]="invoiceSettings.active" />
+                    <span>
+                      {{ invoiceSettings.active ? 'Active' : 'Inactive' }}
+                    </span>
+                  </label>
+                </div>
+
+                <div class="form-field">
+                  <label for="terms">Invoice Terms</label>
+                  <textarea id="terms" name="terms" rows="3" [(ngModel)]="invoiceSettings.terms"></textarea>
+                </div>
+
+                <div class="form-field">
+                  <label for="returnsPolicy">Returns Policy</label>
+                  <textarea id="returnsPolicy" name="returnsPolicy" rows="3"
+                    [(ngModel)]="invoiceSettings.returnsPolicy"></textarea>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Authorized Signatory -->
+            <div class="form-section">
+
+              <h3>Authorized Signatory</h3>
+
+              <div class="form-grid">
+
+                <div class="form-field">
+                  <label for="signatoryName">Name</label>
+                  <input id="signatoryName" name="signatoryName" [(ngModel)]="invoiceSettings.signatory.name" />
+                </div>
+
+                <div class="form-field">
+                  <label for="designation">Designation</label>
+                  <input id="designation" name="designation" [(ngModel)]="invoiceSettings.signatory.designation" />
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Bank Details -->
+            <div class="form-section">
+
+              <h3>Bank Details</h3>
+
+              <div class="form-grid">
+
+                <div class="form-field">
+                  <label for="bankName">Bank Name</label>
+                  <input id="bankName" name="bankName" [(ngModel)]="invoiceSettings.bankDetails.bankName" />
+                </div>
+
+                <div class="form-field">
+                  <label for="accountName">Account Name</label>
+                  <input id="accountName" name="accountName" [(ngModel)]="invoiceSettings.bankDetails.accountName" />
+                </div>
+
+                <div class="form-field">
+                  <label for="accountNumber">Account Number</label>
+                  <input id="accountNumber" name="accountNumber"
+                    [(ngModel)]="invoiceSettings.bankDetails.accountNumber" />
+                </div>
+
+                <div class="form-field">
+                  <label for="ifsc">IFSC Code</label>
+                  <input id="ifsc" name="ifsc" [(ngModel)]="invoiceSettings.bankDetails.ifsc" />
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Save -->
+            <div class="form-actions">
+              <button type="submit" class="primary-button" [disabled]="saving">
+                {{ saving ? 'Saving...' : 'Save Invoice Settings' }}
+              </button>
+            </div>
+
+          </form>
+        </section>
+
+        <!-- ===================================== -->
+        <!-- SHIPPING / PACKING / CHARGES -->
+        <!-- ===================================== -->
+        <section *ngIf="
+            activeTab === 'shipping' ||
+            activeTab === 'packing' ||
+            activeTab === 'charges'
+          ">
+
+          <div class="section-heading">
+
+            <div>
+              <h2>
+                {{
+                activeTab === 'shipping'
+                ? 'Shipping Settings'
+                : activeTab === 'packing'
+                ? 'Packing Settings'
+                : 'Additional Charges'
+                }}
+              </h2>
+
+              <p>
+                {{
+                activeTab === 'shipping'
+                ? 'Configure shipping fees, thresholds and tax rules.'
+                : activeTab === 'packing'
+                ? 'Configure packing fees and packaging rules.'
+                : 'Configure additional charges such as Cash on Delivery.'
+                }}
+              </p>
+            </div>
+
+            <button type="button" class="primary-button" (click)="openCreateRule()" [disabled]="saving">
+              + Add New
+            </button>
+
+          </div>
+
+          <!-- Create Rule Form -->
+          <div class="rule-form-card" *ngIf="!editingRule && ruleForm">
+
+            <h3>Add a New Setting</h3>
+
+            <p class="form-description">
+              Complete the form below to create a setting.
+            </p>
+
+            <form (ngSubmit)="saveRule()">
+
+              <div class="form-grid">
+
+                <div class="form-field">
+                  <label for="ruleName">Name</label>
+                  <input id="ruleName" name="ruleName" [(ngModel)]="ruleForm.name" required />
+                </div>
+
+                <div class="form-field">
+                  <label for="ruleCode">Code</label>
+                  <input id="ruleCode" name="ruleCode" [(ngModel)]="ruleForm.code" required />
+                </div>
+
+                <div class="form-field">
+                  <label for="ruleType">Type</label>
+                  <input id="ruleType" name="ruleType" [ngModel]="currentRuleType" readonly />
+                </div>
+
+                <div class="form-field">
+                  <label for="ruleMethod">Calculation Method</label>
+                  <select id="ruleMethod" name="ruleMethod" [(ngModel)]="ruleForm.method" required>
+                    <option value="flat">Flat Amount</option>
+                    <option value="percentage">Percentage</option>
+                  </select>
+                </div>
+
+                <div class="form-field">
+                  <label for="ruleAmount">Amount</label>
+                  <input id="ruleAmount" name="ruleAmount" type="number" min="0" [(ngModel)]="ruleForm.amount" />
+                </div>
+
+                <div class="form-field">
+                  <label for="rulePercentage">Percentage (%)</label>
+                  <input id="rulePercentage" name="rulePercentage" type="number" min="0"
+                    [(ngModel)]="ruleForm.percentage" />
+                </div>
+
+                <div class="form-field">
+                  <label for="ruleFreeAbove">Free Above</label>
+                  <input id="ruleFreeAbove" name="ruleFreeAbove" type="number" min="0"
+                    [(ngModel)]="ruleForm.freeAbove" />
+                </div>
+
+                <div class="form-field">
+                  <label for="ruleTaxRate">Tax Rate (%)</label>
+                  <input id="ruleTaxRate" name="ruleTaxRate" type="number" min="0" [(ngModel)]="ruleForm.taxRate" />
+                </div>
+
+                <div class="form-field toggle-field">
+                  <label for="ruleTaxable">Taxable</label>
+
+                  <label class="toggle-control">
+                    <input id="ruleTaxable" name="ruleTaxable" type="checkbox" [(ngModel)]="ruleForm.taxable" />
+                    <span>{{ ruleForm.taxable ? 'Yes' : 'No' }}</span>
+                  </label>
+                </div>
+
+                <div class="form-field toggle-field">
+                  <label for="ruleActive">Active</label>
+
+                  <label class="toggle-control">
+                    <input id="ruleActive" name="ruleActive" type="checkbox" [(ngModel)]="ruleForm.active" />
+                    <span>
+                      {{ ruleForm.active ? 'Active' : 'Inactive' }}
+                    </span>
+                  </label>
+                </div>
+
+                <div class="form-field full-width">
+                  <label for="ruleConditions">Conditions (JSON)</label>
+                  <textarea id="ruleConditions" name="ruleConditions" rows="5" [(ngModel)]="ruleForm.conditionsText"
+                    required></textarea>
+                  <small>
+                    Enter a valid JSON object for the conditions.
+                  </small>
+                </div>
+
+              </div>
+
+              <div class="form-actions">
+
+                <button type="submit" class="primary-button" [disabled]="saving">
+                  {{ saving ? 'Saving...' : 'Create Setting' }}
+                </button>
+
+                <button type="button" class="secondary-button" (click)="cancelRuleForm()">
+                  Cancel
+                </button>
+
+              </div>
+
+            </form>
+          </div>
+
+          <!-- Edit Rule Form -->
+          <div class="rule-form-card" *ngIf="editingRule">
+
+            <h3>Edit Setting</h3>
+
+            <form (ngSubmit)="saveRule()">
+
+              <div class="form-grid">
+
+                <div class="form-field">
+                  <label for="editRuleName">Name</label>
+                  <input id="editRuleName" name="editRuleName" [(ngModel)]="ruleForm.name" required />
+                </div>
+
+                <div class="form-field">
+                  <label for="editRuleCode">Code</label>
+                  <input id="editRuleCode" name="editRuleCode" [(ngModel)]="ruleForm.code" required />
+                </div>
+
+                <div class="form-field">
+                  <label for="editRuleMethod">Calculation Method</label>
+                  <select id="editRuleMethod" name="editRuleMethod" [(ngModel)]="ruleForm.method">
+                    <option value="flat">Flat Amount</option>
+                    <option value="percentage">Percentage</option>
+                  </select>
+                </div>
+
+                <div class="form-field">
+                  <label for="editRuleAmount">Amount</label>
+                  <input id="editRuleAmount" name="editRuleAmount" type="number" min="0"
+                    [(ngModel)]="ruleForm.amount" />
+                </div>
+
+                <div class="form-field">
+                  <label for="editRulePercentage">Percentage (%)</label>
+                  <input id="editRulePercentage" name="editRulePercentage" type="number" min="0"
+                    [(ngModel)]="ruleForm.percentage" />
+                </div>
+
+                <div class="form-field">
+                  <label for="editRuleFreeAbove">Free Above</label>
+                  <input id="editRuleFreeAbove" name="editRuleFreeAbove" type="number" min="0"
+                    [(ngModel)]="ruleForm.freeAbove" />
+                </div>
+
+                <div class="form-field">
+                  <label for="editRuleTaxRate">Tax Rate (%)</label>
+                  <input id="editRuleTaxRate" name="editRuleTaxRate" type="number" min="0"
+                    [(ngModel)]="ruleForm.taxRate" />
+                </div>
+
+                <div class="form-field toggle-field">
+                  <label for="editRuleTaxable">Taxable</label>
+
+                  <label class="toggle-control">
+                    <input id="editRuleTaxable" name="editRuleTaxable" type="checkbox" [(ngModel)]="ruleForm.taxable" />
+                    <span>{{ ruleForm.taxable ? 'Yes' : 'No' }}</span>
+                  </label>
+                </div>
+
+                <div class="form-field toggle-field">
+                  <label for="editRuleActive">Active</label>
+
+                  <label class="toggle-control">
+                    <input id="editRuleActive" name="editRuleActive" type="checkbox" [(ngModel)]="ruleForm.active" />
+                    <span>
+                      {{ ruleForm.active ? 'Active' : 'Inactive' }}
+                    </span>
+                  </label>
+                </div>
+
+                <div class="form-field full-width">
+                  <label for="editRuleConditions">
+                    Conditions (JSON)
+                  </label>
+                  <textarea id="editRuleConditions" name="editRuleConditions" rows="5"
+                    [(ngModel)]="ruleForm.conditionsText" required></textarea>
+                </div>
+
+              </div>
+
+              <div class="form-actions">
+
+                <button type="submit" class="primary-button" [disabled]="saving">
+                  {{ saving ? 'Saving...' : 'Update Setting' }}
+                </button>
+
+                <button type="button" class="secondary-button" (click)="cancelRuleForm()">
+                  Cancel
+                </button>
+
+              </div>
+
+            </form>
+          </div>
+
+          <!-- Rules Table -->
+          <div class="table-card">
+
+            <div class="table-heading">
+              <div>
+                <h3>Configured Rules</h3>
+                <p>
+                  Manage your existing configuration rules.
+                </p>
+              </div>
+
+              <span class="count-badge">
+                {{ currentRules.length }} items
+              </span>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" *ngIf="!currentRules.length">
+              <p>
+                No settings are available to display.
+              </p>
+
+              <small>
+                {{
+                activeTab === 'charges'
+                ? 'No additional charges have been created yet. You can create a charge using Add New.'
+                : 'No rules have been configured yet. You can create a rule using Add New.'
+                }}
+              </small>
+            </div>
+
+            <!-- Table -->
+            <div class="table-wrapper" *ngIf="currentRules.length">
+
+              <table>
+
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Code</th>
+                    <th>Method</th>
+                    <th>Amount</th>
+                    <th>Percentage</th>
+                    <th>Taxable</th>
+                    <th>Status</th>
+                    <th class="right-align">Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+
+                  <tr *ngFor="let rule of currentRules; let i = index">
+
+                    <td class="name-cell">
+                      {{ rule.name || '—' }}
+                    </td>
+
+                    <td>
+                      {{ rule.code || '—' }}
+                    </td>
+
+                    <td>
+                      {{ rule.method || '—' }}
+                    </td>
+
+                    <td>
+                      {{ rule.amount ?? 0 }}
+                    </td>
+
+                    <td>
+                      {{ rule.percentage ?? 0 }}%
+                    </td>
+
+                    <td>
+                      <span class="status-badge" [class.status-active]="rule.taxable"
+                        [class.status-inactive]="!rule.taxable">
+                        {{ rule.taxable ? 'Yes' : 'No' }}
+                      </span>
+                    </td>
+
+                    <td>
+                      <span class="status-badge" [class.status-active]="rule.active"
+                        [class.status-inactive]="!rule.active">
+                        {{ rule.active ? 'Active' : 'Inactive' }}
+                      </span>
+                    </td>
+
+                    <td class="right-align actions-cell">
+
+                      <button type="button" class="table-action" (click)="openEditRule(rule, i)" [disabled]="saving">
+                        Edit
+                      </button>
+
+                      <button type="button" class="table-action delete-action" (click)="deleteRule(rule, i)"
+                        [disabled]="saving">
+                        Delete
+                      </button>
+
+                    </td>
+
+                  </tr>
+
+                </tbody>
+
+              </table>
+
+            </div>
+          </div>
+
+        </section>
+
+      </ng-container>
+    </div>
+  </section>
+</div>

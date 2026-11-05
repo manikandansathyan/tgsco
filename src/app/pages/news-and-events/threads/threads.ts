@@ -1,8 +1,13 @@
-
+import {
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Subscription, finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
 interface Weaver {
@@ -25,6 +30,7 @@ interface Weaver {
 })
 export class Threads implements OnInit, OnDestroy {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
   private subscription = new Subscription();
 
   sectionTitle = 'Threads of Triumph';
@@ -32,6 +38,7 @@ export class Threads implements OnInit, OnDestroy {
   nextLabel = 'Next';
 
   items: Weaver[] = [];
+
   isLoading = false;
   isSaving = false;
   isDeleting = false;
@@ -67,63 +74,42 @@ export class Threads implements OnInit, OnDestroy {
 
   private clearPreviews(): void {
     this.items.forEach((item) => {
-      if (item.previewUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(item.previewUrl);
-      }
+      this.revokeUrl(item.previewUrl);
     });
   }
 
-  private extractImageUrl(value: any): string {
-    if (typeof value === 'string') {
-      return value;
+  private revokeUrl(url: string): void {
+    if (url?.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
     }
-
-    if (!value || typeof value !== 'object') {
-      return '';
-    }
-
-    const candidates = [
-      value.url,
-      value.imageUrl,
-      value.image_url,
-      value.mainImageUrl,
-      value.mainImage,
-      value.image,
-      value.src,
-    ];
-
-    for (const candidate of candidates) {
-      if (typeof candidate === 'string') {
-        return candidate;
-      }
-
-      if (candidate && typeof candidate === 'object') {
-        const nested = this.extractImageUrl(candidate);
-        if (nested) return nested;
-      }
-    }
-
-    return '';
   }
 
-  private extractPayload(response: any): any {
-    let payload = response?.data ?? response;
+  private extractData(response: any): any {
+    const data = response?.data ?? response ?? {};
 
-    if (payload?.content) {
-      const content = payload.content;
+    let content = data.content ?? {};
 
-      if (typeof content === 'string') {
-        try {
-          payload = JSON.parse(content);
-        } catch {
-          payload = payload;
-        }
-      } else if (typeof content === 'object') {
-        payload = content;
+    if (typeof content === 'string') {
+      try {
+        content = JSON.parse(content);
+      } catch {
+        content = {};
       }
     }
 
-    return payload;
+    return {
+      ...data,
+      ...content,
+      images: Array.isArray(data.images) ? data.images : [],
+    };
+  }
+
+  private extractImageUrl(data: any, field: string): string {
+    const image = data.images?.find(
+      (entry: any) => entry.field === field
+    );
+
+    return image?.url ?? '';
   }
 
   loadThreads(): void {
@@ -132,59 +118,72 @@ export class Threads implements OnInit, OnDestroy {
     this.successMessage = '';
 
     this.subscription.add(
-      this.api.getThreadsOfTriumph().subscribe({
-        next: (response: any) => {
-          const payload = this.extractPayload(response);
+      this.api
+        .getThreadsOfTriumph()
+        .pipe(
+          timeout(60000),
+          finalize(() => {
+            this.isLoading = false;
+            this.cdr.markForCheck();
+          })
+        )
+        .subscribe({
+          next: (response: any) => {
+            const data = this.extractData(response);
 
-          this.sectionTitle = payload?.title || 'Threads of Triumph';
+            this.clearPreviews();
 
-          this.previousLabel =
-            payload?.navigation?.previousLabel || 'Previous';
+            this.sectionTitle = data.title || 'Threads of Triumph';
 
-          this.nextLabel =
-            payload?.navigation?.nextLabel || 'Next';
+            this.previousLabel =
+              data.navigation?.previousLabel || 'Previous';
 
-          const apiItems = Array.isArray(payload?.items)
-            ? payload.items
-            : [];
+            this.nextLabel =
+              data.navigation?.nextLabel || 'Next';
 
-          this.clearPreviews();
+            const apiItems = Array.isArray(data.items)
+              ? data.items
+              : [];
 
-          this.items = Array.from({ length: 4 }, (_, index) => {
-            const item = apiItems[index] || {};
-            const imageUrl = this.extractImageUrl(
-              item.mainImageUrl ??
-              item.mainImage ??
-              item.image ??
-              item.imageUrl
-            );
+            this.items = Array.from({ length: 4 }, (_, index) => {
+              const item = apiItems[index] || {};
 
-            return {
-              ...this.createEmptyWeaver(index),
-              ...item,
-              id: item.id || `featured-weaver-${index + 1}`,
-              slug: item.slug || `featured-weaver-${index + 1}`,
-              subheading:
-                item.subheading || 'FEATURES ON INDIVIDUAL WEAVERS',
-              description: item.description || this.defaultDescription,
-              mainImageAlt:
-                item.mainImageAlt || 'TGSCO handloom weaver at work',
-              mainImageUrl: imageUrl,
-              mainImageFile: null,
-              previewUrl: imageUrl,
-            } as Weaver;
-          });
+              const imageField =
+                item.mainImageField || `items[${index}].mainImage`;
 
-          this.isEditMode = apiItems.length > 0;
-          this.isLoading = false;
-        },
-        error: (error: any) => {
-          this.isLoading = false;
-          this.errorMessage =
-            error?.error?.message ||
-            'Unable to load Threads of Triumph. Please try again.';
-        },
-      })
+              const imageUrl = this.extractImageUrl(data, imageField);
+
+              return {
+                ...this.createEmptyWeaver(index),
+                id: item.id || `featured-weaver-${index + 1}`,
+                slug: item.slug || `featured-weaver-${index + 1}`,
+                subheading:
+                  item.subheading || 'FEATURES ON INDIVIDUAL WEAVERS',
+                description: item.description || this.defaultDescription,
+                mainImageAlt:
+                  item.mainImageAlt || 'TGSCO handloom weaver at work',
+                mainImageUrl: imageUrl,
+                mainImageFile: null,
+                previewUrl: imageUrl,
+              };
+            });
+
+            this.isEditMode = apiItems.length > 0;
+          },
+          error: (error: any) => {
+            if (error.status === 404) {
+              this.isEditMode = false;
+              this.items = Array.from({ length: 4 }, (_, index) =>
+                this.createEmptyWeaver(index)
+              );
+              return;
+            }
+
+            this.errorMessage =
+              error?.error?.message ||
+              'Unable to load Threads of Triumph. Please try again.';
+          },
+        })
     );
   }
 
@@ -197,32 +196,45 @@ export class Threads implements OnInit, OnDestroy {
     this.successMessage = '';
 
     this.subscription.add(
-      this.api.getFeaturedWeaver(item.id).subscribe({
-        next: (response: any) => {
-          const data = this.extractPayload(response);
-          const imageUrl = this.extractImageUrl(
-            data?.mainImageUrl ??
-            data?.mainImage ??
-            data?.image ??
-            data?.imageUrl
-          );
+      this.api
+        .getFeaturedWeaver(item.id)
+        .pipe(
+          timeout(60000),
+          finalize(() => this.cdr.markForCheck())
+        )
+        .subscribe({
+          next: (response: any) => {
+            const data = this.extractData(response);
 
-          this.items[index] = {
-            ...item,
-            ...data,
-            mainImageUrl: imageUrl || item.mainImageUrl,
-            previewUrl: imageUrl || item.previewUrl,
-            mainImageFile: item.mainImageFile,
-          };
+            const imageField =
+              data.mainImageField || `items[${index}].mainImage`;
 
-          this.successMessage = `Loaded ${item.id}.`;
-        },
-        error: (error: any) => {
-          this.errorMessage =
-            error?.error?.message ||
-            `Unable to load ${item.id}.`;
-        },
-      })
+            const imageUrl =
+              this.extractImageUrl(data, imageField) ||
+              this.extractImageUrl(
+                { images: response?.data?.images ?? [] },
+                imageField
+              );
+
+            this.revokeUrl(item.previewUrl);
+
+            this.items[index] = {
+              ...item,
+              ...data,
+              mainImageUrl: imageUrl || item.mainImageUrl,
+              previewUrl: item.mainImageFile
+                ? item.previewUrl
+                : imageUrl || item.previewUrl,
+              mainImageFile: item.mainImageFile,
+            };
+
+            this.successMessage = `Loaded ${item.id}.`;
+          },
+          error: (error: any) => {
+            this.errorMessage =
+              error?.error?.message || `Unable to load ${item.id}.`;
+          },
+        })
     );
   }
 
@@ -240,17 +252,8 @@ export class Threads implements OnInit, OnDestroy {
   removeWeaver(index: number): void {
     const item = this.items[index];
 
-    if (item?.previewUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(item.previewUrl);
-    }
-
+    this.revokeUrl(item?.previewUrl);
     this.items.splice(index, 1);
-
-    this.items = this.items.map((current, i) => ({
-      ...current,
-      id: `featured-weaver-${i + 1}`,
-      slug: current.slug || `featured-weaver-${i + 1}`,
-    }));
 
     this.successMessage = '';
     this.errorMessage = '';
@@ -276,9 +279,7 @@ export class Threads implements OnInit, OnDestroy {
 
     const item = this.items[index];
 
-    if (item.previewUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(item.previewUrl);
-    }
+    this.revokeUrl(item.previewUrl);
 
     item.mainImageFile = file;
     item.previewUrl = URL.createObjectURL(file);
@@ -313,12 +314,14 @@ export class Threads implements OnInit, OnDestroy {
       const item = this.items[index];
 
       if (!item.subheading.trim() || !item.description.trim()) {
-        this.errorMessage = `Please complete the text fields for weaver ${index + 1}.`;
+        this.errorMessage =
+          `Please complete the text fields for weaver ${index + 1}.`;
         return;
       }
 
       if (!item.mainImageFile && !item.mainImageUrl) {
-        this.errorMessage = `Please upload an image for weaver ${index + 1}.`;
+        this.errorMessage =
+          `Please upload an image for weaver ${index + 1}.`;
         return;
       }
     }
@@ -357,23 +360,29 @@ export class Threads implements OnInit, OnDestroy {
       : this.api.createThreadsOfTriumph(content, images);
 
     this.subscription.add(
-      request.subscribe({
-        next: () => {
-          this.isSaving = false;
-          this.successMessage = this.isEditMode
-            ? 'Threads of Triumph updated successfully.'
-            : 'Threads of Triumph created successfully.';
+      request
+        .pipe(
+          timeout(60000),
+          finalize(() => {
+            this.isSaving = false;
+            this.cdr.markForCheck();
+          })
+        )
+        .subscribe({
+          next: () => {
+            this.successMessage = this.isEditMode
+              ? 'Threads of Triumph updated successfully.'
+              : 'Threads of Triumph created successfully.';
 
-          this.isEditMode = true;
-          this.loadThreads();
-        },
-        error: (error: any) => {
-          this.isSaving = false;
-          this.errorMessage =
-            error?.error?.message ||
-            'Unable to save Threads of Triumph. Please check the fields and try again.';
-        },
-      })
+            this.isEditMode = true;
+            this.loadThreads();
+          },
+          error: (error: any) => {
+            this.errorMessage =
+              error?.error?.message ||
+              'Unable to save Threads of Triumph. Please check the fields and try again.';
+          },
+        })
     );
   }
 
@@ -391,27 +400,37 @@ export class Threads implements OnInit, OnDestroy {
     this.successMessage = '';
 
     this.subscription.add(
-      this.api.deleteThreadsOfTriumph().subscribe({
-        next: () => {
-          this.isDeleting = false;
-          this.clearPreviews();
-          this.items = Array.from({ length: 4 }, (_, index) =>
-            this.createEmptyWeaver(index)
-          );
-          this.sectionTitle = 'Threads of Triumph';
-          this.previousLabel = 'Previous';
-          this.nextLabel = 'Next';
-          this.isEditMode = false;
-          this.successMessage =
-            'Threads of Triumph deleted successfully.';
-        },
-        error: (error: any) => {
-          this.isDeleting = false;
-          this.errorMessage =
-            error?.error?.message ||
-            'Unable to delete Threads of Triumph. Please try again.';
-        },
-      })
+      this.api
+        .deleteThreadsOfTriumph()
+        .pipe(
+          timeout(60000),
+          finalize(() => {
+            this.isDeleting = false;
+            this.cdr.markForCheck();
+          })
+        )
+        .subscribe({
+          next: () => {
+            this.clearPreviews();
+
+            this.items = Array.from({ length: 4 }, (_, index) =>
+              this.createEmptyWeaver(index)
+            );
+
+            this.sectionTitle = 'Threads of Triumph';
+            this.previousLabel = 'Previous';
+            this.nextLabel = 'Next';
+            this.isEditMode = false;
+
+            this.successMessage =
+              'Threads of Triumph deleted successfully.';
+          },
+          error: (error: any) => {
+            this.errorMessage =
+              error?.error?.message ||
+              'Unable to delete Threads of Triumph. Please try again.';
+          },
+        })
     );
   }
 

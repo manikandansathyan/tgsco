@@ -37,56 +37,73 @@ export class Schemes implements OnInit {
     this.loadSchemesHero();
   }
 
-  loadSchemesHero(): void {
-    this.isLoading = true;
-    this.message = '';
+loadSchemesHero(): void {
+  this.isLoading = true;
+  this.message = '';
 
-    this.api
-      .getSchemesHero()
-      .pipe(
-        timeout(60000),
-        finalize(() => {
-          this.isLoading = false;
-          this.cdr.markForCheck();
-        })
-      )
-      .subscribe({
-        next: (response: any) => {
-          const data = response?.data ?? response;
+  this.api
+    .getSchemesHero()
+    .pipe(
+      timeout(60000),
+      finalize(() => {
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      })
+    )
+    .subscribe({
+      next: (response: any) => {
+        const responseData = response?.data ?? response;
+        const content = responseData?.content ?? responseData;
 
-          if (data && !data.error && typeof data === 'object') {
-            const content = data.content ?? data;
+        if (!content || typeof content !== 'object') {
+          this.isEditing = false;
+          return;
+        }
 
-            this.title = content.title ?? 'Schemes';
-            this.imageAlt =
-              content.imageAlt ??
-              'Hands working on a traditional handloom textile';
+        // Load title and image alt text
+        this.title = content.title ?? 'Schemes';
 
-            this.existingImage =
-              content.heroImage?.url ??
-              content.heroImage ??
-              content.imageUrl ??
-              content.image ??
-              null;
+        this.imageAlt =
+          content.imageAlt ??
+          'Hands working on a traditional handloom textile';
 
-            this.isEditing = !!(
-              content.title ||
-              this.existingImage
-            );
-          }
+        // Find hero image from the images array
+        const images = Array.isArray(responseData?.images)
+          ? responseData.images
+          : [];
 
-          this.cdr.markForCheck();
-        },
-        error: (error) => {
-          console.error('Failed to load Schemes Hero:', error);
-          this.showMessage(
-            'Unable to load Schemes Hero content. You can still create it.',
-            'error'
-          );
-        },
-      });
-  }
+        const heroImage = images.find(
+          (image: any) => image.field === 'heroImage'
+        );
 
+        // Set existing image URL
+        this.existingImage =
+          heroImage?.url ??
+          content.heroImage?.url ??
+          content.heroImage ??
+          content.imageUrl ??
+          content.image ??
+          null;
+
+        // Determine whether content already exists
+        this.isEditing = !!(
+          responseData?.id ||
+          responseData?._id
+        );
+
+        this.cdr.markForCheck();
+      },
+
+      error: (error) => {
+        console.error('Failed to load Schemes Hero:', error);
+
+        this.showMessage(
+          'Unable to load Schemes Hero content. You can still create it.',
+          'error'
+        );
+      },
+    });
+}
   onImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];

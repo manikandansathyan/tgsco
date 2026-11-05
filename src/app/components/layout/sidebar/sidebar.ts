@@ -9,6 +9,7 @@ import {
   LucideSettings,
   LucideChevronDown,
   LucideLayoutDashboard,
+  LucideShieldCheck,
 } from '@lucide/angular';
 
 @Component({
@@ -21,9 +22,9 @@ import {
     LucidePanelsTopLeft,
     LucideImage,
     LucidePackage,
-    LucideSettings,
     LucideChevronDown,
-    LucideLayoutDashboard
+    LucideLayoutDashboard,
+    LucideShieldCheck,
   ],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
@@ -39,8 +40,8 @@ export class Sidebar {
   isNewsAndEventsOpen = false;
   isContactOpen = false;
   isVideoOpen = false;
-
   isCatalogueOpen = false;
+  isCommerceOpen = false;
 
   togglePortfolio(): void {
     this.isPortfolioOpen = !this.isPortfolioOpen;
@@ -74,7 +75,11 @@ export class Sidebar {
     this.isVideoOpen = !this.isVideoOpen;
   }
 
-  toggleCatalogue():void{
-    this.isCatalogueOpen = !this.isCatalogueOpen
+  toggleCatalogue(): void {
+    this.isCatalogueOpen = !this.isCatalogueOpen;
+  }
+
+  toggleCommerce(): void {
+    this.isCommerceOpen = !this.isCommerceOpen;
   }
 }

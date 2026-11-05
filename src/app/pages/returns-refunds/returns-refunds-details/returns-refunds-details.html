@@ -1,0 +1,310 @@
+
+<div class="details-page">
+  <ng-container *ngIf="returnItem; else noReturnSelected">
+    <div class="page-header">
+      <div class="header-left">
+        <button type="button" class="back-btn" (click)="goBack()">
+          <span>←</span> Back to Returns
+        </button>
+
+        <h1>Return Details</h1>
+        <p>Review the request and manage its refund status.</p>
+      </div>
+
+      <span class="status-badge" [ngClass]="statusClass(returnItem.status)">
+        {{ formatStatus(returnItem.status) }}
+      </span>
+    </div>
+
+    <div *ngIf="successMessage" class="alert alert-success" role="status">
+      {{ successMessage }}
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-error" role="alert">
+      {{ errorMessage }}
+    </div>
+
+    <div class="details-layout">
+      <div class="main-column">
+        <section class="details-card">
+          <div class="card-heading">
+            <div>
+              <h2>Return Request</h2>
+              <p>Request identification and reason</p>
+            </div>
+            <span class="return-id">{{ returnId || '—' }}</span>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Return ID</span>
+              <strong>{{ returnId || '—' }}</strong>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Order Number</span>
+              <strong>{{ orderNumber }}</strong>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Reason</span>
+              <strong>{{ formatStatus(returnItem.reason) }}</strong>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Requested Date</span>
+              <strong>
+                {{
+                  (returnItem.requestedAt || returnItem.createdAt)
+                    ? ((returnItem.requestedAt || returnItem.createdAt) | date:'dd MMM yyyy, h:mm a')
+                    : '—'
+                }}
+              </strong>
+            </div>
+
+            <div class="info-item full-width">
+              <span class="info-label">Request Description</span>
+              <p class="description">
+                {{ returnItem.description || returnItem.message || 'No description provided.' }}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="details-card">
+          <div class="card-heading">
+            <div>
+              <h2>Customer Information</h2>
+              <p>Customer details associated with this request</p>
+            </div>
+          </div>
+
+          <div class="customer-panel">
+            <div class="customer-avatar">
+              {{ customerName.charAt(0).toUpperCase() }}
+            </div>
+
+            <div class="customer-info">
+              <strong>{{ customerName }}</strong>
+              <span>{{ returnItem.customer?.email || 'Email not available' }}</span>
+              <span>{{ returnItem.customer?.phone || 'Phone not available' }}</span>
+            </div>
+          </div>
+
+          <div class="info-grid customer-extra">
+            <div class="info-item">
+              <span class="info-label">Payment Method</span>
+              <strong>{{ formatStatus(returnItem.paymentMethod) }}</strong>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Payment Status</span>
+              <strong>{{ formatStatus(returnItem.paymentStatus) }}</strong>
+            </div>
+
+            <div class="info-item full-width" *ngIf="returnItem.customer?.address">
+              <span class="info-label">Address</span>
+              <strong>{{ returnItem.customer?.address || '-' }}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="details-card">
+          <div class="card-heading">
+            <div>
+              <h2>Refund Information</h2>
+              <p>Review or enter the refund processing details</p>
+            </div>
+          </div>
+
+          <div class="refund-summary">
+            <span>Refund Amount</span>
+            <strong>{{ amount | currency:'INR':'symbol':'1.2-2' }}</strong>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="refundMethod">Refund Method</label>
+              <select
+                id="refundMethod"
+                name="refundMethod"
+                [(ngModel)]="refundMethod"
+              >
+                <option value="upi">UPI</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="original_payment_method">Original Payment Method</option>
+                <option value="cash">Cash</option>
+                <option value="wallet">Wallet</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="refundAmount">Refund Amount (₹)</label>
+              <input
+                id="refundAmount"
+                name="refundAmount"
+                type="number"
+                min="0"
+                step="0.01"
+                [(ngModel)]="refundAmount"
+              />
+            </div>
+
+            <div class="form-field">
+              <label for="refundReference">Refund Reference</label>
+              <input
+                id="refundReference"
+                name="refundReference"
+                type="text"
+                placeholder="Enter transaction/reference ID"
+                [(ngModel)]="refundReference"
+              />
+            </div>
+
+            <div class="form-field">
+              <label for="refundProcessedAt">Processed Date & Time</label>
+              <input
+                id="refundProcessedAt"
+                name="refundProcessedAt"
+                type="datetime-local"
+                [(ngModel)]="refundProcessedAt"
+              />
+            </div>
+
+            <div class="form-field full-width">
+              <label for="refundNotes">Refund Notes</label>
+              <textarea
+                id="refundNotes"
+                name="refundNotes"
+                rows="3"
+                placeholder="Add refund processing notes"
+                [(ngModel)]="refundNotes"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="existing-refund" *ngIf="returnItem.refundProcessedAt">
+            <span class="info-label">Previously recorded refund date</span>
+            <strong>
+              {{ returnItem.refundProcessedAt | date:'dd MMM yyyy, h:mm a' }}
+            </strong>
+          </div>
+        </section>
+
+        <section class="details-card" *ngIf="canApprove">
+          <div class="card-heading">
+            <div>
+              <h2>Review Request</h2>
+              <p>Approve this return request to proceed with processing.</p>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="statusMessage">Approval Message</label>
+            <textarea
+              id="statusMessage"
+              name="statusMessage"
+              rows="3"
+              placeholder="Add a message about this decision"
+              [(ngModel)]="statusMessage"
+            ></textarea>
+          </div>
+        </section>
+      </div>
+
+      <aside class="side-column">
+        <section class="details-card action-card">
+          <h2>Manage Return</h2>
+          <p class="action-description">
+            Available actions depend on the current return status.
+          </p>
+
+          <button
+            *ngIf="canApprove"
+            type="button"
+            class="primary-action"
+            [disabled]="updating"
+            (click)="approveReturn()"
+          >
+            {{ updating ? 'Updating...' : 'Approve Return' }}
+          </button>
+
+          <button
+            *ngIf="canRefund"
+            type="button"
+            class="primary-action refund-action"
+            [disabled]="updating"
+            (click)="processRefund()"
+          >
+            {{ updating ? 'Processing...' : 'Mark as Refunded' }}
+          </button>
+
+          <button
+            *ngIf="canComplete"
+            type="button"
+            class="primary-action complete-action"
+            [disabled]="updating"
+            (click)="completeReturn()"
+          >
+            {{ updating ? 'Updating...' : 'Complete Return' }}
+          </button>
+
+          <div
+            class="no-action"
+            *ngIf="!canApprove && !canRefund && !canComplete"
+          >
+            No further actions are available for this status.
+          </div>
+
+          <div class="action-note">
+            <strong>Note</strong>
+            <p>
+              Confirm the refund transaction with your payment provider before
+              marking it as refunded.
+            </p>
+          </div>
+        </section>
+
+        <section class="details-card status-card">
+          <h2>Current Status</h2>
+
+          <div class="status-line">
+            <span class="status-dot" [ngClass]="statusClass(returnItem.status)"></span>
+            <div>
+              <strong>{{ formatStatus(returnItem.status) }}</strong>
+              <span>Latest status available in the selected record</span>
+            </div>
+          </div>
+
+          <div class="status-line" *ngIf="returnItem.updatedAt">
+            <span class="status-dot status-default"></span>
+            <div>
+              <strong>Last Updated</strong>
+              <span>{{ returnItem.updatedAt | date:'dd MMM yyyy, h:mm a' }}</span>
+            </div>
+          </div>
+
+          <div class="status-line" *ngIf="returnItem.refundReference">
+            <span class="status-dot status-completed"></span>
+            <div>
+              <strong>Refund Reference</strong>
+              <span>{{ returnItem.refundReference }}</span>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </ng-container>
+
+  <ng-template #noReturnSelected>
+    <div class="no-selection">
+      <div class="no-selection-icon">↩</div>
+      <h2>No Return Selected</h2>
+      <p>Go back to the returns list and select a request to view its details.</p>
+      <button type="button" class="primary-action" (click)="goBack()">
+        Back to Returns
+      </button>
+    </div>
+  </ng-template>
+</div>

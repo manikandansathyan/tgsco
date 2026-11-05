@@ -45,57 +45,77 @@ export class Support implements OnInit, OnDestroy {
   }
 
   loadSupportingWeavers(): void {
-    this.isLoading = true;
-    this.message = '';
+  this.isLoading = true;
+  this.message = '';
 
-    this.api
-      .getSupportingWeavers()
-      .pipe(
-        timeout(60000),
-        finalize(() => {
-          this.isLoading = false;
-          this.cdr.markForCheck();
-        })
-      )
-      .subscribe({
-        next: (response: any) => {
-          const data = response?.data ?? response;
-          const content = data?.content ?? data;
+  this.api
+    .getSupportingWeavers()
+    .pipe(
+      timeout(60000),
+      finalize(() => {
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      })
+    )
+    .subscribe({
+      next: (response: any) => {
+        const responseData = response?.data ?? response;
+        const content = responseData?.content ?? responseData;
 
-          if (content && typeof content === 'object' && !content.error) {
-            this.eyebrow = content.eyebrow ?? 'Schemes';
-            this.title =
-              content.title ??
-              'Supporting the Weavers Who Sustain Our Heritage';
-            this.description =
-              content.description ??
-              'TGSCO works in close partnership with state and central government bodies to implement welfare schemes, financial support programmes, and skill development initiatives for handloom weavers across Telangana. This page serves as a central resource for weavers, cooperative members, and stakeholders to understand available support.';
-            this.imageAlt =
-              content.imageAlt ?? 'Hands working with handloom threads';
+        if (!content || typeof content !== 'object') {
+          this.isEditing = false;
+          return;
+        }
 
-            this.existingImage =
-              this.extractImageUrl(content.supportingImage) ??
-              this.extractImageUrl(content.imageUrl) ??
-              this.extractImageUrl(content.image);
+        // Load text content
+        this.eyebrow = content.eyebrow ?? 'Schemes';
 
-            this.isEditing = !!(
-              content.title ||
-              content.description ||
-              this.existingImage
-            );
-          }
+        this.title =
+          content.title ??
+          'Supporting the Weavers Who Sustain Our Heritage';
 
-          this.cdr.markForCheck();
-        },
-        error: (error) => {
-          console.error('Failed to load Supporting the Weavers:', error);
-          this.showMessage(
-            'Unable to load existing content. You can still create content if none exists.',
-            'error'
-          );
-        },
-      });
-  }
+        this.description =
+          content.description ??
+          'TGSCO works in close partnership with state and central government bodies to implement welfare schemes, financial support programmes, and skill development initiatives for handloom weavers across Telangana. This page serves as a central resource for weavers, cooperative members, and stakeholders to understand available support.';
+
+        this.imageAlt =
+          content.imageAlt ?? 'Hands working with handloom threads';
+
+        // Find the image from response.data.images[]
+        const images = Array.isArray(responseData?.images)
+          ? responseData.images
+          : [];
+
+        const supportingImage = images.find(
+          (image: any) => image.field === 'supportingImage'
+        );
+
+        // Set existing image URL
+        this.existingImage =
+          supportingImage?.url ??
+          this.extractImageUrl(content.supportingImage) ??
+          this.extractImageUrl(content.imageUrl) ??
+          this.extractImageUrl(content.image);
+
+        // Check whether content already exists
+        this.isEditing = !!(
+          responseData?.id ||
+          responseData?._id
+        );
+
+        this.cdr.markForCheck();
+      },
+
+      error: (error) => {
+        console.error('Failed to load Supporting the Weavers:', error);
+
+        this.showMessage(
+          'Unable to load existing content. You can still create content if none exists.',
+          'error'
+        );
+      },
+    });
+}
 
   onImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;

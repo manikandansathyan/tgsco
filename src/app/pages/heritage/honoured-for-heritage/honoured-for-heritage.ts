@@ -1,6 +1,14 @@
+
+import {
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
 interface Award {
@@ -22,6 +30,7 @@ interface Award {
 })
 export class HonouredForHeritage implements OnInit, OnDestroy {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
 
   title = 'Honoured for Heritage';
 
@@ -38,6 +47,7 @@ export class HonouredForHeritage implements OnInit, OnDestroy {
   saving = false;
   deleting = false;
   isEditMode = false;
+
   message = '';
   errorMessage = '';
 
@@ -49,57 +59,28 @@ export class HonouredForHeritage implements OnInit, OnDestroy {
     this.clearAllPreviews();
   }
 
-  private getObject(data: any): any {
-    let result = data?.data ?? data;
+  private getObject(response: any): any {
+    const result = response?.data ?? response;
 
-    if (typeof result === 'string') {
+    if (!result || typeof result !== 'object') {
+      return {};
+    }
+
+    let content = result.content ?? {};
+
+    if (typeof content === 'string') {
       try {
-        result = JSON.parse(result);
+        content = JSON.parse(content);
       } catch {
-        return {};
+        content = {};
       }
     }
 
-    if (result?.content) {
-      const content =
-        typeof result.content === 'string'
-          ? this.parseContent(result.content)
-          : result.content;
-
-      return {
-        ...result,
-        ...content,
-      };
-    }
-
-    return result ?? {};
-  }
-
-  private parseContent(content: string): any {
-    try {
-      return JSON.parse(content);
-    } catch {
-      return {};
-    }
-  }
-
-  private getImageUrl(item: any): string {
-    if (typeof item === 'string') {
-      return item;
-    }
-
-    return (
-      item?.imageUrl ??
-      item?.imageURL ??
-      item?.image_url ??
-      item?.image?.url ??
-      item?.image?.imageUrl ??
-      item?.image?.secure_url ??
-      item?.image?.path ??
-      item?.image ??
-      item?.url ??
-      ''
-    );
+    return {
+      ...result,
+      ...content,
+      images: Array.isArray(result.images) ? result.images : [],
+    };
   }
 
   loadAwards(): void {
@@ -107,58 +88,85 @@ export class HonouredForHeritage implements OnInit, OnDestroy {
     this.errorMessage = '';
     this.message = '';
 
-    this.api.getHeritageAwards().subscribe({
-      next: (response: any) => {
-        const data = this.getObject(response);
+    this.api
+      .getHeritageAwards()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.loading = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const data = this.getObject(response);
 
-        this.title = data.title ?? 'Honoured for Heritage';
-        this.description = data.description ?? '';
+          this.clearAllPreviews();
 
-        this.clearAwardPreviews();
+          this.title = data.title ?? 'Honoured for Heritage';
+          this.description = data.description ?? '';
 
-        this.awards = Array.isArray(data.awards)
-          ? data.awards.map((item: any) => {
-              const imageUrl = this.getImageUrl(item);
+          const uploadedImages = Array.isArray(data.images)
+            ? data.images
+            : [];
 
-              return {
-                title: item.title ?? '',
-                description: item.description ?? '',
-                imageAlt: item.imageAlt ?? '',
-                imageUrl,
-                imagePreview: '',
-                existingImageUrl: imageUrl,
-                imageFile: null,
-              };
-            })
-          : [];
+          this.awards = Array.isArray(data.awards)
+            ? data.awards.map((item: any, index: number) => {
+                const imageField =
+                  item?.imageField ?? `awards[${index}].image`;
 
-        const iconUrl = this.getImageUrl(
-          data.decorativeIcon ?? data.icon ?? data.decorative_icon
-        );
+                const uploadedImage = uploadedImages.find(
+                  (image: any) => image?.field === imageField
+                );
 
-        this.existingDecorativeIconUrl = iconUrl;
-        this.decorativeIconPreview = '';
-        this.decorativeIconFile = null;
-        this.isEditMode =
-          !!data.title ||
-          !!data.description ||
-          this.awards.length > 0;
+                const imageUrl = uploadedImage?.url ?? '';
 
-        this.loading = false;
-      },
-      error: (error: any) => {
-        this.loading = false;
+                return {
+                  title: item?.title ?? '',
+                  description: item?.description ?? '',
+                  imageAlt:
+                    item?.imageAlt ?? item?.title ?? '',
+                  imageUrl,
+                  imagePreview: '',
+                  existingImageUrl: imageUrl,
+                  imageFile: null,
+                };
+              })
+            : [];
 
-        if (error.status === 404) {
-          this.isEditMode = false;
-          this.message = 'No awards content found. You can create it below.';
-          return;
-        }
+          // Only set an icon URL if the API actually returns one.
+          const decorativeIconImage = uploadedImages.find(
+            (image: any) => image?.field === 'decorativeIcon'
+          );
 
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to load awards content.';
-      },
-    });
+          this.existingDecorativeIconUrl =
+            decorativeIconImage?.url ?? '';
+
+          this.decorativeIconPreview = '';
+          this.decorativeIconFile = null;
+
+          this.isEditMode =
+            !!data.title ||
+            !!data.description ||
+            this.awards.length > 0;
+
+          this.cdr.markForCheck();
+        },
+        error: (error: any) => {
+          if (error?.status === 404) {
+            this.isEditMode = false;
+            this.awards = [];
+            this.existingDecorativeIconUrl = '';
+            this.message =
+              'No awards content found. You can create it below.';
+            return;
+          }
+
+          this.errorMessage =
+            error?.error?.message ??
+            'Failed to load awards content.';
+        },
+      });
   }
 
   addAward(): void {
@@ -174,7 +182,11 @@ export class HonouredForHeritage implements OnInit, OnDestroy {
   }
 
   removeAward(index: number): void {
-    this.revokeUrl(this.awards[index]?.imagePreview);
+    const award = this.awards[index];
+
+    if (!award) return;
+
+    this.revokeUrl(award.imagePreview);
     this.awards.splice(index, 1);
   }
 
@@ -191,11 +203,28 @@ export class HonouredForHeritage implements OnInit, OnDestroy {
 
     const award = this.awards[index];
 
+    if (!award) return;
+
     this.revokeUrl(award.imagePreview);
 
     award.imageFile = file;
     award.imagePreview = URL.createObjectURL(file);
     award.imageUrl = '';
+
+    this.message = '';
+  }
+
+  removeAwardImage(index: number): void {
+    const award = this.awards[index];
+
+    if (!award) return;
+
+    this.revokeUrl(award.imagePreview);
+
+    award.imageFile = null;
+    award.imagePreview = '';
+    award.imageUrl = '';
+    award.existingImageUrl = '';
   }
 
   onDecorativeIconSelected(event: Event): void {
@@ -213,6 +242,15 @@ export class HonouredForHeritage implements OnInit, OnDestroy {
 
     this.decorativeIconFile = file;
     this.decorativeIconPreview = URL.createObjectURL(file);
+
+    this.message = '';
+  }
+
+  removeDecorativeIcon(): void {
+    this.decorativeIconFile = null;
+    this.revokeUrl(this.decorativeIconPreview);
+    this.decorativeIconPreview = '';
+    this.existingDecorativeIconUrl = '';
   }
 
   private isValidImage(file: File): boolean {
@@ -222,7 +260,7 @@ export class HonouredForHeritage implements OnInit, OnDestroy {
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      this.errorMessage = 'Image size must be less than 5 MB.';
+      this.errorMessage = 'Image size must be 5 MB or less.';
       return false;
     }
 
@@ -236,6 +274,11 @@ export class HonouredForHeritage implements OnInit, OnDestroy {
 
     if (!this.title.trim()) {
       this.errorMessage = 'Please enter the section title.';
+      return;
+    }
+
+    if (!this.description.trim()) {
+      this.errorMessage = 'Please enter the section description.';
       return;
     }
 
@@ -263,12 +306,14 @@ export class HonouredForHeritage implements OnInit, OnDestroy {
     const content = {
       title: this.title.trim(),
       description: this.description.trim(),
+
       awards: this.awards.map((award, index) => ({
         title: award.title.trim(),
         description: award.description.trim(),
         imageField: `awards[${index}].image`,
         imageAlt: award.imageAlt.trim() || award.title.trim(),
       })),
+
       iconField: 'decorativeIcon',
     };
 
@@ -282,7 +327,9 @@ export class HonouredForHeritage implements OnInit, OnDestroy {
 
     this.saving = true;
 
-    const request = this.isEditMode
+    const wasEditing = this.isEditMode;
+
+    const request = wasEditing
       ? this.api.updateHeritageAwards(
           content,
           awardImages,
@@ -294,27 +341,42 @@ export class HonouredForHeritage implements OnInit, OnDestroy {
           this.decorativeIconFile
         );
 
-    request.subscribe({
-      next: (response: any) => {
-        this.saving = false;
-        this.message =
-          response?.message ??
-          (this.isEditMode
-            ? 'Awards updated successfully.'
-            : 'Awards created successfully.');
+    request
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.saving = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          this.clearAllPreviews();
 
-        this.loadAwards();
-      },
-      error: (error: any) => {
-        this.saving = false;
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to save awards content.';
-      },
-    });
+          this.decorativeIconFile = null;
+
+          this.message =
+            response?.message ??
+            (wasEditing
+              ? 'Awards updated successfully.'
+              : 'Awards created successfully.');
+
+          this.loadAwards();
+        },
+        error: (error: any) => {
+          this.errorMessage =
+            error?.error?.message ??
+            'Failed to save awards content.';
+        },
+      });
   }
 
   deleteAwards(): void {
-    if (!confirm('Are you sure you want to delete the entire awards section?')) {
+    if (
+      !window.confirm(
+        'Are you sure you want to delete the entire awards section?'
+      )
+    ) {
       return;
     }
 
@@ -322,46 +384,70 @@ export class HonouredForHeritage implements OnInit, OnDestroy {
     this.message = '';
     this.errorMessage = '';
 
-    this.api.deleteHeritageAwards().subscribe({
-      next: () => {
-        this.deleting = false;
-        this.clearAllPreviews();
+    this.api
+      .deleteHeritageAwards()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.deleting = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          this.clearAllPreviews();
 
-        this.title = 'Honoured for Heritage';
-        this.description = '';
-        this.awards = [];
-        this.decorativeIconFile = null;
-        this.decorativeIconPreview = '';
-        this.existingDecorativeIconUrl = '';
-        this.isEditMode = false;
-        this.message = 'Awards section deleted successfully.';
-      },
-      error: (error: any) => {
-        this.deleting = false;
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to delete awards content.';
-      },
-    });
+          this.title = 'Honoured for Heritage';
+          this.description =
+            'A showcase of national and international awards, recognitions, and certifications received by TGSCO and its affiliated weavers, testimony to decades of craftsmanship and commitment.';
+
+          this.awards = [];
+
+          this.decorativeIconFile = null;
+          this.decorativeIconPreview = '';
+          this.existingDecorativeIconUrl = '';
+
+          this.isEditMode = false;
+
+          this.message =
+            response?.message ??
+            'Awards section deleted successfully.';
+        },
+        error: (error: any) => {
+          this.errorMessage =
+            error?.error?.message ??
+            'Failed to delete awards content.';
+        },
+      });
   }
 
   resetForm(): void {
+    this.clearAllPreviews();
+    this.decorativeIconFile = null;
+    this.message = '';
+    this.errorMessage = '';
+
     this.loadAwards();
   }
 
   private clearAwardPreviews(): void {
     this.awards.forEach((award) => {
       this.revokeUrl(award.imagePreview);
+      award.imagePreview = '';
     });
   }
 
   private clearAllPreviews(): void {
     this.clearAwardPreviews();
     this.revokeUrl(this.decorativeIconPreview);
+    this.decorativeIconPreview = '';
   }
 
   private revokeUrl(url: string): void {
-    if (url.startsWith('blob:')) {
+    if (url?.startsWith('blob:')) {
       URL.revokeObjectURL(url);
     }
   }
+
+  
 }

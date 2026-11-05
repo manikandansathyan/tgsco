@@ -117,41 +117,45 @@ export class Blog implements OnInit {
         next: (response: any) => {
           const data = response?.data ?? response;
           const savedContent = data?.content ?? data;
+          const returnedImages = Array.isArray(data?.images)
+            ? data.images
+            : [];
 
           if (
             savedContent &&
             typeof savedContent.title === 'string' &&
             Array.isArray(savedContent.articles)
           ) {
-            const defaults = this.getDefaultContent();
-
             this.content = {
               title: savedContent.title,
               articles: savedContent.articles.map(
                 (article: any, index: number): BlogArticle => {
-                  const fallback = defaults.articles[index];
+                  const imageField = `articles[${index}].image`;
+
+                  const matchedImage = returnedImages.find(
+                    (image: any) => image.field === imageField
+                  );
 
                   return {
-                    date: article.date ?? fallback?.date ?? '',
+                    date: article.date ?? '',
                     title: article.title ?? '',
                     description: article.description ?? '',
-                    buttonText:
-                      article.buttonText ??
-                      fallback?.buttonText ??
-                      'READ MORE',
+                    buttonText: article.buttonText ?? 'READ MORE',
                     url: article.url ?? '',
-                    imageUrl: this.getImageUrl(
-                      article.imageUrl ??
+                    imageUrl:
+                      matchedImage?.url ??
+                      this.getImageUrl(
+                        article.imageUrl ??
                         article.image ??
                         article.image_url
-                    ),
+                      ),
                     imageFile: null,
                   };
                 }
               ),
             };
 
-            this.isExistingContent = true;
+            this.isExistingContent = !!data?.id;
           } else {
             this.content = this.getDefaultContent();
             this.isExistingContent = false;
@@ -161,10 +165,10 @@ export class Blog implements OnInit {
         },
         error: (error) => {
           console.error('Failed to load Blog content:', error);
-          this.content = this.getDefaultContent();
-          this.isExistingContent = false;
+
           this.errorMessage =
-            'Could not load saved blog content. Check the API response before creating new content.';
+            'Could not load saved blog content. Please check the API response.';
+
           this.cdr.markForCheck();
         },
       });
@@ -250,12 +254,13 @@ export class Blog implements OnInit {
 
     const payload = {
       title: this.content.title.trim(),
-      articles: this.content.articles.map((article) => ({
+      articles: this.content.articles.map((article, index) => ({
         date: article.date.trim(),
         title: article.title.trim(),
         description: article.description.trim(),
         buttonText: article.buttonText.trim(),
         url: article.url.trim(),
+        imageField: `articles[${index}].image`,
       })),
     };
 
@@ -263,6 +268,7 @@ export class Blog implements OnInit {
       index,
       image: article.imageFile,
     }));
+
 
     this.isSaving = true;
 

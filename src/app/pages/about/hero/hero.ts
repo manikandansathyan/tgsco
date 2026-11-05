@@ -39,62 +39,78 @@ export class Hero implements OnInit {
     this.loadAboutHero();
   }
 
-  loadAboutHero(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+loadAboutHero(): void {
+  this.isLoading = true;
+  this.errorMessage = '';
 
-    this.api
-      .getAboutHeroAPI()
-      .pipe(
-        timeout(60000),
-        finalize(() => {
-          this.isLoading = false;
-          this.cdr.markForCheck();
-        })
-      )
-      .subscribe({
-        next: (response: any) => {
-          const data = response?.data ?? response;
-          const content = data?.content ?? data;
+  this.api
+    .getAboutHeroAPI()
+    .pipe(
+      timeout(60000),
+      finalize(() => {
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      })
+    )
+    .subscribe({
+      next: (response: any) => {
+        const data = response?.data ?? response;
+        const content = data?.content ?? data;
 
-          if (
-            content &&
-            (content.title || content.imageAlt || content.heroImage ||
-              content.imageUrl || content.image)
-          ) {
-            this.isExistingContent = true;
-            this.title = content.title ?? this.title;
-            this.imageAlt =
-              content.imageAlt ??
-              content.image_alt ??
-              this.imageAlt;
+        if (content) {
+          this.isExistingContent = !!data?.id;
 
-            const image =
-              content.heroImage ??
-              content.imageUrl ??
-              content.image_url ??
-              content.image ??
-              '';
+          this.title = content.title ?? 'ABOUT TGSCO';
 
-            this.imageUrl =
-              typeof image === 'string'
-                ? image
-                : image?.url ?? '';
+          this.imageAlt =
+            content.imageAlt ??
+            content.image_alt ??
+            'Telangana handloom weavers working at a traditional loom';
 
-            this.imagePreview = this.imageUrl;
-          }
+          // Get image from the API images array
+          const heroImage = Array.isArray(data?.images)
+            ? data.images.find(
+                (image: any) => image.field === 'heroImage'
+              )
+            : null;
 
-          this.cdr.markForCheck();
-        },
-        error: (error) => {
-          console.error('Failed to load About Hero:', error);
-          this.errorMessage =
-            error?.error?.message ??
-            'Unable to load About Hero content.';
-          this.cdr.markForCheck();
-        },
-      });
-  }
+          // Fallback for older API response formats
+          const fallbackImage =
+            content.heroImage ??
+            content.imageUrl ??
+            content.image_url ??
+            content.image ??
+            '';
+
+          this.imageUrl =
+            heroImage?.url ??
+            (typeof fallbackImage === 'string'
+              ? fallbackImage
+              : fallbackImage?.url ?? '');
+
+          this.imagePreview = this.imageUrl;
+        } else {
+          this.isExistingContent = false;
+          this.title = 'ABOUT TGSCO';
+          this.imageAlt =
+            'Telangana handloom weavers working at a traditional loom';
+          this.imageUrl = '';
+          this.imagePreview = '';
+        }
+
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('Failed to load About Hero:', error);
+
+        this.errorMessage =
+          error?.error?.message ??
+          'Unable to load About Hero content.';
+
+        this.cdr.markForCheck();
+      },
+    });
+}
 
   onImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;

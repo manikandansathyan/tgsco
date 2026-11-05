@@ -1,0 +1,332 @@
+
+<div class="chronicles-page">
+
+  <div class="page-header">
+    <div>
+      <span class="page-eyebrow">HOME PAGE MANAGEMENT</span>
+      <h1>Chronicles of Thread</h1>
+      <p>Manage the heritage and storytelling section of the home page.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        class="btn btn-outline"
+        type="button"
+        (click)="getChronicles()"
+        [disabled]="loading || saving">
+        <i class="bi bi-arrow-clockwise"></i>
+        Refresh
+      </button>
+
+      <button
+        class="btn btn-danger"
+        type="button"
+        (click)="deleteChronicles()"
+        [disabled]="!hasContent || deleting || saving">
+        <i class="bi bi-trash"></i>
+        {{ deleting ? 'Deleting...' : 'Delete' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="alert alert-success" *ngIf="successMessage">
+    <i class="bi bi-check-circle-fill"></i>
+    {{ successMessage }}
+  </div>
+
+  <div class="alert alert-error" *ngIf="errorMessage">
+    <i class="bi bi-exclamation-circle-fill"></i>
+    {{ errorMessage }}
+  </div>
+
+  <div class="loading-container" *ngIf="loading">
+    <div class="loader"></div>
+    <p>Loading Chronicles of Thread...</p>
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <div class="content-status">
+      <div>
+        <span class="status-dot" [class.active]="hasContent"></span>
+        <span>{{ hasContent ? 'Content Available' : 'New Content' }}</span>
+      </div>
+      <span class="status-description">
+        {{ hasContent ? 'Existing content can be edited.' : 'Create the section content.' }}
+      </span>
+    </div>
+
+    <form (ngSubmit)="saveChronicles()" #chroniclesForm="ngForm">
+
+      <!-- Basic Content -->
+      <section class="form-card">
+        <div class="section-heading">
+          <div class="section-icon">
+            <i class="bi bi-pencil-square"></i>
+          </div>
+          <div>
+            <h2>Basic Content</h2>
+            <p>Section heading and introductory text.</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="eyebrow">Eyebrow Text</label>
+          <input
+            id="eyebrow"
+            type="text"
+            name="eyebrow"
+            [(ngModel)]="content.eyebrow"
+            placeholder="THE CHRONICLES OF THREAD">
+        </div>
+
+        <div class="form-group">
+          <label for="title">Section Title <span>*</span></label>
+          <input
+            id="title"
+            type="text"
+            name="title"
+            [(ngModel)]="content.title"
+            placeholder="A Legacy Woven Through Centuries"
+            required>
+        </div>
+
+        <div class="form-group">
+          <div class="label-row">
+            <label>Paragraphs</label>
+            <button
+              type="button"
+              class="text-button"
+              (click)="addParagraph()">
+              <i class="bi bi-plus-circle"></i>
+              Add Paragraph
+            </button>
+          </div>
+
+          <div class="paragraph-item" *ngFor="let paragraph of content.paragraphs; let i = index">
+            <div class="paragraph-header">
+              <span>Paragraph {{ i + 1 }}</span>
+              <button
+                type="button"
+                class="remove-button"
+                (click)="removeParagraph(i)"
+                [disabled]="content.paragraphs.length <= 1">
+                <i class="bi bi-trash"></i>
+                Remove
+              </button>
+            </div>
+
+            <textarea
+              [name]="'paragraph' + i"
+              [(ngModel)]="content.paragraphs[i]"
+              rows="5"
+              placeholder="Enter paragraph content...">
+            </textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- Statistic and CTA -->
+      <section class="form-card">
+        <div class="section-heading">
+          <div class="section-icon">
+            <i class="bi bi-bar-chart"></i>
+          </div>
+          <div>
+            <h2>Statistic & Call to Action</h2>
+            <p>Configure the statistic and collection button.</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="statValue">Statistic Value</label>
+            <input
+              id="statValue"
+              type="text"
+              name="statValue"
+              [(ngModel)]="content.statistic.value"
+              placeholder="56+">
+          </div>
+
+          <div class="form-group">
+            <label for="statLabel">Statistic Label</label>
+            <input
+              id="statLabel"
+              type="text"
+              name="statLabel"
+              [(ngModel)]="content.statistic.label"
+              placeholder="Years of Weaving Legacy">
+          </div>
+
+          <div class="form-group">
+            <label for="ctaLabel">CTA Button Label</label>
+            <input
+              id="ctaLabel"
+              type="text"
+              name="ctaLabel"
+              [(ngModel)]="content.cta.label"
+              placeholder="EXPLORE THE COLLECTION">
+          </div>
+
+          <div class="form-group">
+            <label for="ctaUrl">CTA Button URL</label>
+            <input
+              id="ctaUrl"
+              type="text"
+              name="ctaUrl"
+              [(ngModel)]="content.cta.url"
+              placeholder="/collections">
+          </div>
+        </div>
+      </section>
+
+      <!-- Images -->
+      <section class="form-card">
+        <div class="section-heading">
+          <div class="section-icon">
+            <i class="bi bi-images"></i>
+          </div>
+          <div>
+            <h2>Section Images</h2>
+            <p>Upload the left and right images used in the section. Maximum size: 5 MB each.</p>
+          </div>
+        </div>
+
+        <div class="image-grid">
+
+          <div class="image-upload-card">
+            <label>Left Image</label>
+
+            <div class="image-preview">
+              <img
+                *ngIf="leftImagePreview || existingLeftImage"
+                [src]="leftImagePreview || existingLeftImage"
+                alt="Left image preview">
+
+              <div class="empty-image" *ngIf="!leftImagePreview && !existingLeftImage">
+                <i class="bi bi-image"></i>
+                <span>No image selected</span>
+              </div>
+            </div>
+
+            <label class="upload-button">
+              <i class="bi bi-cloud-arrow-up"></i>
+              {{ leftImageFile ? 'Change Image' : 'Choose Left Image' }}
+              <input
+                type="file"
+                accept="image/*"
+                (change)="onImageSelected($event, 'left')"
+                hidden>
+            </label>
+
+            <div class="form-group">
+              <label for="leftAlt">Left Image Alt Text</label>
+              <input
+                id="leftAlt"
+                type="text"
+                name="leftAlt"
+                [(ngModel)]="content.leftImageAlt"
+                placeholder="Describe the left image">
+            </div>
+
+            <span class="file-name" *ngIf="leftImageFile">
+              {{ leftImageFile.name }}
+            </span>
+          </div>
+
+          <div class="image-upload-card">
+            <label>Right Image</label>
+
+            <div class="image-preview">
+              <img
+                *ngIf="rightImagePreview || existingRightImage"
+                [src]="rightImagePreview || existingRightImage"
+                alt="Right image preview">
+
+              <div class="empty-image" *ngIf="!rightImagePreview && !existingRightImage">
+                <i class="bi bi-image"></i>
+                <span>No image selected</span>
+              </div>
+            </div>
+
+            <label class="upload-button">
+              <i class="bi bi-cloud-arrow-up"></i>
+              {{ rightImageFile ? 'Change Image' : 'Choose Right Image' }}
+              <input
+                type="file"
+                accept="image/*"
+                (change)="onImageSelected($event, 'right')"
+                hidden>
+            </label>
+
+            <div class="form-group">
+              <label for="rightAlt">Right Image Alt Text</label>
+              <input
+                id="rightAlt"
+                type="text"
+                name="rightAlt"
+                [(ngModel)]="content.rightImageAlt"
+                placeholder="Describe the right image">
+            </div>
+
+            <span class="file-name" *ngIf="rightImageFile">
+              {{ rightImageFile.name }}
+            </span>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Closing Quote -->
+      <section class="form-card">
+        <div class="section-heading">
+          <div class="section-icon">
+            <i class="bi bi-quote"></i>
+          </div>
+          <div>
+            <h2>Closing Quote</h2>
+            <p>Final storytelling text displayed in the section.</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="closingQuote">Closing Quote</label>
+          <textarea
+            id="closingQuote"
+            name="closingQuote"
+            [(ngModel)]="content.closingQuote"
+            rows="4"
+            placeholder="Enter the closing quote...">
+          </textarea>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="resetForm()"
+          [disabled]="saving || deleting">
+          Reset
+        </button>
+
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="saving || deleting || !chroniclesForm.valid">
+          <i class="bi bi-check2-circle"></i>
+          {{
+            saving
+              ? 'Saving...'
+              : hasContent
+                ? 'Update Content'
+                : 'Save Content'
+          }}
+        </button>
+      </div>
+
+    </form>
+  </ng-container>
+</div>

@@ -1,6 +1,13 @@
+import {
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
 @Component({
@@ -12,6 +19,7 @@ import { Api } from '../../../core/services/api';
 })
 export class Hero implements OnInit, OnDestroy {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
 
   title = 'NEWS & EVENTS';
   imageAlt = 'TGSCO handloom exhibition and textiles';
@@ -49,17 +57,27 @@ export class Hero implements OnInit, OnDestroy {
   }
 
   private extractData(response: any): any {
-    let data = response?.data ?? response ?? {};
+    const data = response?.data ?? response ?? {};
+    const content = this.parseContent(data.content);
 
-    if (data?.content !== undefined) {
-      const content = this.parseContent(data.content);
-      data = { ...data, ...content };
-    }
-
-    return data;
+    return {
+      ...data,
+      ...content,
+      images: data.images ?? [],
+    };
   }
 
   private extractImageUrl(data: any): string {
+    // Get the image URL from the API images array.
+    const heroImageData = data?.images?.find(
+      (image: any) => image.field === 'heroImage'
+    );
+
+    if (heroImageData?.url) {
+      return heroImageData.url;
+    }
+
+    // Fallback for older API response formats.
     const image =
       data?.heroImage ??
       data?.imageUrl ??
@@ -85,39 +103,52 @@ export class Hero implements OnInit, OnDestroy {
     this.message = '';
     this.errorMessage = '';
 
-    this.api.getNewsHero().subscribe({
-      next: (response: any) => {
-        const data = this.extractData(response);
+    this.api
+      .getNewsHero()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.loading = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const data = this.extractData(response);
 
-        this.title = data.title ?? 'NEWS & EVENTS';
-        this.imageAlt =
-          data.imageAlt ?? 'TGSCO handloom exhibition and textiles';
+          this.title = data.title ?? 'NEWS & EVENTS';
 
-        this.revokePreview();
-        this.heroImage = null;
-        this.existingImageUrl = this.extractImageUrl(data);
+          this.imageAlt =
+            data.imageAlt ??
+            'TGSCO handloom exhibition and textiles';
 
-        this.isEditMode = !!(
-          data.title ||
-          this.existingImageUrl
-        );
+          this.revokePreview();
+          this.heroImage = null;
 
-        this.loading = false;
-      },
-      error: (error: any) => {
-        this.loading = false;
+          // Read the image URL from data.images[].
+          this.existingImageUrl = this.extractImageUrl(data);
 
-        if (error.status === 404) {
-          this.isEditMode = false;
-          this.existingImageUrl = '';
-          this.message = 'No hero content found. You can create it below.';
-          return;
-        }
+          this.isEditMode = !!(
+            data.id ||
+            data.title ||
+            this.existingImageUrl
+          );
+        },
 
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to load News & Events hero.';
-      },
-    });
+        error: (error: any) => {
+          if (error.status === 404) {
+            this.isEditMode = false;
+            this.existingImageUrl = '';
+            this.message =
+              'No hero content found. You can create it below.';
+            return;
+          }
+
+          this.errorMessage =
+            error?.error?.message ??
+            'Failed to load News & Events hero.';
+        },
+      });
   }
 
   onImageSelected(event: Event): void {
@@ -171,27 +202,39 @@ export class Hero implements OnInit, OnDestroy {
       ? this.api.updateNewsHero(content, this.heroImage)
       : this.api.createNewsHero(content, this.heroImage);
 
-    request.subscribe({
-      next: (response: any) => {
-        this.saving = false;
-        this.message =
-          response?.message ??
-          (this.isEditMode
-            ? 'News & Events hero updated successfully.'
-            : 'News & Events hero created successfully.');
+    request
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.saving = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          this.message =
+            response?.message ??
+            (this.isEditMode
+              ? 'News & Events hero updated successfully.'
+              : 'News & Events hero created successfully.');
 
-        this.loadNewsHero();
-      },
-      error: (error: any) => {
-        this.saving = false;
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to save News & Events hero.';
-      },
-    });
+          this.loadNewsHero();
+        },
+
+        error: (error: any) => {
+          this.errorMessage =
+            error?.error?.message ??
+            'Failed to save News & Events hero.';
+        },
+      });
   }
 
   deleteNewsHero(): void {
-    if (!confirm('Are you sure you want to delete the News & Events hero?')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete the News & Events hero?'
+      )
+    ) {
       return;
     }
 
@@ -199,25 +242,36 @@ export class Hero implements OnInit, OnDestroy {
     this.message = '';
     this.errorMessage = '';
 
-    this.api.deleteNewsHero().subscribe({
-      next: () => {
-        this.deleting = false;
+    this.api
+      .deleteNewsHero()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.deleting = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.revokePreview();
 
-        this.revokePreview();
-        this.title = 'NEWS & EVENTS';
-        this.imageAlt = 'TGSCO handloom exhibition and textiles';
-        this.heroImage = null;
-        this.existingImageUrl = '';
-        this.isEditMode = false;
+          this.title = 'NEWS & EVENTS';
+          this.imageAlt = 'TGSCO handloom exhibition and textiles';
 
-        this.message = 'News & Events hero deleted successfully.';
-      },
-      error: (error: any) => {
-        this.deleting = false;
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to delete News & Events hero.';
-      },
-    });
+          this.heroImage = null;
+          this.existingImageUrl = '';
+          this.isEditMode = false;
+
+          this.message =
+            'News & Events hero deleted successfully.';
+        },
+
+        error: (error: any) => {
+          this.errorMessage =
+            error?.error?.message ??
+            'Failed to delete News & Events hero.';
+        },
+      });
   }
 
   resetForm(): void {

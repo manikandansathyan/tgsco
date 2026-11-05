@@ -1,6 +1,14 @@
+
+import {
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
 interface PressRelease {
@@ -23,9 +31,9 @@ interface PressRelease {
 })
 export class Press implements OnInit, OnDestroy {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
 
   sectionTitle = 'Press Releases';
-
   items: PressRelease[] = [];
 
   sliderIconFile: File | null = null;
@@ -49,9 +57,7 @@ export class Press implements OnInit, OnDestroy {
   }
 
   private parseContent(value: any): any {
-    if (typeof value !== 'string') {
-      return value ?? {};
-    }
+    if (typeof value !== 'string') return value ?? {};
 
     try {
       return JSON.parse(value);
@@ -61,17 +67,30 @@ export class Press implements OnInit, OnDestroy {
   }
 
   private extractData(response: any): any {
-    let data = response?.data ?? response ?? {};
+    const data = response?.data ?? response ?? {};
+    const content = this.parseContent(data.content);
 
-    if (data?.content !== undefined) {
-      const content = this.parseContent(data.content);
-      data = { ...data, ...content };
-    }
-
-    return data;
+    return {
+      ...data,
+      ...content,
+      images: data.images ?? content.images ?? [],
+    };
   }
 
-  private extractImageUrl(value: any): string {
+  private extractImageUrl(
+    value: any,
+    images: any[],
+    field: string
+  ): string {
+    const matchingImage = images.find(
+      (image: any) => image.field === field
+    );
+
+    if (matchingImage?.url) {
+      return matchingImage.url;
+    }
+
+    // Fallback for older API response formats.
     const image =
       value?.imageUrl ??
       value?.imageURL ??
@@ -80,9 +99,7 @@ export class Press implements OnInit, OnDestroy {
       value?.url ??
       '';
 
-    if (typeof image === 'string') {
-      return image;
-    }
+    if (typeof image === 'string') return image;
 
     return (
       image?.url ??
@@ -111,59 +128,87 @@ export class Press implements OnInit, OnDestroy {
     this.message = '';
     this.errorMessage = '';
 
-    this.api.getPressReleases().subscribe({
-      next: (response: any) => {
-        const data = this.extractData(response);
+    this.api
+      .getPressReleases()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.loading = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const data = this.extractData(response);
 
-        this.clearPreviews();
+          const images = Array.isArray(data.images)
+            ? data.images
+            : [];
 
-        this.sectionTitle = data.title ?? 'Press Releases';
+          this.clearPreviews();
 
-        this.items = Array.isArray(data.items)
-          ? data.items.map((item: any, index: number) => {
-              const fallbackId = `press-release-${index + 1}`;
+          this.sectionTitle = data.title ?? 'Press Releases';
 
-              return {
-                id: item.id ?? fallbackId,
-                slug: item.slug ?? item.id ?? fallbackId,
-                title: item.title ?? '',
-                description: item.description ?? '',
-                imageAlt: item.imageAlt ?? '',
-                imageFile: null,
-                imagePreview: '',
-                existingImageUrl: this.extractImageUrl(item),
-              };
-            })
-          : [];
+          this.items = Array.isArray(data.items)
+            ? data.items.map((item: any, index: number) => {
+                const fallbackId = `press-release-${index + 1}`;
+                const imageField =
+                  item.imageField ?? `items[${index}].image`;
 
-        this.existingSliderIconUrl = this.extractImageUrl({
-          image:
-            data.sliderIconUrl ??
-            data.sliderIcon ??
-            data.slider_icon ??
-            data.icon,
-        });
+                return {
+                  id: item.id ?? fallbackId,
+                  slug: item.slug ?? item.id ?? fallbackId,
+                  title: item.title ?? '',
+                  description: item.description ?? '',
+                  imageAlt: item.imageAlt ?? '',
+                  imageFile: null,
+                  imagePreview: '',
+                  existingImageUrl: this.extractImageUrl(
+                    item,
+                    images,
+                    imageField
+                  ),
+                };
+              })
+            : [];
 
-        this.sliderIconFile = null;
-        this.sliderIconPreview = '';
-        this.isEditMode = !!data.title || this.items.length > 0;
-        this.loading = false;
-      },
-      error: (error: any) => {
-        this.loading = false;
+          // Slider icon is retrieved separately.
+          this.existingSliderIconUrl = this.extractImageUrl(
+            {
+              image:
+                data.sliderIconUrl ??
+                data.sliderIcon ??
+                data.slider_icon ??
+                data.icon,
+            },
+            images,
+            data.sliderIconField ?? 'sliderIcon'
+          );
 
-        if (error.status === 404) {
-          this.isEditMode = false;
-          this.items = [];
-          this.message =
-            'No Press Releases section found. You can create it below.';
-          return;
-        }
+          this.sliderIconFile = null;
+          this.sliderIconPreview = '';
 
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to load Press Releases.';
-      },
-    });
+          this.isEditMode =
+            !!data.title || this.items.length > 0;
+
+          this.cdr.markForCheck();
+        },
+
+        error: (error: any) => {
+          if (error.status === 404) {
+            this.isEditMode = false;
+            this.items = [];
+            this.existingSliderIconUrl = '';
+
+            this.message =
+              'No Press Releases section found. You can create it below.';
+            return;
+          }
+
+          this.errorMessage =
+            error?.error?.message ?? 'Failed to load Press Releases.';
+        },
+      });
   }
 
   addItem(): void {
@@ -196,6 +241,7 @@ export class Press implements OnInit, OnDestroy {
     this.errorMessage = '';
 
     const item = this.items[index];
+
     this.revokeUrl(item.imagePreview);
 
     item.imageFile = file;
@@ -221,6 +267,7 @@ export class Press implements OnInit, OnDestroy {
     }
 
     this.errorMessage = '';
+
     this.revokeUrl(this.sliderIconPreview);
 
     this.sliderIconFile = file;
@@ -273,6 +320,7 @@ export class Press implements OnInit, OnDestroy {
 
     const content = {
       title: this.sectionTitle.trim(),
+
       items: this.items.map((item, index) => ({
         id: item.id.trim() || `press-release-${index + 1}`,
         slug:
@@ -284,6 +332,7 @@ export class Press implements OnInit, OnDestroy {
         imageField: `items[${index}].image`,
         imageAlt: item.imageAlt.trim() || item.title.trim(),
       })),
+
       sliderIconField: 'sliderIcon',
     };
 
@@ -309,23 +358,30 @@ export class Press implements OnInit, OnDestroy {
           this.sliderIconFile ?? undefined
         );
 
-    request.subscribe({
-      next: (response: any) => {
-        this.saving = false;
-        this.message =
-          response?.message ??
-          (this.isEditMode
-            ? 'Press Releases updated successfully.'
-            : 'Press Releases created successfully.');
+    request
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.saving = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          this.message =
+            response?.message ??
+            (this.isEditMode
+              ? 'Press Releases updated successfully.'
+              : 'Press Releases created successfully.');
 
-        this.loadPressReleases();
-      },
-      error: (error: any) => {
-        this.saving = false;
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to save Press Releases.';
-      },
-    });
+          this.loadPressReleases();
+        },
+
+        error: (error: any) => {
+          this.errorMessage =
+            error?.error?.message ?? 'Failed to save Press Releases.';
+        },
+      });
   }
 
   deletePressReleases(): void {
@@ -341,26 +397,35 @@ export class Press implements OnInit, OnDestroy {
     this.message = '';
     this.errorMessage = '';
 
-    this.api.deletePressReleases().subscribe({
-      next: () => {
-        this.deleting = false;
-        this.clearPreviews();
+    this.api
+      .deletePressReleases()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.deleting = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.clearPreviews();
 
-        this.sectionTitle = 'Press Releases';
-        this.items = [];
-        this.sliderIconFile = null;
-        this.sliderIconPreview = '';
-        this.existingSliderIconUrl = '';
-        this.isEditMode = false;
+          this.sectionTitle = 'Press Releases';
+          this.items = [];
+          this.sliderIconFile = null;
+          this.sliderIconPreview = '';
+          this.existingSliderIconUrl = '';
+          this.isEditMode = false;
 
-        this.message = 'Press Releases section deleted successfully.';
-      },
-      error: (error: any) => {
-        this.deleting = false;
-        this.errorMessage =
-          error?.error?.message ?? 'Failed to delete Press Releases.';
-      },
-    });
+          this.message =
+            'Press Releases section deleted successfully.';
+        },
+
+        error: (error: any) => {
+          this.errorMessage =
+            error?.error?.message ?? 'Failed to delete Press Releases.';
+        },
+      });
   }
 
   resetForm(): void {
@@ -368,12 +433,15 @@ export class Press implements OnInit, OnDestroy {
   }
 
   private clearPreviews(): void {
-    this.items.forEach((item) => this.revokeUrl(item.imagePreview));
+    this.items.forEach((item) => {
+      this.revokeUrl(item.imagePreview);
+    });
+
     this.revokeUrl(this.sliderIconPreview);
   }
 
   private revokeUrl(url: string): void {
-    if (url.startsWith('blob:')) {
+    if (url?.startsWith('blob:')) {
       URL.revokeObjectURL(url);
     }
   }

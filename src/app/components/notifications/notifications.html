@@ -1,0 +1,144 @@
+<div class="notification-panel">
+  <div class="notification-header">
+    <div>
+      <h3>Notifications</h3>
+      <p>
+        You have
+        <strong>{{ unreadCount }}</strong>
+        unread notifications
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="icon-button close-button"
+      aria-label="Close notifications"
+      (click)="closeDropdown()"
+    >
+      <span>&times;</span>
+    </button>
+  </div>
+
+  <div class="notification-actions">
+    <button
+      type="button"
+      class="text-button"
+      [disabled]="unreadCount === 0 || actionLoading"
+      (click)="markAllAsRead()"
+    >
+      Mark all as read
+    </button>
+
+    <button
+      type="button"
+      class="text-button delete-all-button"
+      [disabled]="actionLoading"
+      (click)="deleteAllRead()"
+    >
+      Clear read
+    </button>
+  </div>
+
+  <div class="notification-content">
+    <div *ngIf="loading" class="state-message">
+      <span class="loader"></span>
+      <p>Loading notifications...</p>
+    </div>
+
+    <div *ngIf="!loading && errorMessage" class="error-message">
+      {{ errorMessage }}
+      <button type="button" (click)="loadNotifications()">Retry</button>
+    </div>
+
+    <div
+      *ngIf="!loading && !errorMessage && notifications.length === 0"
+      class="empty-state"
+    >
+      <div class="empty-icon">
+        <span>🔔</span>
+      </div>
+      <h4>No notifications</h4>
+      <p>You're all caught up. New notifications will appear here.</p>
+    </div>
+
+    <div
+      *ngIf="!loading && notifications.length > 0"
+      class="notification-list"
+    >
+      <div
+        *ngFor="let notification of notifications"
+        class="notification-item"
+        [class.unread]="isUnread(notification)"
+      >
+        <div class="notification-indicator">
+          <span *ngIf="isUnread(notification)" class="unread-dot"></span>
+          <span *ngIf="!isUnread(notification)" class="read-icon">✓</span>
+        </div>
+
+        <div class="notification-details">
+          <h4>{{ getNotificationTitle(notification) }}</h4>
+
+          <p>{{ getNotificationMessage(notification) }}</p>
+
+          <span class="notification-date">
+            {{ getNotificationDate(notification) }}
+          </span>
+
+          <div class="item-actions">
+            <button
+              *ngIf="isUnread(notification)"
+              type="button"
+              class="item-action"
+              [disabled]="loadingNotificationId === getNotificationId(notification)"
+              (click)="markAsRead(notification)"
+            >
+              {{
+                loadingNotificationId === getNotificationId(notification)
+                  ? 'Updating...'
+                  : 'Mark as read'
+              }}
+            </button>
+
+            <button
+              type="button"
+              class="item-action delete-action"
+              [disabled]="loadingNotificationId === getNotificationId(notification)"
+              (click)="deleteNotification(notification)"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    *ngIf="!loading && notifications.length > 0"
+    class="notification-footer"
+  >
+    <span>
+      Page {{ page }} of {{ totalPages }}
+    </span>
+
+    <div class="pagination-actions">
+      <button
+        type="button"
+        class="pagination-button"
+        [disabled]="page <= 1"
+        (click)="previousPage()"
+      >
+        Previous
+      </button>
+
+      <button
+        type="button"
+        class="pagination-button"
+        [disabled]="page >= totalPages"
+        (click)="nextPage()"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+</div>

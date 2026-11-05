@@ -46,6 +46,11 @@ export const routes: Routes = [
               import('./pages/home/story/story').then((m) => m.Story),
           },
           {
+            path: 'chronicles',
+            loadComponent: () =>
+              import('./pages/home/chronicles/chronicles').then((m) => m.Chronicles),
+          },
+          {
             path: 'state-techniques',
             loadComponent: () =>
               import('./pages/home/state-techniques/state-techniques').then(
@@ -381,6 +386,62 @@ export const routes: Routes = [
             (m) => m.CatalogueDetail
           ),
         data: { section: 'products' },
+      },
+      {
+        path: 'orders',
+        loadComponent: () =>
+          import('./pages/orders/orders').then(
+            (m) => m.Orders
+          ),
+      },
+      {
+        path: 'orders/:id',
+        loadComponent: () =>
+          import('./pages/orders/order-details/order-details').then(
+            (m) => m.OrderDetails
+          ),
+      },
+      {
+        path: 'returns-refunds',
+        loadComponent: () =>
+          import('./pages/returns-refunds/returns-refunds').then(
+            (m) => m.ReturnsRefunds
+          ),
+      },
+      {
+        path: 'returns-refunds/:id',
+        loadComponent: () =>
+          import('./pages/returns-refunds/returns-refunds-details/returns-refunds-details').then(
+            (m) => m.ReturnsRefundsDetails
+          ),
+      },
+      {
+        path: 'inventory',
+        loadComponent: () =>
+          import('./pages/inventory/inventory').then(
+            (m) => m.Inventory
+          ),
+      },
+      {
+        path: 'inventory/:id',
+        loadComponent: () =>
+          import('./pages/inventory/inventory-details/inventory-details').then(
+            (m) => m.InventoryDetails
+          ),
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./pages/settings/settings').then(
+            (m) => m.Settings
+          ),
+      },
+      {
+        path: 'profile-security',
+        loadComponent: () =>
+          import('./pages/profile-security/profile-security').then(
+            (m) => m.ProfileSecurity
+          ),
       },
     ],
   },

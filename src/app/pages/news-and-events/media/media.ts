@@ -1,8 +1,13 @@
-
+import {
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Subscription, finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
 
 interface GalleryImage {
@@ -35,6 +40,7 @@ interface GalleryCategory {
 })
 export class Media implements OnInit, OnDestroy {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
   private subscriptions = new Subscription();
 
   sectionTitle = 'Media Gallery';
@@ -56,7 +62,8 @@ export class Media implements OnInit, OnDestroy {
       id: 'exhibitions',
       title: 'Exhibitions',
       subtitle: 'Explore our exhibitions',
-      mainImageAlt: 'Handloom textiles and weaving materials at an exhibition',
+      mainImageAlt:
+        'Handloom textiles and weaving materials at an exhibition',
       associatedAlts: [
         'Handloom weaving on a traditional loom',
         'Women examining handloom textiles',
@@ -134,7 +141,7 @@ export class Media implements OnInit, OnDestroy {
   }
 
   private revokeUrl(url: string): void {
-    if (url.startsWith('blob:')) {
+    if (url?.startsWith('blob:')) {
       URL.revokeObjectURL(url);
     }
   }
@@ -150,26 +157,41 @@ export class Media implements OnInit, OnDestroy {
   }
 
   private extractPayload(response: any): any {
-    let payload = response?.data ?? response;
+    const data = response?.data ?? response ?? {};
 
-    if (payload?.content) {
-      if (typeof payload.content === 'string') {
-        try {
-          payload = JSON.parse(payload.content);
-        } catch {
-          return payload;
-        }
-      } else if (typeof payload.content === 'object') {
-        payload = payload.content;
+    let content = data.content ?? {};
+
+    if (typeof content === 'string') {
+      try {
+        content = JSON.parse(content);
+      } catch {
+        content = {};
       }
     }
 
-    return payload;
+    if (!content || typeof content !== 'object') {
+      content = {};
+    }
+
+    return {
+      ...data,
+      ...content,
+      images: Array.isArray(data.images)
+        ? data.images
+        : Array.isArray(content.images)
+          ? content.images
+          : [],
+    };
   }
 
   private imageUrl(value: any): string {
-    if (typeof value === 'string') return value;
-    if (!value || typeof value !== 'object') return '';
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (!value || typeof value !== 'object') {
+      return '';
+    }
 
     const keys = [
       'url',
@@ -184,11 +206,16 @@ export class Media implements OnInit, OnDestroy {
     for (const key of keys) {
       const candidate = value[key];
 
-      if (typeof candidate === 'string') return candidate;
+      if (typeof candidate === 'string') {
+        return candidate;
+      }
 
       if (candidate && typeof candidate === 'object') {
         const nested = this.imageUrl(candidate);
-        if (nested) return nested;
+
+        if (nested) {
+          return nested;
+        }
       }
     }
 
@@ -197,7 +224,8 @@ export class Media implements OnInit, OnDestroy {
 
   private normalizeCategory(
     apiCategory: any,
-    index: number
+    index: number,
+    images: any[] = []
   ): GalleryCategory {
     const config =
       this.defaultCategories[index] || {
@@ -210,15 +238,53 @@ export class Media implements OnInit, OnDestroy {
 
     const fallback = this.createCategory(config, index);
 
-    const apiImages = Array.isArray(apiCategory?.associatedImages)
+    const apiAssociatedImages = Array.isArray(
+      apiCategory?.associatedImages
+    )
       ? apiCategory.associatedImages
       : [];
 
-    const mainUrl = this.imageUrl(
-      apiCategory?.mainImageUrl ??
-        apiCategory?.mainImage ??
-        apiCategory?.image
+    const mainImageField =
+      apiCategory?.mainImageField ??
+      `categories[${index}].mainImage`;
+
+    const matchingMainImage = images.find(
+      (image: any) => image.field === mainImageField
     );
+
+    const mainUrl =
+      matchingMainImage?.url ||
+      this.imageUrl(
+        apiCategory?.mainImageUrl ??
+          apiCategory?.mainImage ??
+          apiCategory?.image
+      );
+
+    const associatedImages: GalleryImage[] =
+      apiAssociatedImages.map(
+        (image: any, imageIndex: number) => {
+          const imageField =
+            image?.field ??
+            `categories[${index}].associatedImages[${imageIndex}]`;
+
+          const matchingImage = images.find(
+            (entry: any) => entry.field === imageField
+          );
+
+          const url =
+            matchingImage?.url || this.imageUrl(image);
+
+          return {
+            alt:
+              image?.alt ||
+              config.associatedAlts[imageIndex] ||
+              `Gallery image ${imageIndex + 1}`,
+            url,
+            file: null,
+            previewUrl: url,
+          };
+        }
+      );
 
     return {
       ...fallback,
@@ -234,21 +300,7 @@ export class Media implements OnInit, OnDestroy {
       mainImageFile: null,
       mainPreviewUrl: mainUrl,
       videoLink: apiCategory?.videoLink ?? '',
-      associatedImages: apiImages.map(
-        (image: any, imageIndex: number) => {
-          const url = this.imageUrl(image);
-
-          return {
-            alt:
-              image?.alt ||
-              config.associatedAlts[imageIndex] ||
-              `Gallery image ${imageIndex + 1}`,
-            url,
-            file: null,
-            previewUrl: url,
-          };
-        }
-      ),
+      associatedImages,
     };
   }
 
@@ -258,89 +310,135 @@ export class Media implements OnInit, OnDestroy {
     this.successMessage = '';
 
     this.subscriptions.add(
-      this.api.getMediaGallery().subscribe({
-        next: (response: any) => {
-          const payload = this.extractPayload(response);
-          const apiCategories = Array.isArray(payload?.categories)
-            ? payload.categories
-            : [];
+      this.api
+        .getMediaGallery()
+        .pipe(
+          timeout(60000),
+          finalize(() => {
+            this.isLoading = false;
+            this.cdr.markForCheck();
+          })
+        )
+        .subscribe({
+          next: (response: any) => {
+            const payload = this.extractPayload(response);
 
-          this.clearPreviews();
+            const apiCategories = Array.isArray(
+              payload?.categories
+            )
+              ? payload.categories
+              : [];
 
-          this.sectionTitle = payload?.title || 'Media Gallery';
+            const images = Array.isArray(payload?.images)
+              ? payload.images
+              : [];
 
-          this.categories = this.defaultCategories.map(
-            (config, index) => {
-              const match = apiCategories.find(
-                (category: any) => category?.id === config.id
-              );
+            this.clearPreviews();
 
-              return this.normalizeCategory(match || {}, index);
-            }
-          );
+            this.sectionTitle =
+              payload?.title || 'Media Gallery';
 
-          this.isEditMode = apiCategories.length > 0;
-          this.isLoading = false;
-        },
-        error: (error: any) => {
-          this.isLoading = false;
-          this.errorMessage =
-            error?.error?.message ||
-            'Unable to load the Media Gallery.';
-        },
-      })
+            this.categories = this.defaultCategories.map(
+              (config, index) => {
+                const match = apiCategories.find(
+                  (category: any) =>
+                    category?.id === config.id
+                );
+
+                return this.normalizeCategory(
+                  match || {},
+                  index,
+                  images
+                );
+              }
+            );
+
+            this.isEditMode = apiCategories.length > 0;
+
+            this.cdr.markForCheck();
+          },
+
+          error: (error: any) => {
+            this.errorMessage =
+              error?.error?.message ||
+              'Unable to load the Media Gallery.';
+          },
+        })
     );
   }
 
   loadCategory(index: number): void {
     const category = this.categories[index];
-    if (!category?.id) return;
+
+    if (!category?.id) {
+      return;
+    }
 
     this.errorMessage = '';
     this.successMessage = '';
 
     this.subscriptions.add(
-      this.api.getMediaGalleryCategory(category.id).subscribe({
-        next: (response: any) => {
-          const data = this.extractPayload(response);
-          const updated = this.normalizeCategory(data, index);
+      this.api
+        .getMediaGalleryCategory(category.id)
+        .pipe(
+          timeout(60000),
+          finalize(() => this.cdr.markForCheck())
+        )
+        .subscribe({
+          next: (response: any) => {
+            const data = this.extractPayload(response);
 
-          this.revokeUrl(category.mainPreviewUrl);
+            const updated = this.normalizeCategory(
+              data,
+              index,
+              Array.isArray(data.images) ? data.images : []
+            );
 
-          category.id = updated.id;
-          category.slug = updated.slug;
-          category.title = updated.title;
-          category.subtitle = updated.subtitle;
-          category.description = updated.description;
-          category.mainImageAlt = updated.mainImageAlt;
-          category.mainImageUrl = updated.mainImageUrl;
-          category.mainPreviewUrl = updated.mainPreviewUrl;
-          category.mainImageFile = null;
-          category.videoLink = updated.videoLink;
+            this.revokeUrl(category.mainPreviewUrl);
 
-          category.associatedImages.forEach((image) =>
-            this.revokeUrl(image.previewUrl)
-          );
+            category.id = updated.id;
+            category.slug = updated.slug;
+            category.title = updated.title;
+            category.subtitle = updated.subtitle;
+            category.description = updated.description;
+            category.mainImageAlt = updated.mainImageAlt;
+            category.mainImageUrl = updated.mainImageUrl;
+            category.mainPreviewUrl = updated.mainPreviewUrl;
+            category.mainImageFile = null;
+            category.videoLink = updated.videoLink;
 
-          category.associatedImages = updated.associatedImages;
+            category.associatedImages.forEach((image) =>
+              this.revokeUrl(image.previewUrl)
+            );
 
-          this.successMessage =
-            `${category.title} loaded successfully.`;
-        },
-        error: (error: any) => {
-          this.errorMessage =
-            error?.error?.message ||
-            `Unable to load ${category.title}.`;
-        },
-      })
+            category.associatedImages =
+              updated.associatedImages;
+
+            this.successMessage =
+              `${category.title} loaded successfully.`;
+
+            this.cdr.markForCheck();
+          },
+
+          error: (error: any) => {
+            this.errorMessage =
+              error?.error?.message ||
+              `Unable to load ${category.title}.`;
+          },
+        })
     );
   }
 
-  onMainImageSelected(event: Event, index: number): void {
+  onMainImageSelected(
+    event: Event,
+    index: number
+  ): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     if (!file.type.startsWith('image/')) {
       this.errorMessage = 'Please select a valid image file.';
@@ -355,6 +453,10 @@ export class Media implements OnInit, OnDestroy {
     }
 
     const category = this.categories[index];
+
+    if (!category) {
+      return;
+    }
 
     this.revokeUrl(category.mainPreviewUrl);
 
@@ -373,7 +475,9 @@ export class Media implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     if (!file.type.startsWith('image/')) {
       this.errorMessage = 'Please select a valid image file.';
@@ -388,7 +492,13 @@ export class Media implements OnInit, OnDestroy {
     }
 
     const image =
-      this.categories[categoryIndex].associatedImages[imageIndex];
+      this.categories[categoryIndex]?.associatedImages[
+        imageIndex
+      ];
+
+    if (!image) {
+      return;
+    }
 
     this.revokeUrl(image.previewUrl);
 
@@ -402,6 +512,10 @@ export class Media implements OnInit, OnDestroy {
   addAssociatedImage(categoryIndex: number): void {
     const category = this.categories[categoryIndex];
 
+    if (!category) {
+      return;
+    }
+
     if (category.associatedImages.length >= 10) {
       this.errorMessage =
         'Maximum 10 associated images per category.';
@@ -413,6 +527,9 @@ export class Media implements OnInit, OnDestroy {
         `Gallery image ${category.associatedImages.length + 1}`
       )
     );
+
+    this.errorMessage = '';
+    this.successMessage = '';
   }
 
   removeAssociatedImage(
@@ -420,35 +537,53 @@ export class Media implements OnInit, OnDestroy {
     imageIndex: number
   ): void {
     const images =
-      this.categories[categoryIndex].associatedImages;
+      this.categories[categoryIndex]?.associatedImages;
 
-    const image = images[imageIndex];
+    if (!images || !images[imageIndex]) {
+      return;
+    }
 
-    this.revokeUrl(image.previewUrl);
+    this.revokeUrl(images[imageIndex].previewUrl);
     images.splice(imageIndex, 1);
+
+    this.errorMessage = '';
+    this.successMessage = '';
   }
 
   private buildContent(): Record<string, any> {
     return {
       title: this.sectionTitle.trim(),
-      categories: this.categories.map((category, categoryIndex) => ({
-        id: category.id.trim(),
-        slug: category.slug.trim() || category.id.trim(),
-        title: category.title.trim(),
-        subtitle: category.subtitle.trim(),
-        description: category.description.trim(),
-        mainImageField: `categories[${categoryIndex}].mainImage`,
-        mainImageAlt:
-          category.mainImageAlt.trim() || category.title.trim(),
-        associatedImages: category.associatedImages.map(
-          (image, imageIndex) => ({
-            field: `categories[${categoryIndex}].associatedImages[${imageIndex}]`,
-            alt:
-              image.alt.trim() || `Gallery image ${imageIndex + 1}`,
-          })
-        ),
-        videoLink: category.videoLink.trim(),
-      })),
+
+      categories: this.categories.map(
+        (category, categoryIndex) => ({
+          id: category.id.trim(),
+          slug:
+            category.slug.trim() || category.id.trim(),
+          title: category.title.trim(),
+          subtitle: category.subtitle.trim(),
+          description: category.description.trim(),
+
+          mainImageField:
+            `categories[${categoryIndex}].mainImage`,
+
+          mainImageAlt:
+            category.mainImageAlt.trim() ||
+            category.title.trim(),
+
+          associatedImages:
+            category.associatedImages.map(
+              (image, imageIndex) => ({
+                field:
+                  `categories[${categoryIndex}].associatedImages[${imageIndex}]`,
+                alt:
+                  image.alt.trim() ||
+                  `Gallery image ${imageIndex + 1}`,
+              })
+            ),
+
+          videoLink: category.videoLink.trim(),
+        })
+      ),
     };
   }
 
@@ -458,6 +593,12 @@ export class Media implements OnInit, OnDestroy {
 
     if (!this.sectionTitle.trim()) {
       this.errorMessage = 'Please enter the gallery title.';
+      return;
+    }
+
+    if (this.categories.length === 0) {
+      this.errorMessage =
+        'Please add at least one gallery category.';
       return;
     }
 
@@ -473,13 +614,20 @@ export class Media implements OnInit, OnDestroy {
         return;
       }
 
-      if (!category.mainImageFile && !category.mainImageUrl) {
+      if (
+        !category.mainImageFile &&
+        !category.mainImageUrl
+      ) {
         this.errorMessage =
           `Please upload a main image for ${category.title}.`;
         return;
       }
 
-      for (let j = 0; j < category.associatedImages.length; j++) {
+      for (
+        let j = 0;
+        j < category.associatedImages.length;
+        j++
+      ) {
         const image = category.associatedImages[j];
 
         if (!image.file && !image.url) {
@@ -495,19 +643,24 @@ export class Media implements OnInit, OnDestroy {
     const mainImages: Record<number, File> = {};
     const associatedImages: Record<string, File> = {};
 
-    this.categories.forEach((category, categoryIndex) => {
-      if (category.mainImageFile) {
-        mainImages[categoryIndex] = category.mainImageFile;
-      }
-
-      category.associatedImages.forEach((image, imageIndex) => {
-        if (image.file) {
-          associatedImages[
-            `categories[${categoryIndex}].associatedImages[${imageIndex}]`
-          ] = image.file;
+    this.categories.forEach(
+      (category, categoryIndex) => {
+        if (category.mainImageFile) {
+          mainImages[categoryIndex] =
+            category.mainImageFile;
         }
-      });
-    });
+
+        category.associatedImages.forEach(
+          (image, imageIndex) => {
+            if (image.file) {
+              associatedImages[
+                `categories[${categoryIndex}].associatedImages[${imageIndex}]`
+              ] = image.file;
+            }
+          }
+        );
+      }
+    );
 
     this.isSaving = true;
 
@@ -524,22 +677,29 @@ export class Media implements OnInit, OnDestroy {
         );
 
     this.subscriptions.add(
-      request.subscribe({
-        next: () => {
-          this.isSaving = false;
-          this.successMessage = this.isEditMode
-            ? 'Media Gallery updated successfully.'
-            : 'Media Gallery created successfully.';
+      request
+        .pipe(
+          timeout(60000),
+          finalize(() => {
+            this.isSaving = false;
+            this.cdr.markForCheck();
+          })
+        )
+        .subscribe({
+          next: () => {
+            this.successMessage = this.isEditMode
+              ? 'Media Gallery updated successfully.'
+              : 'Media Gallery created successfully.';
 
-          this.loadMediaGallery();
-        },
-        error: (error: any) => {
-          this.isSaving = false;
-          this.errorMessage =
-            error?.error?.message ||
-            'Unable to save the Media Gallery.';
-        },
-      })
+            this.loadMediaGallery();
+          },
+
+          error: (error: any) => {
+            this.errorMessage =
+              error?.error?.message ||
+              'Unable to save the Media Gallery.';
+          },
+        })
     );
   }
 
@@ -557,27 +717,39 @@ export class Media implements OnInit, OnDestroy {
     this.successMessage = '';
 
     this.subscriptions.add(
-      this.api.deleteMediaGallery().subscribe({
-        next: () => {
-          this.isDeleting = false;
-          this.clearPreviews();
+      this.api
+        .deleteMediaGallery()
+        .pipe(
+          timeout(60000),
+          finalize(() => {
+            this.isDeleting = false;
+            this.cdr.markForCheck();
+          })
+        )
+        .subscribe({
+          next: () => {
+            this.clearPreviews();
 
-          this.categories = this.defaultCategories.map(
-            (config, index) => this.createCategory(config, index)
-          );
+            this.categories = this.defaultCategories.map(
+              (config, index) =>
+                this.createCategory(config, index)
+            );
 
-          this.sectionTitle = 'Media Gallery';
-          this.isEditMode = false;
-          this.successMessage =
-            'Media Gallery deleted successfully.';
-        },
-        error: (error: any) => {
-          this.isDeleting = false;
-          this.errorMessage =
-            error?.error?.message ||
-            'Unable to delete the Media Gallery.';
-        },
-      })
+            this.sectionTitle = 'Media Gallery';
+            this.isEditMode = false;
+
+            this.successMessage =
+              'Media Gallery deleted successfully.';
+
+            this.cdr.markForCheck();
+          },
+
+          error: (error: any) => {
+            this.errorMessage =
+              error?.error?.message ||
+              'Unable to delete the Media Gallery.';
+          },
+        })
     );
   }
 
