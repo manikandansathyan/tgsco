@@ -1,0 +1,231 @@
+
+<div class="catalogue-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">WEBSITE MANAGEMENT</span>
+      <h1>Catalogue Categories</h1>
+      <p>Manage your catalogue categories and category details.</p>
+    </div>
+
+    <button
+      class="refresh-button"
+      type="button"
+      (click)="loadCategories(selectedType)"
+      [disabled]="isLoading"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M20 7v5h-5"></path>
+        <path d="M4 17v-5h5"></path>
+        <path d="M5.64 9A7 7 0 0 1 17.5 6.5L20 12"></path>
+        <path d="M18.36 15A7 7 0 0 1 6.5 17.5L4 12"></path>
+      </svg>
+      Refresh
+    </button>
+  </header>
+
+  <div class="alert alert-success" *ngIf="successMessage">
+    <span>{{ successMessage }}</span>
+    <button
+      type="button"
+      (click)="successMessage = ''"
+      aria-label="Close"
+    >
+      &times;
+    </button>
+  </div>
+
+  <div class="alert alert-error" *ngIf="errorMessage">
+    <span>{{ errorMessage }}</span>
+    <button
+      type="button"
+      (click)="errorMessage = ''"
+      aria-label="Close"
+    >
+      &times;
+    </button>
+  </div>
+
+  <section class="listing-card">
+    <div class="listing-toolbar">
+      <div>
+        <h2>All Categories</h2>
+        <p>View and manage your catalogue categories.</p>
+      </div>
+
+      <span class="total-count">
+        {{ categories.length }}
+        {{ categories.length === 1 ? 'Category' : 'Categories' }}
+      </span>
+    </div>
+
+    <div class="loading-state" *ngIf="isLoading">
+      <span class="loader"></span>
+      <p>Loading catalogue categories...</p>
+    </div>
+
+    <div
+      class="table-wrapper"
+      *ngIf="!isLoading && categories.length > 0"
+    >
+      <table>
+        <thead>
+          <tr>
+            <th class="number-column">#</th>
+            <th>Category Name</th>
+            <th>Slug</th>
+            <th>Group</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th class="action-column">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr
+            *ngFor="let category of categories; let i = index; trackBy: trackById"
+          >
+            <td class="number-cell">{{ i + 1 }}</td>
+
+            <td>
+              <div class="category-info">
+                <div class="category-image">
+                  <img
+                    *ngIf="category.image"
+                    [src]="category.image"
+                    [alt]="category.name || 'Category image'"
+                  />
+
+                  <span *ngIf="!category.image">
+                    {{ getCategoryName(category).charAt(0).toUpperCase() }}
+                  </span>
+                </div>
+
+                <div class="category-name">
+                  <span>{{ getCategoryName(category) }}</span>
+                  <small>{{ category.subtitle || '—' }}</small>
+                </div>
+              </div>
+            </td>
+
+            <td>
+              <span class="slug-text">
+                {{ category.slug || '—' }}
+              </span>
+            </td>
+
+            <td>
+              <span class="group-text">
+                {{ getCategoryGroup(category) }}
+              </span>
+            </td>
+
+            <td>
+              <span class="type-pill">
+                {{ getCategoryType(category) }}
+              </span>
+            </td>
+
+            <td>
+              <span
+                class="status-pill"
+                [class.inactive]="category.active === false"
+              >
+                <span class="status-dot"></span>
+                {{ getCategoryStatus(category) }}
+              </span>
+            </td>
+
+            <td>
+              <div class="row-actions">
+                <button
+                  class="icon-button view-button"
+                  type="button"
+                  title="View details"
+                  aria-label="View category details"
+                  (click)="viewCategory(category)"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"
+                    ></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+
+                <button
+                  class="icon-button delete-button"
+                  type="button"
+                  title="Delete category"
+                  aria-label="Delete category"
+                  [disabled]="deletingId === getCategoryId(category)"
+                  (click)="deleteCategory(category)"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M3 6h18"></path>
+                    <path d="M8 6V4h8v2"></path>
+                    <path d="m19 6-1 14H6L5 6"></path>
+                    <path d="M10 11v5"></path>
+                    <path d="M14 11v5"></path>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div
+      class="empty-state"
+      *ngIf="!isLoading && categories.length === 0"
+    >
+      <div class="empty-icon">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="3" y="3" width="8" height="8" rx="1.5"></rect>
+          <rect x="13" y="3" width="8" height="8" rx="1.5"></rect>
+          <rect x="3" y="13" width="8" height="8" rx="1.5"></rect>
+          <rect x="13" y="13" width="8" height="8" rx="1.5"></rect>
+        </svg>
+      </div>
+
+      <h3>No catalogue categories found</h3>
+      <p>There are currently no categories available for this filter.</p>
+
+      <button
+        class="refresh-button empty-refresh"
+        type="button"
+        (click)="loadCategories(selectedType)"
+      >
+        Refresh Categories
+      </button>
+    </div>
+  </section>
+</div>

@@ -1,3 +1,4 @@
+
 import { CommonModule } from '@angular/common';
 import {
   Component,
@@ -45,7 +46,6 @@ interface GovernmentScheme {
     items: string[];
   };
 
-  detailImageField: string;
   detailImageAlt: string;
   detailImageUrl: string | null;
   detailImageFile: File | null;
@@ -129,7 +129,6 @@ export class GovtSchemes implements OnInit, OnDestroy {
         items: [''],
       },
 
-      detailImageField: '',
       detailImageAlt: '',
       detailImageUrl: null,
       detailImageFile: null,
@@ -261,7 +260,6 @@ export class GovtSchemes implements OnInit, OnDestroy {
                     : [''],
                 },
 
-                detailImageField: imageField,
                 detailImageAlt: item.imageAlt ?? '',
 
                 detailImageUrl:
@@ -300,7 +298,19 @@ export class GovtSchemes implements OnInit, OnDestroy {
 
   addScheme(): void {
     this.schemes.push(this.defaultScheme());
-    this.cdr.markForCheck();
+
+    const newIndex = this.schemes.length - 1;
+
+    this.cdr.detectChanges();
+
+    const newSchemeElement = document.getElementById(
+      `scheme-card-${newIndex}`
+    );
+
+    newSchemeElement?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
   }
 
   removeScheme(index: number): void {
@@ -444,7 +454,6 @@ export class GovtSchemes implements OnInit, OnDestroy {
       title: this.pageTitle.trim(),
 
       schemes: this.schemes.map((scheme, index) => {
-        // Image field names must match the scheme's current array index.
         const imageField = `schemes[${index}].image`;
 
         if (scheme.detailImageFile) {
@@ -500,6 +509,7 @@ export class GovtSchemes implements OnInit, OnDestroy {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -575,6 +585,7 @@ export class GovtSchemes implements OnInit, OnDestroy {
         timeout(60000),
         finalize(() => {
           this.isDeleting = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -677,5 +688,9 @@ export class GovtSchemes implements OnInit, OnDestroy {
     this.message = message;
     this.messageType = type;
     this.cdr.markForCheck();
+  }
+
+  trackByIndex(index: number): number {
+    return index;
   }
 }

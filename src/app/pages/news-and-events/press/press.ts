@@ -211,10 +211,24 @@ export class Press implements OnInit, OnDestroy {
       });
   }
 
-  addItem(): void {
-    this.items.push(this.createEmptyItem(this.items.length));
-  }
+addItem(): void {
+  this.items.push(this.createEmptyItem(this.items.length));
 
+  const newIndex = this.items.length - 1;
+
+  this.cdr.detectChanges();
+
+  setTimeout(() => {
+    const newPressElement = document.getElementById(
+      `press-card-${newIndex}`
+    );
+
+    newPressElement?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }, 100);
+}
   removeItem(index: number): void {
     this.revokeUrl(this.items[index]?.imagePreview);
     this.items.splice(index, 1);
@@ -363,6 +377,7 @@ export class Press implements OnInit, OnDestroy {
         timeout(60000),
         finalize(() => {
           this.saving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -403,6 +418,7 @@ export class Press implements OnInit, OnDestroy {
         timeout(60000),
         finalize(() => {
           this.deleting = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )

@@ -43,7 +43,7 @@ export class Milestones implements OnInit {
   constructor(
     private readonly api: Api,
     private readonly cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadMilestones();
@@ -124,10 +124,10 @@ export class Milestones implements OnInit {
               description: data.description ?? '',
               milestones: Array.isArray(data.milestones)
                 ? data.milestones.map((item: any, index: number) => ({
-                    number: String(item?.number ?? String(index + 1).padStart(2, '0')),
-                    title: item?.title ?? '',
-                    description: item?.description ?? ''
-                  }))
+                  number: String(item?.number ?? String(index + 1).padStart(2, '0')),
+                  title: item?.title ?? '',
+                  description: item?.description ?? ''
+                }))
                 : this.getDefaultContent().milestones,
               footerText: data.footerText ?? ''
             };
@@ -153,15 +153,34 @@ export class Milestones implements OnInit {
       });
   }
 
+
   addMilestone(): void {
-    const nextNumber = String(this.content.milestones.length + 1).padStart(2, '0');
+    const nextNumber = String(
+      this.content.milestones.length + 1
+    ).padStart(2, '0');
 
     this.content.milestones.push({
       number: nextNumber,
       title: '',
       description: ''
     });
+
+    this.cdr.detectChanges();
+
+    const newIndex = this.content.milestones.length - 1;
+
+    setTimeout(() => {
+      const newMilestone = document.getElementById(
+        `milestone-${newIndex}`
+      );
+
+      newMilestone?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }, 100);
   }
+
 
   removeMilestone(index: number): void {
     this.content.milestones.splice(index, 1);
@@ -210,6 +229,7 @@ export class Milestones implements OnInit {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -256,6 +276,7 @@ export class Milestones implements OnInit {
         timeout(60000),
         finalize(() => {
           this.isDeleting = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )

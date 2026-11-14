@@ -1,6 +1,4 @@
-
 <div class="news-page">
-
   <header class="page-header">
     <div>
       <span class="eyebrow">WEBSITE MANAGEMENT</span>
@@ -27,7 +25,7 @@
         (click)="saveNewsEvents()"
         [disabled]="isSaving || isLoading"
       >
-        {{ isSaving ? 'Saving...' : 'Save Changes' }}
+        {{ isSaving ? 'Saving...' : isExistingContent ? 'Save Changes' : 'Create Section' }}
       </button>
     </div>
   </header>
@@ -46,10 +44,7 @@
 
   <ng-container *ngIf="!isLoading">
 
-    <!-- SECTION CONTENT -->
-
     <section class="form-section">
-
       <div class="section-heading">
         <div>
           <h2>Section Content</h2>
@@ -58,7 +53,6 @@
       </div>
 
       <div class="form-grid">
-
         <div class="form-group full-width">
           <label for="sectionTitle">Section Title</label>
 
@@ -94,14 +88,10 @@
             placeholder="/news-events"
           />
         </div>
-
       </div>
     </section>
 
-    <!-- NEWS CARDS -->
-
     <section class="form-section">
-
       <div class="section-heading cards-heading">
         <div>
           <h2>News & Event Cards</h2>
@@ -112,18 +102,17 @@
           type="button"
           class="add-button"
           (click)="addCard()"
+          [disabled]="isSaving"
         >
           + Add Card
         </button>
       </div>
 
       <div class="cards-list">
-
         <article
           class="news-card-editor"
           *ngFor="let card of cards; let i = index"
         >
-
           <div class="card-top">
             <div>
               <span class="card-number">CARD {{ i + 1 }}</span>
@@ -141,13 +130,8 @@
           </div>
 
           <div class="card-content">
-
-            <!-- IMAGE UPLOAD -->
-
             <div class="image-upload">
-
               <div class="image-preview">
-
                 <img
                   *ngIf="card.imagePreview"
                   [src]="card.imagePreview"
@@ -161,7 +145,6 @@
                   <span class="image-icon">＋</span>
                   <span>No image selected</span>
                 </div>
-
               </div>
 
               <label class="upload-button">
@@ -183,13 +166,9 @@
                     : 'Upload an image for this card.')
                 }}
               </p>
-
             </div>
 
-            <!-- CARD FIELDS -->
-
             <div class="form-grid card-fields">
-
               <div class="form-group">
                 <label [for]="'category-' + i">
                   Category
@@ -259,30 +238,11 @@
                   placeholder="/news-events/example"
                 />
               </div>
-
             </div>
           </div>
         </article>
-
       </div>
     </section>
-
-    <!-- BOTTOM ACTIONS -->
-
-    <div class="bottom-actions">
-
-      <span>{{ cards.length }} card(s)</span>
-
-      <button
-        type="button"
-        class="save-button"
-        (click)="saveNewsEvents()"
-        [disabled]="isSaving || isLoading"
-      >
-        {{ isSaving ? 'Saving...' : 'Save News & Events' }}
-      </button>
-
-    </div>
 
   </ng-container>
 </div>

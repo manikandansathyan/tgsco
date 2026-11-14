@@ -77,6 +77,7 @@
       >
         <div class="maker-card-header">
           <div class="maker-index">0{{ i + 1 }}</div>
+
           <div class="maker-heading-text">
             <h3>{{ maker.name || 'New Maker' }}</h3>
             <p>{{ maker.role || 'Maker profile' }}</p>
@@ -101,7 +102,7 @@
               <img
                 *ngIf="maker.imageUrl"
                 [src]="maker.imageUrl"
-                [alt]="maker.imageAlt || maker.name"
+                [alt]="maker.name || 'TGSCO artisan'"
               />
 
               <div class="image-placeholder" *ngIf="!maker.imageUrl">
@@ -150,17 +151,6 @@
                 />
               </div>
 
-              <div class="field">
-                <label [for]="'makerSlug' + i">Slug / ID</label>
-                <input
-                  [id]="'makerSlug' + i"
-                  type="text"
-                  [(ngModel)]="maker.slug"
-                  [name]="'makerSlug' + i"
-                  placeholder="maker-slug"
-                />
-              </div>
-
               <div class="field full-width">
                 <label [for]="'makerRole' + i">Role and Experience</label>
                 <input
@@ -182,23 +172,13 @@
                   placeholder="Enter the maker's story or quote"
                 ></textarea>
               </div>
-
-              <div class="field full-width">
-                <label [for]="'makerAlt' + i">Image Alt Text</label>
-                <input
-                  [id]="'makerAlt' + i"
-                  type="text"
-                  [(ngModel)]="maker.imageAlt"
-                  [name]="'makerAlt' + i"
-                  placeholder="Describe the image"
-                />
-              </div>
             </div>
 
             <div class="image-status">
               <span class="status-dot"></span>
-              <span>{{ maker.imageFile ? 'New image selected' : maker.imageUrl ? 'Current image loaded' : 'No image loaded' }}</span>
-              <span class="image-field-name">{{ maker.imageField }}</span>
+              <span>
+                {{ maker.imageFile ? 'New image selected' : maker.imageUrl ? 'Current image loaded' : 'No image loaded' }}
+              </span>
             </div>
           </div>
         </div>
@@ -255,7 +235,7 @@
         type="button"
         class="save-button"
         (click)="saveMakers()"
-        [disabled]="isSaving"
+        [disabled]="isSaving || isLoading"
       >
         {{ isSaving ? 'Saving...' : 'Save Makers Section' }}
       </button>

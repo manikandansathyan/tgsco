@@ -271,6 +271,7 @@ loadMission(): void {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -316,6 +317,7 @@ loadMission(): void {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )

@@ -80,9 +80,11 @@
         <div class="empty-state">
           <h3>No FAQ items yet</h3>
           <p>Add a question to get started.</p>
+          <!--
           <button class="btn btn-primary" type="button" (click)="addItem()">
             Add First Question
           </button>
+          -->
         </div>
       }
 
@@ -126,18 +128,20 @@
               ></textarea>
             </div>
 
+            <!--
             <div class="slug-preview">
               <span>ID:</span> {{ item.id }}
               <span class="slug-separator">·</span>
               <span>Slug:</span> {{ item.slug || 'Will be generated from the question' }}
             </div>
+            -->
           </article>
         }
       </div>
     </section>
 
     <footer class="form-footer">
-      <span class="item-count">{{ items.length }} FAQ item(s)</span>
+      <!-- <span class="item-count">{{ items.length }} FAQ item(s)</span> -->
 
       <button
         class="btn btn-primary save-button"

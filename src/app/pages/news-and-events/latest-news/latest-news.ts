@@ -1,3 +1,4 @@
+
 import {
   ChangeDetectorRef,
   Component,
@@ -75,12 +76,14 @@ export class LatestNews implements OnInit, OnDestroy {
     };
   }
 
-  private extractImageUrl(item: any, images: any[], index: number): string {
-    // Use the imageField supplied by the API.
+  private extractImageUrl(
+    item: any,
+    images: any[],
+    index: number
+  ): string {
     const imageField =
       item?.imageField ?? `items[${index}].image`;
 
-    // Find the matching image from the separate images array.
     const imageData = images.find(
       (image: any) => image.field === imageField
     );
@@ -89,7 +92,6 @@ export class LatestNews implements OnInit, OnDestroy {
       return imageData.url;
     }
 
-    // Fallback for older API response formats.
     const image =
       item?.imageUrl ??
       item?.imageURL ??
@@ -123,10 +125,13 @@ export class LatestNews implements OnInit, OnDestroy {
     };
   }
 
-  loadLatestNews(): void {
+  loadLatestNews(preserveMessage = false): void {
     this.loading = true;
-    this.message = '';
-    this.errorMessage = '';
+
+    if (!preserveMessage) {
+      this.message = '';
+      this.errorMessage = '';
+    }
 
     this.api
       .getLatestNews()
@@ -178,20 +183,28 @@ export class LatestNews implements OnInit, OnDestroy {
             data.title ||
             this.items.length > 0
           );
+
+          this.cdr.markForCheck();
         },
 
         error: (error: any) => {
           if (error.status === 404) {
             this.isEditMode = false;
             this.items = [];
-            this.message =
-              'No latest news content found. You can create it below.';
+
+            if (!preserveMessage) {
+              this.message =
+                'No latest news content found. You can create it below.';
+            }
+
             return;
           }
 
           this.errorMessage =
             error?.error?.message ??
             'Failed to load latest news.';
+
+          this.cdr.markForCheck();
         },
       });
   }
@@ -281,6 +294,8 @@ export class LatestNews implements OnInit, OnDestroy {
       }
     }
 
+    const wasEditMode = this.isEditMode;
+
     const content = {
       title: this.sectionTitle.trim(),
 
@@ -310,7 +325,7 @@ export class LatestNews implements OnInit, OnDestroy {
 
     this.saving = true;
 
-    const request = this.isEditMode
+    const request = wasEditMode
       ? this.api.updateLatestNews(content, itemImages)
       : this.api.createLatestNews(content, itemImages);
 
@@ -319,24 +334,38 @@ export class LatestNews implements OnInit, OnDestroy {
         timeout(60000),
         finalize(() => {
           this.saving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
       .subscribe({
         next: (response: any) => {
+          if (response?.success === false || response?.error) {
+            this.errorMessage =
+              response?.message ||
+              response?.error?.message ||
+              'Failed to save latest news.';
+            return;
+          }
+
+          this.isEditMode = true;
+
           this.message =
-            response?.message ??
-            (this.isEditMode
+            response?.message ||
+            (wasEditMode
               ? 'Latest news updated successfully.'
               : 'Latest news created successfully.');
 
-          this.loadLatestNews();
+          this.loadLatestNews(true);
+          this.cdr.markForCheck();
         },
 
         error: (error: any) => {
           this.errorMessage =
             error?.error?.message ??
             'Failed to save latest news.';
+
+          this.cdr.markForCheck();
         },
       });
   }
@@ -360,6 +389,7 @@ export class LatestNews implements OnInit, OnDestroy {
         timeout(60000),
         finalize(() => {
           this.deleting = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -373,12 +403,16 @@ export class LatestNews implements OnInit, OnDestroy {
 
           this.message =
             'Latest News section deleted successfully.';
+
+          this.cdr.markForCheck();
         },
 
         error: (error: any) => {
           this.errorMessage =
             error?.error?.message ??
             'Failed to delete latest news.';
+
+          this.cdr.markForCheck();
         },
       });
   }

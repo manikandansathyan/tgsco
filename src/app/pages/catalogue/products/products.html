@@ -1,0 +1,235 @@
+
+<div class="catalogue-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">WEBSITE MANAGEMENT</span>
+      <h1>Catalogue Products</h1>
+      <p>Manage your catalogue products and product details.</p>
+    </div>
+
+    <button
+      class="refresh-button"
+      type="button"
+      (click)="loadProducts()"
+      [disabled]="isLoading"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M20 7v5h-5"></path>
+        <path d="M4 17v-5h5"></path>
+        <path d="M5.64 9A7 7 0 0 1 17.5 6.5L20 12"></path>
+        <path d="M18.36 15A7 7 0 0 1 6.5 17.5L4 12"></path>
+      </svg>
+      Refresh
+    </button>
+  </header>
+
+  <div class="alert alert-success" *ngIf="successMessage">
+    <span>{{ successMessage }}</span>
+    <button
+      type="button"
+      (click)="successMessage = ''"
+      aria-label="Close"
+    >
+      &times;
+    </button>
+  </div>
+
+  <div class="alert alert-error" *ngIf="errorMessage">
+    <span>{{ errorMessage }}</span>
+    <button
+      type="button"
+      (click)="errorMessage = ''"
+      aria-label="Close"
+    >
+      &times;
+    </button>
+  </div>
+
+  <section class="listing-card">
+    <div class="listing-toolbar">
+      <div>
+        <h2>All Products</h2>
+        <p>View and manage your catalogue products.</p>
+      </div>
+
+      <span class="total-count">
+        {{ products.length }}
+        {{ products.length === 1 ? 'Product' : 'Products' }}
+      </span>
+    </div>
+
+    <div class="loading-state" *ngIf="isLoading">
+      <span class="loader"></span>
+      <p>Loading catalogue products...</p>
+    </div>
+
+    <div
+      class="table-wrapper"
+      *ngIf="!isLoading && products.length > 0"
+    >
+      <table>
+        <thead>
+          <tr>
+            <th class="number-column">#</th>
+            <th>Product</th>
+            <th>SKU</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Status</th>
+            <th class="action-column">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr
+            *ngFor="let product of products; let i = index; trackBy: trackById"
+          >
+            <td class="number-cell">{{ i + 1 }}</td>
+
+            <td>
+              <div class="product-info">
+                <div class="product-image">
+                  <img
+                    *ngIf="product.mainImage || product.image"
+                    [src]="product.mainImage || product.image"
+                    [alt]="product.name || 'Product image'"
+                  />
+
+                  <span *ngIf="!product.mainImage && !product.image">
+                    {{ getProductName(product).charAt(0).toUpperCase() }}
+                  </span>
+                </div>
+
+                <div class="product-name">
+                  <span>{{ getProductName(product) }}</span>
+                  <small>{{ product.slug || '—' }}</small>
+                </div>
+              </div>
+            </td>
+
+            <td>
+              <span class="sku-text">{{ product.sku || '—' }}</span>
+            </td>
+
+            <td>
+              <span class="category-text">
+                {{ product.categorySlug || '—' }}
+              </span>
+            </td>
+
+            <td>
+              <span class="price-text">
+                {{ product.price != null ? (product.price | currency:'INR':'symbol':'1.0-2') : '—' }}
+              </span>
+            </td>
+
+            <td>
+              <span class="stock-text">
+                {{ product.stockQuantity ?? '—' }}
+              </span>
+            </td>
+
+            <td>
+              <span
+                class="status-pill"
+                [class.inactive]="product.active === false"
+              >
+                <span class="status-dot"></span>
+                {{ getProductStatus(product) }}
+              </span>
+            </td>
+
+            <td>
+              <div class="row-actions">
+                <button
+                  class="icon-button view-button"
+                  type="button"
+                  title="View details"
+                  aria-label="View product details"
+                  (click)="viewProduct(product)"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"
+                    ></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+
+                <button
+                  class="icon-button delete-button"
+                  type="button"
+                  title="Delete product"
+                  aria-label="Delete product"
+                  [disabled]="deletingId === getProductId(product)"
+                  (click)="deleteProduct(product)"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M3 6h18"></path>
+                    <path d="M8 6V4h8v2"></path>
+                    <path d="m19 6-1 14H6L5 6"></path>
+                    <path d="M10 11v5"></path>
+                    <path d="M14 11v5"></path>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div
+      class="empty-state"
+      *ngIf="!isLoading && products.length === 0"
+    >
+      <div class="empty-icon">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="m3 7 9-4 9 4-9 4-9-4Z"></path>
+          <path d="M3 7v10l9 4 9-4V7"></path>
+          <path d="M12 11v10"></path>
+        </svg>
+      </div>
+
+      <h3>No catalogue products found</h3>
+      <p>There are currently no products available.</p>
+
+      <button
+        class="refresh-button empty-refresh"
+        type="button"
+        (click)="loadProducts()"
+      >
+        Refresh Products
+      </button>
+    </div>
+  </section>
+</div>

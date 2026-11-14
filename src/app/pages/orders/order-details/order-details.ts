@@ -1,3 +1,4 @@
+
 import { CommonModule } from '@angular/common';
 import {
   Component,
@@ -343,6 +344,7 @@ export class OrderDetails implements OnInit {
         timeout(60000),
         finalize(() => {
           this.saving = false;
+          this.api.scrollToTop();
         }),
       )
       .subscribe({
@@ -447,6 +449,7 @@ export class OrderDetails implements OnInit {
         timeout(60000),
         finalize(() => {
           this.saving = false;
+          this.api.scrollToTop();
         }),
       )
       .subscribe({
@@ -602,30 +605,6 @@ export class OrderDetails implements OnInit {
       : [];
   }
 
-  get itemCount(): number {
-    return this.orderItems.reduce(
-      (total: number, item: any) =>
-        total + Number(item?.quantity ?? 0),
-      0,
-    );
-  }
-
-  get subtotal(): number {
-    return Number(this.order?.subtotal ?? 0);
-  }
-
-  get shippingFee(): number {
-    return Number(this.order?.shippingFee ?? 0);
-  }
-
-  get taxAmount(): number {
-    return Number(this.order?.taxAmount ?? 0);
-  }
-
-  get discountAmount(): number {
-    return Number(this.order?.discountAmount ?? 0);
-  }
-
   get canCancel(): boolean {
     return ![
       'cancelled',
@@ -678,28 +657,6 @@ export class OrderDetails implements OnInit {
     } catch {
       return `${currency} ${value.toFixed(2)}`;
     }
-  }
-
-  getOrderDate(): string {
-    const value = this.order?.createdAt;
-
-    if (!value) {
-      return '—';
-    }
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-      return '—';
-    }
-
-    return date.toLocaleString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   }
 
   goBack(): void {

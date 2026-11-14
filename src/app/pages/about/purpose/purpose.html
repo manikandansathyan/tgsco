@@ -1,4 +1,3 @@
-
 <div class="purpose-page">
   <header class="page-header">
     <div>
@@ -29,24 +28,13 @@
 
       <div class="form-group">
         <label for="purposeLabel">Section Label</label>
-        <input
-          id="purposeLabel"
-          name="purposeLabel"
-          type="text"
-          [(ngModel)]="label"
-          placeholder="Our Purpose"
-        />
+        <input id="purposeLabel" name="purposeLabel" type="text" [(ngModel)]="label" placeholder="Our Purpose" />
       </div>
 
       <div class="form-group">
         <label for="purposeTitle">Purpose Statement</label>
-        <textarea
-          id="purposeTitle"
-          name="purposeTitle"
-          [(ngModel)]="title"
-          rows="5"
-          placeholder="Enter the main purpose statement"
-        ></textarea>
+        <textarea id="purposeTitle" name="purposeTitle" [(ngModel)]="title" rows="5"
+          placeholder="Enter the main purpose statement"></textarea>
       </div>
     </section>
 
@@ -57,41 +45,25 @@
           <p>Add, edit, or remove the statements explaining TGSCO's purpose.</p>
         </div>
 
-        <button
-          type="button"
-          class="secondary-button"
-          (click)="addPoint()"
-        >
+        <button type="button" class="secondary-button" (click)="addPoint()">
           + Add Point
         </button>
       </div>
 
       <div class="points-list">
-        <article
-          class="point-card"
-          *ngFor="let point of points; let i = index"
-        >
+        <article class="point-card" *ngFor="let point of points; let i = index; trackBy: trackByIndex">
           <div class="point-heading">
             <span class="point-number">Point {{ i + 1 }}</span>
 
-            <button
-              type="button"
-              class="remove-button"
-              (click)="removePoint(i)"
-            >
+            <button type="button" class="remove-button" (click)="removePoint(i)">
               Remove
             </button>
           </div>
 
           <div class="form-group">
             <label [for]="'purposePoint' + i">Statement</label>
-            <textarea
-              [id]="'purposePoint' + i"
-              [name]="'purposePoint' + i"
-              [(ngModel)]="points[i]"
-              rows="3"
-              placeholder="Enter a purpose point"
-            ></textarea>
+            <textarea [id]="'purposePoint' + i" [name]="'purposePoint' + i" [(ngModel)]="points[i]" rows="3"
+              placeholder="Enter a purpose point"></textarea>
           </div>
         </article>
       </div>
@@ -105,10 +77,7 @@
 
       <div class="image-upload-card">
         <div class="image-preview" *ngIf="purposeImagePreview">
-          <img
-            [src]="purposeImagePreview"
-            alt="Purpose section preview"
-          />
+          <img [src]="purposeImagePreview" alt="Purpose section preview" />
         </div>
 
         <div class="empty-image" *ngIf="!purposeImagePreview">
@@ -117,12 +86,7 @@
 
         <label class="upload-button">
           Choose Image
-          <input
-            type="file"
-            accept="image/*"
-            (change)="onPurposeImageSelected($event)"
-            hidden
-          />
+          <input type="file" accept="image/*" (change)="onPurposeImageSelected($event)" hidden />
         </label>
 
         <small>
@@ -132,22 +96,12 @@
     </section>
 
     <footer class="form-actions">
-      <button
-        type="button"
-        class="delete-button"
-        *ngIf="isExistingContent"
-        [disabled]="isSaving"
-        (click)="deletePurpose()"
-      >
+      <button type="button" class="delete-button" *ngIf="isExistingContent" [disabled]="isSaving"
+        (click)="deletePurpose()">
         Delete Content
       </button>
 
-      <button
-        type="button"
-        class="save-button"
-        [disabled]="isSaving"
-        (click)="savePurpose()"
-      >
+      <button type="button" class="save-button" [disabled]="isSaving" (click)="savePurpose()">
         {{ isSaving ? 'Saving...' : (isExistingContent ? 'Update Purpose' : 'Save Purpose') }}
       </button>
     </footer>

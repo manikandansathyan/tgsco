@@ -131,7 +131,7 @@
           />
         </label>
 
-        @if (image.previewUrl || image.existingUrl) {
+        <!-- @if (image.previewUrl || image.existingUrl) {
           <div class="preview-container">
             <div class="preview-header">
               <h3>Image Preview</h3>
@@ -153,22 +153,22 @@
               [alt]="image.alt || 'Sustainability image preview'"
             />
           </div>
-        }
+        } -->
 
         <div class="form-group alt-group">
-          <label [for]="'imageAlt' + $index">
+          <!-- <label [for]="'imageAlt' + $index">
             Image {{ $index + 1 }} Alt Text
             @if (image.file || image.existingUrl) {
               <span>*</span>
             }
-          </label>
+          </label> -->
 
-          <input
+          <!-- <input
             [id]="'imageAlt' + $index"
             [name]="'imageAlt' + $index"
             [(ngModel)]="image.alt"
             placeholder="Describe the image"
-          />
+          /> -->
 
           <small>
             Describe the image for accessibility and screen readers.
@@ -201,7 +201,7 @@
               aria-label="Choose background color"
             />
 
-            <input
+            <!-- <input
               id="backgroundColor"
               name="backgroundColor"
               class="color-text"
@@ -209,7 +209,7 @@
               placeholder="#000000"
               pattern="^#[0-9A-Fa-f]{6}$"
               required
-            />
+            /> -->
           </div>
 
           <div

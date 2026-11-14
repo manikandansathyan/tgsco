@@ -154,6 +154,7 @@ loadAboutHero(): void {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -196,6 +197,7 @@ loadAboutHero(): void {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )

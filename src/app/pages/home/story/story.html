@@ -1,3 +1,4 @@
+
 <div class="story-page">
   <header class="page-header">
     <div>
@@ -6,19 +7,26 @@
       <p>Manage the story, image, call-to-action, and statistics displayed on your website.</p>
     </div>
 
-
     <div class="header-actions">
-
-      <button *ngIf="isExistingContent" type="button" class="delete-button" (click)="deleteOurStory()"
-        [disabled]="isLoading || isSaving">
+      <button
+        *ngIf="isExistingContent"
+        type="button"
+        class="delete-button"
+        (click)="deleteOurStory()"
+        [disabled]="isLoading || isSaving"
+      >
         Delete Section
       </button>
 
-      <button type="button" class="save-button" (click)="saveOurStory()" [disabled]="isLoading || isSaving">
+      <button
+        type="button"
+        class="save-button"
+        (click)="saveOurStory()"
+        [disabled]="isLoading || isSaving"
+      >
         {{ isSaving ? 'Saving...' : (isExistingContent ? 'Save Changes' : 'Create Section') }}
       </button>
     </div>
-
   </header>
 
   <div class="alert error-alert" *ngIf="errorMessage">
@@ -34,7 +42,7 @@
     <p>Loading Our Story content...</p>
   </div>
 
-  <form class="story-layout" *ngIf="!isLoading" (ngSubmit)="saveOurStory()">
+  <div class="story-layout" *ngIf="!isLoading">
     <section class="form-card">
       <div class="card-heading">
         <div>
@@ -45,14 +53,26 @@
 
       <div class="form-group">
         <label for="storyTitle">Title</label>
-        <input id="storyTitle" type="text" name="title" [(ngModel)]="title" placeholder="Enter story title" required />
+        <input
+          id="storyTitle"
+          type="text"
+          name="title"
+          [(ngModel)]="title"
+          placeholder="Enter story title"
+          required
+        />
       </div>
 
       <div class="form-group">
         <label for="storyDescription">Description</label>
-        <textarea id="storyDescription" name="description" [(ngModel)]="description" rows="7"
-          placeholder="Enter the Our Story description" required></textarea>
-        <span class="field-hint">{{ description.length }} characters</span>
+        <textarea
+          id="storyDescription"
+          name="description"
+          [(ngModel)]="description"
+          rows="7"
+          placeholder="Enter the Our Story description"
+          required
+        ></textarea>
       </div>
 
       <div class="form-divider"></div>
@@ -67,13 +87,24 @@
       <div class="form-grid">
         <div class="form-group">
           <label for="buttonLabel">Button Label</label>
-          <input id="buttonLabel" type="text" name="buttonLabel" [(ngModel)]="buttonLabel"
-            placeholder="Learn More About TGSCO" />
+          <input
+            id="buttonLabel"
+            type="text"
+            name="buttonLabel"
+            [(ngModel)]="buttonLabel"
+            placeholder="Learn More About TGSCO"
+          />
         </div>
 
         <div class="form-group">
           <label for="buttonUrl">Button URL</label>
-          <input id="buttonUrl" type="text" name="buttonUrl" [(ngModel)]="buttonUrl" placeholder="/about" />
+          <input
+            id="buttonUrl"
+            type="text"
+            name="buttonUrl"
+            [(ngModel)]="buttonUrl"
+            placeholder="/about"
+          />
         </div>
       </div>
     </section>
@@ -99,14 +130,24 @@
 
       <div class="form-group">
         <label for="storyImage">Upload Image</label>
-        <input id="storyImage" type="file" accept="image/*" (change)="onImageSelected($event)" />
+        <input
+          id="storyImage"
+          type="file"
+          accept="image/*"
+          (change)="onImageSelected($event)"
+        />
         <span class="field-hint">Choose an image file for the story section.</span>
       </div>
 
       <div class="form-group">
         <label for="imageAlt">Image Alt Text</label>
-        <input id="imageAlt" type="text" name="imageAlt" [(ngModel)]="imageAlt"
-          placeholder="Describe the story image" />
+        <input
+          id="imageAlt"
+          type="text"
+          name="imageAlt"
+          [(ngModel)]="imageAlt"
+          placeholder="Describe the story image"
+        />
       </div>
     </section>
 
@@ -117,7 +158,12 @@
           <p>Manage the statistics displayed below the story.</p>
         </div>
 
-        <button type="button" class="secondary-button" (click)="addStat()" [disabled]="stats.length >= 6">
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="addStat()"
+          [disabled]="stats.length >= 6"
+        >
           + Add Statistic
         </button>
       </div>
@@ -128,26 +174,39 @@
         <div class="stat-fields">
           <div class="form-group">
             <label [for]="'statValue' + i">Value</label>
-            <input [id]="'statValue' + i" type="text" [name]="'statValue' + i" [(ngModel)]="stat.value"
-              placeholder="00,000+" required />
+            <input
+              [id]="'statValue' + i"
+              type="text"
+              [name]="'statValue' + i"
+              [(ngModel)]="stat.value"
+              placeholder="00,000+"
+              required
+            />
           </div>
 
           <div class="form-group">
             <label [for]="'statLabel' + i">Label</label>
-            <input [id]="'statLabel' + i" type="text" [name]="'statLabel' + i" [(ngModel)]="stat.label"
-              placeholder="Active Master Artisans" required />
+            <input
+              [id]="'statLabel' + i"
+              type="text"
+              [name]="'statLabel' + i"
+              [(ngModel)]="stat.label"
+              placeholder="Active Master Artisans"
+              required
+            />
           </div>
         </div>
 
-        <button type="button" class="remove-button" (click)="removeStat(i)" aria-label="Remove statistic"
-          title="Remove statistic">
+        <button
+          type="button"
+          class="remove-button"
+          (click)="removeStat(i)"
+          aria-label="Remove statistic"
+          title="Remove statistic"
+        >
           ×
         </button>
       </div>
-
-      <p class="empty-stats" *ngIf="stats.length === 0">
-        No statistics added yet.
-      </p>
     </section>
-  </form>
+  </div>
 </div>

@@ -17,74 +17,21 @@ interface ReturnOrder {
   orderId?: string;
   totalAmount?: number;
   total?: number;
-  paymentMethod?: string;
-  paymentStatus?: string;
   customer?: {
     name?: string;
-    email?: string;
-    phone?: string;
-    address?: string;
   };
-}
-
-interface ReturnProduct {
-  _id?: string;
-  product?: string | {
-    _id?: string;
-    name?: string;
-    title?: string;
-    image?: string;
-  };
-  productName?: string;
-  name?: string;
-  quantity?: number;
-  price?: number;
-  amount?: number;
-  reason?: string;
-}
-
-interface PickupAddress {
-  name?: string;
-  phone?: string;
-  address?: string;
-  addressLine1?: string;
-  addressLine2?: string;
-  city?: string;
-  state?: string;
-  pincode?: string;
-  postalCode?: string;
-  country?: string;
 }
 
 interface RefundMethodDetails {
-  _id?: string;
   type?: string;
   method?: string;
-  accountHolderName?: string;
-  accountNumber?: string;
-  bankName?: string;
-  ifscCode?: string;
-  upiId?: string;
-}
-
-interface ReturnTimeline {
-  status?: string;
-  message?: string;
-  note?: string;
-  createdAt?: string;
-  date?: string;
 }
 
 interface ReturnItem {
   _id?: string;
   id?: string;
   order?: ReturnOrder;
-  user?: string;
-  items?: ReturnProduct[];
   reason?: string;
-  customerNote?: string;
-  description?: string;
-  message?: string;
 
   customer?: {
     name?: string;
@@ -93,14 +40,8 @@ interface ReturnItem {
     address?: string;
   };
 
-  pickupAddress?: PickupAddress;
-
-  refundMethodId?: string | null;
-  refundMethod?: RefundMethodDetails | null;
-
   paymentMethod?: string;
   paymentStatus?: string;
-
   status?: string;
 
   refund?: any;
@@ -108,15 +49,13 @@ interface ReturnItem {
   requestedAmount?: number;
   refundProcessedAt?: string;
   refundReference?: string;
+  refundMethod?: RefundMethodDetails | null;
 
-  timeline?: ReturnTimeline[];
-
+  description?: string;
+  message?: string;
   requestedAt?: string;
   createdAt?: string;
   updatedAt?: string;
-
-  cancellationReason?: string;
-  cancelledAt?: string;
 }
 
 interface RefundPayload {
@@ -142,7 +81,6 @@ export class ReturnsRefundsDetails implements OnInit {
 
   returnItem: ReturnItem | null = null;
 
-  loading = false;
   updating = false;
 
   errorMessage = '';
@@ -189,31 +127,6 @@ export class ReturnsRefundsDetails implements OnInit {
     );
   }
 
-  get customerEmail(): string {
-    return (
-      this.returnItem?.customer?.email ||
-      this.returnItem?.order?.customer?.email ||
-      ''
-    );
-  }
-
-  get customerPhone(): string {
-    return (
-      this.returnItem?.customer?.phone ||
-      this.returnItem?.order?.customer?.phone ||
-      ''
-    );
-  }
-
-  get customerAddress(): string {
-    return (
-      this.returnItem?.customer?.address ||
-      this.returnItem?.pickupAddress?.address ||
-      this.returnItem?.pickupAddress?.addressLine1 ||
-      ''
-    );
-  }
-
   get amount(): number {
     return this.getAmount();
   }
@@ -242,7 +155,6 @@ export class ReturnsRefundsDetails implements OnInit {
 
   // Load return details
   loadReturnDetails(id: string): void {
-    this.loading = true;
     this.errorMessage = '';
 
     this.api
@@ -253,7 +165,6 @@ export class ReturnsRefundsDetails implements OnInit {
       .pipe(
         timeout(60000),
         finalize(() => {
-          this.loading = false;
           this.cdr.markForCheck();
         })
       )
@@ -512,6 +423,7 @@ export class ReturnsRefundsDetails implements OnInit {
         timeout(60000),
         finalize(() => {
           this.updating = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )

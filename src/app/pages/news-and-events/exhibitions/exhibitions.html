@@ -6,220 +6,170 @@
       <p>Manage national exhibitions and international textile fairs.</p>
     </div>
 
-    <button
-      type="button"
-      class="secondary-button"
-      (click)="resetForm()"
-      [disabled]="loading || saving || deleting"
-    >
+    <button type="button" class="secondary-button" (click)="resetForm()" [disabled]="loading || saving || deleting">
       Refresh
     </button>
   </header>
 
   @if (message) {
-    <div class="alert success-alert">{{ message }}</div>
+  <div class="alert success-alert">{{ message }}</div>
   }
 
   @if (errorMessage) {
-    <div class="alert error-alert">{{ errorMessage }}</div>
+  <div class="alert error-alert">{{ errorMessage }}</div>
   }
 
   @if (loading) {
-    <div class="loading-state">Loading exhibitions...</div>
+  <div class="loading-state">Loading exhibitions...</div>
   } @else {
-    <form class="exhibitions-form" (ngSubmit)="saveExhibitions()">
-      <section class="form-section">
-        <div class="section-heading">
-          <div>
-            <h2>Section Details</h2>
-            <p>Set the heading displayed above the exhibition cards.</p>
-          </div>
+  <form class="exhibitions-form" (ngSubmit)="saveExhibitions()">
+    <section class="form-section">
+      <div class="section-heading">
+        <div>
+          <h2>Section Details</h2>
+          <p>Set the heading displayed above the exhibition cards.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="sectionTitle">Section Title <span>*</span></label>
+        <input id="sectionTitle" name="sectionTitle" type="text" [(ngModel)]="sectionTitle" placeholder="Exhibitions"
+          required />
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="section-heading">
+        <div>
+          <h2>Exhibition Cards</h2>
+          <p>
+            Manage each exhibition label and its image. Upload a separate
+            image for each card.
+          </p>
         </div>
 
-        <div class="field">
-          <label for="sectionTitle">Section Title <span>*</span></label>
-          <input
-            id="sectionTitle"
-            name="sectionTitle"
-            type="text"
-            [(ngModel)]="sectionTitle"
-            placeholder="Exhibitions"
-            required
-          />
-        </div>
-      </section>
+        <button type="button" class="primary-button" (click)="addItem()">
+          + Add Exhibition
+        </button>
+      </div>
 
-      <section class="form-section">
-        <div class="section-heading">
+      @if (items.length === 0) {
+      <div class="empty-state">
+        <h3>No exhibitions added</h3>
+        <p>Add an exhibition to start managing this section.</p>
+      </div>
+      }
+
+      @for (item of items; track $index; let i = $index) {
+      <article class="exhibition-card">
+        <div class="card-header">
           <div>
-            <h2>Exhibition Cards</h2>
-            <p>
-              Manage each exhibition label and its image. Upload a separate
-              image for each card.
-            </p>
+            <span class="item-number">EXHIBITION {{ i + 1 }}</span>
+            <h3>{{ item.label || 'New Exhibition' }}</h3>
           </div>
 
-          <button
-            type="button"
-            class="primary-button"
-            (click)="addItem()"
-          >
-            + Add Exhibition
+          <button type="button" class="remove-button" (click)="removeItem(i)">
+            Remove
           </button>
         </div>
 
-        @if (items.length === 0) {
-          <div class="empty-state">
-            <h3>No exhibitions added</h3>
-            <p>Add an exhibition to start managing this section.</p>
+        <div class="fields-grid">
+          <div class="field">
+            <label [for]="'exhibitionId' + i">Exhibition ID</label>
+            <input [id]="'exhibitionId' + i" [name]="'exhibitionId' + i" type="text" [(ngModel)]="item.id"
+              placeholder="national-exhibitions" />
           </div>
-        }
 
-        @for (item of items; track $index; let i = $index) {
-          <article class="exhibition-card">
-            <div class="card-header">
-              <div>
-                <span class="item-number">EXHIBITION {{ i + 1 }}</span>
-                <h3>{{ item.label || 'New Exhibition' }}</h3>
+          <div class="field">
+            <label [for]="'exhibitionSlug' + i">Slug</label>
+            <input [id]="'exhibitionSlug' + i" [name]="'exhibitionSlug' + i" type="text" [(ngModel)]="item.slug"
+              placeholder="national-exhibitions" />
+          </div>
+
+          <div class="field full-width">
+            <label [for]="'exhibitionLabel' + i">
+              Exhibition Label <span>*</span>
+            </label>
+            <input [id]="'exhibitionLabel' + i" [name]="'exhibitionLabel' + i" type="text" [(ngModel)]="item.label"
+              placeholder="NATIONAL EXHIBITIONS" required />
+          </div>
+          
+          <div class="field full-width">
+            <label [for]="'exhibitionHoverText' + i">
+              Hover Description
+            </label>
+            <textarea [id]="'exhibitionHoverText' + i" [name]="'exhibitionHoverText' + i" [(ngModel)]="item.hoverText"
+              rows="4"
+              placeholder="Enter the description displayed when users hover over this exhibition image"></textarea>
+            <small>
+              This description will be displayed when visitors hover over the exhibition card.
+            </small>
+          </div>
+
+          <div class="field full-width">
+            <label [for]="'exhibitionAlt' + i">Image Alt Text</label>
+            <input [id]="'exhibitionAlt' + i" [name]="'exhibitionAlt' + i" type="text" [(ngModel)]="item.imageAlt"
+              placeholder="Describe the exhibition image" />
+          </div>
+
+          <div class="field full-width">
+            <label [for]="'exhibitionImage' + i">
+              Exhibition Image <span>*</span>
+            </label>
+
+            <div class="image-upload-layout">
+              <div class="image-preview">
+                @if (item.imagePreview || item.existingImageUrl) {
+                <img [src]="item.imagePreview || item.existingImageUrl" [alt]="item.imageAlt || item.label" />
+                } @else {
+                <div class="image-placeholder">No image selected</div>
+                }
               </div>
 
-              <button
-                type="button"
-                class="remove-button"
-                (click)="removeItem(i)"
-              >
-                Remove
-              </button>
-            </div>
+              <div class="upload-control">
+                <input [id]="'exhibitionImage' + i" [name]="'exhibitionImage' + i" type="file" accept="image/*"
+                  (change)="onImageSelected($event, i)" />
 
-            <div class="fields-grid">
-              <div class="field">
-                <label [for]="'exhibitionId' + i">Exhibition ID</label>
-                <input
-                  [id]="'exhibitionId' + i"
-                  [name]="'exhibitionId' + i"
-                  type="text"
-                  [(ngModel)]="item.id"
-                  placeholder="national-exhibitions"
-                />
-              </div>
+                <small>Supported image formats. Maximum size: 5 MB.</small>
 
-              <div class="field">
-                <label [for]="'exhibitionSlug' + i">Slug</label>
-                <input
-                  [id]="'exhibitionSlug' + i"
-                  [name]="'exhibitionSlug' + i"
-                  type="text"
-                  [(ngModel)]="item.slug"
-                  placeholder="national-exhibitions"
-                />
-              </div>
-
-              <div class="field full-width">
-                <label [for]="'exhibitionLabel' + i">
-                  Exhibition Label <span>*</span>
-                </label>
-                <input
-                  [id]="'exhibitionLabel' + i"
-                  [name]="'exhibitionLabel' + i"
-                  type="text"
-                  [(ngModel)]="item.label"
-                  placeholder="NATIONAL EXHIBITIONS"
-                  required
-                />
-              </div>
-
-              <div class="field full-width">
-                <label [for]="'exhibitionAlt' + i">Image Alt Text</label>
-                <input
-                  [id]="'exhibitionAlt' + i"
-                  [name]="'exhibitionAlt' + i"
-                  type="text"
-                  [(ngModel)]="item.imageAlt"
-                  placeholder="Describe the exhibition image"
-                />
-              </div>
-
-              <div class="field full-width">
-                <label [for]="'exhibitionImage' + i">
-                  Exhibition Image <span>*</span>
-                </label>
-
-                <div class="image-upload-layout">
-                  <div class="image-preview">
-                    @if (item.imagePreview || item.existingImageUrl) {
-                      <img
-                        [src]="item.imagePreview || item.existingImageUrl"
-                        [alt]="item.imageAlt || item.label"
-                      />
-                    } @else {
-                      <div class="image-placeholder">No image selected</div>
-                    }
-                  </div>
-
-                  <div class="upload-control">
-                    <input
-                      [id]="'exhibitionImage' + i"
-                      [name]="'exhibitionImage' + i"
-                      type="file"
-                      accept="image/*"
-                      (change)="onImageSelected($event, i)"
-                    />
-
-                    <small>Supported image formats. Maximum size: 5 MB.</small>
-
-                    @if (item.imageFile) {
-                      <span class="selected-file">{{ item.imageFile.name }}</span>
-                    } @else if (item.existingImageUrl) {
-                      <span class="selected-file">
-                        Existing image retained unless replaced.
-                      </span>
-                    }
-                  </div>
-                </div>
+                @if (item.imageFile) {
+                <span class="selected-file">{{ item.imageFile.name }}</span>
+                } @else if (item.existingImageUrl) {
+                <span class="selected-file">
+                  Existing image retained unless replaced.
+                </span>
+                }
               </div>
             </div>
-          </article>
-        }
-      </section>
-
-      <footer class="form-actions">
-        @if (isEditMode) {
-          <button
-            type="button"
-            class="delete-button"
-            (click)="deleteExhibitions()"
-            [disabled]="saving || deleting"
-          >
-            {{ deleting ? 'Deleting...' : 'Delete Section' }}
-          </button>
-        }
-
-        <div class="action-right">
-          <button
-            type="button"
-            class="secondary-button"
-            (click)="resetForm()"
-            [disabled]="saving || deleting"
-          >
-            Reset
-          </button>
-
-          <button
-            type="submit"
-            class="primary-button save-button"
-            [disabled]="saving || deleting"
-          >
-            {{
-              saving
-                ? 'Saving...'
-                : isEditMode
-                  ? 'Update Exhibitions'
-                  : 'Create Exhibitions'
-            }}
-          </button>
+          </div>
         </div>
-      </footer>
-    </form>
+      </article>
+      }
+    </section>
+
+    <footer class="form-actions">
+      @if (isEditMode) {
+      <button type="button" class="delete-button" (click)="deleteExhibitions()" [disabled]="saving || deleting">
+        {{ deleting ? 'Deleting...' : 'Delete Section' }}
+      </button>
+      }
+
+      <div class="action-right">
+        <button type="button" class="secondary-button" (click)="resetForm()" [disabled]="saving || deleting">
+          Reset
+        </button>
+
+        <button type="submit" class="primary-button save-button" [disabled]="saving || deleting">
+          {{
+          saving
+          ? 'Saving...'
+          : isEditMode
+          ? 'Update Exhibitions'
+          : 'Create Exhibitions'
+          }}
+        </button>
+      </div>
+    </footer>
+  </form>
   }
 </div>

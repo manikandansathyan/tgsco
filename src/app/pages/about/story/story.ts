@@ -30,7 +30,19 @@ interface WhoWeAreContent {
   styleUrl: './story.css'
 })
 export class Story implements OnInit {
-  content: WhoWeAreContent = this.getDefaultContent();
+
+  content: WhoWeAreContent = {
+    title: '',
+    paragraphs: [],
+    quote: '',
+    supportingText: '',
+    button: {
+      label: '',
+      url: ''
+    },
+    videoUrl: '',
+    videoAlt: ''
+  };
 
   primaryImage: File | null = null;
   primaryImageUrl = '';
@@ -40,6 +52,7 @@ export class Story implements OnInit {
   isSaving = false;
   isDeleting = false;
   isExistingContent = false;
+  hasLoaded = false;
 
   successMessage = '';
   errorMessage = '';
@@ -53,119 +66,118 @@ export class Story implements OnInit {
     this.loadWhoWeAre();
   }
 
-  private getDefaultContent(): WhoWeAreContent {
+  trackByIndex(index: number): number {
+    return index;
+  }
+
+  private getEmptyContent(): WhoWeAreContent {
     return {
-      title: 'Who We Are',
-      paragraphs: [
-        'The Telangana State Handloom Weavers Co-operative Society Limited (TGSCO) is the official cooperative body dedicated to the welfare, empowerment, and promotion of Telangana’s handloom weaving communities.',
-        'We exist at the intersection of heritage and livelihood, protecting centuries-old craft traditions while creating sustainable, dignified incomes for the artisans who carry them forward.'
-      ],
-      quote:
-        'We are not just a retailer of handloom products. We are the bridge between Telangana’s weaving villages and the world.',
-      supportingText:
-        'Supporting over 10,000 artisan families with equitable wages and preserving indigenous textile crafts.',
+      title: '',
+      paragraphs: [],
+      quote: '',
+      supportingText: '',
       button: {
-        label: 'Learn More',
-        url: '/about'
+        label: '',
+        url: ''
       },
-      videoUrl:
-        'https://blr1.digitaloceanspaces.com/mbm/videos/d4c50448-0774-4349-8918-8948ec2e6aac-13049211_1080_1920_30fps.mp4',
-      videoAlt: 'TGSCO artisans and handloom heritage'
+      videoUrl: '',
+      videoAlt: ''
     };
   }
 
- loadWhoWeAre(): void {
-  this.isLoading = true;
-  this.errorMessage = '';
+  loadWhoWeAre(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
 
-  this.api
-    .getWhoWeAreAPI()
-    .pipe(
-      timeout(60000),
-      finalize(() => {
-        this.isLoading = false;
-        this.cdr.markForCheck();
-      })
-    )
-    .subscribe({
-      next: (response: any) => {
-        const responseData = response?.data ?? response;
-        const data = responseData?.content ?? responseData;
+    this.api
+      .getWhoWeAreAPI()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isLoading = false;
+          this.hasLoaded = true;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const responseData = response?.data ?? response;
+          const data = responseData?.content ?? responseData;
 
-        if (
-          data &&
-          typeof data === 'object' &&
-          !Array.isArray(data)
-        ) {
-          this.content = {
-            title: data.title ?? 'Who We Are',
+          if (
+            data &&
+            typeof data === 'object' &&
+            !Array.isArray(data)
+          ) {
+            this.content = {
+              title: data.title ?? '',
 
-            paragraphs: Array.isArray(data.paragraphs)
-              ? [...data.paragraphs]
-              : this.getDefaultContent().paragraphs,
+              paragraphs: Array.isArray(data.paragraphs)
+                ? [...data.paragraphs]
+                : [],
 
-            quote: data.quote ?? '',
-            supportingText: data.supportingText ?? '',
+              quote: data.quote ?? '',
+              supportingText: data.supportingText ?? '',
 
-            button: {
-              label: data.button?.label ?? 'Learn More',
-              url: data.button?.url ?? '/about'
-            },
+              button: {
+                label: data.button?.label ?? '',
+                url: data.button?.url ?? ''
+              },
 
-            videoUrl: data.videoUrl ?? '',
-            videoAlt: data.videoAlt ?? ''
-          };
+              videoUrl: data.videoUrl ?? '',
+              videoAlt: data.videoAlt ?? ''
+            };
 
-          // Find primary image from the API images array
-          const matchedImage = Array.isArray(responseData?.images)
-            ? responseData.images.find(
-                (image: any) => image.field === 'primaryImage'
-              )
-            : null;
+            const matchedImage = Array.isArray(responseData?.images)
+              ? responseData.images.find(
+                  (image: any) => image.field === 'primaryImage'
+                )
+              : null;
 
-          // Fallback for older response formats
-          const fallbackImage =
-            data.primaryImageUrl ??
-            data.primary_image_url ??
-            data.primaryImage ??
-            data.primary_image ??
-            data.imageUrl ??
-            data.image ??
-            '';
+            const fallbackImage =
+              data.primaryImageUrl ??
+              data.primary_image_url ??
+              data.primaryImage ??
+              data.primary_image ??
+              data.imageUrl ??
+              data.image ??
+              '';
 
-          this.primaryImageUrl =
-            matchedImage?.url ??
-            (typeof fallbackImage === 'string'
-              ? fallbackImage
-              : fallbackImage?.url ?? '');
+            this.primaryImageUrl =
+              matchedImage?.url ??
+              (typeof fallbackImage === 'string'
+                ? fallbackImage
+                : fallbackImage?.url ?? '');
 
-          this.primaryImagePreview = this.primaryImageUrl;
+            this.primaryImagePreview = this.primaryImageUrl;
 
-          this.isExistingContent = !!responseData?.id;
-        } else {
-          this.content = this.getDefaultContent();
-          this.primaryImageUrl = '';
-          this.primaryImagePreview = '';
-          this.isExistingContent = false;
+            this.isExistingContent = !!responseData?.id;
+
+          } else {
+            this.content = this.getEmptyContent();
+
+            this.primaryImageUrl = '';
+            this.primaryImagePreview = '';
+            this.isExistingContent = false;
+          }
+
+          this.primaryImage = null;
+          this.successMessage = '';
+
+          this.cdr.markForCheck();
+        },
+
+        error: (error: any) => {
+          console.error('Failed to load Who We Are content:', error);
+
+          this.errorMessage =
+            error?.error?.message ??
+            'Unable to load Who We Are content. Please try again.';
+
+          this.cdr.markForCheck();
         }
-
-        this.primaryImage = null;
-        this.successMessage = '';
-
-        this.cdr.markForCheck();
-      },
-
-      error: (error: any) => {
-        console.error('Failed to load Who We Are content:', error);
-
-        this.errorMessage =
-          error?.error?.message ??
-          'Unable to load Who We Are content. Please try again.';
-
-        this.cdr.markForCheck();
-      }
-    });
-}
+      });
+  }
 
   addParagraph(): void {
     this.content.paragraphs.push('');
@@ -193,6 +205,7 @@ export class Story implements OnInit {
 
     this.primaryImage = file;
     this.errorMessage = '';
+
     this.primaryImagePreview = URL.createObjectURL(file);
   }
 
@@ -212,15 +225,19 @@ export class Story implements OnInit {
 
     const payload: WhoWeAreContent = {
       title: this.content.title.trim(),
-      paragraphs: this.content.paragraphs.map((paragraph) =>
-        paragraph.trim()
+
+      paragraphs: this.content.paragraphs.map(
+        (paragraph) => paragraph.trim()
       ),
+
       quote: this.content.quote.trim(),
       supportingText: this.content.supportingText.trim(),
+
       button: {
         label: this.content.button.label.trim(),
         url: this.content.button.url.trim()
       },
+
       videoUrl: this.content.videoUrl.trim(),
       videoAlt: this.content.videoAlt.trim()
     };
@@ -234,6 +251,7 @@ export class Story implements OnInit {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -241,13 +259,18 @@ export class Story implements OnInit {
         next: (response: any) => {
           this.content = payload;
           this.isExistingContent = true;
+
           this.successMessage =
-            response?.message ?? 'Who We Are content saved successfully.';
+            response?.message ??
+            'Who We Are content saved successfully.';
 
           this.primaryImage = null;
+
           this.loadWhoWeAre();
+
           this.cdr.markForCheck();
         },
+
         error: (error: any) => {
           console.error('Failed to save Who We Are content:', error);
 
@@ -283,20 +306,26 @@ export class Story implements OnInit {
         timeout(60000),
         finalize(() => {
           this.isDeleting = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
       .subscribe({
         next: () => {
-          this.content = this.getDefaultContent();
+          this.content = this.getEmptyContent();
+
           this.primaryImage = null;
           this.primaryImageUrl = '';
           this.primaryImagePreview = '';
+
           this.isExistingContent = false;
+
           this.successMessage =
             'Who We Are content deleted successfully.';
+
           this.cdr.markForCheck();
         },
+
         error: (error: any) => {
           console.error('Failed to delete Who We Are content:', error);
 
@@ -310,10 +339,6 @@ export class Story implements OnInit {
   }
 
   resetForm(): void {
-    this.content = this.getDefaultContent();
-    this.primaryImage = null;
-    this.primaryImagePreview = this.primaryImageUrl;
-    this.successMessage = '';
-    this.errorMessage = '';
+    this.loadWhoWeAre();
   }
 }

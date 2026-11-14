@@ -121,10 +121,13 @@ export class Exhibitions implements OnInit, OnDestroy {
     };
   }
 
-  loadExhibitions(): void {
+  loadExhibitions(preserveMessage = false): void {
     this.loading = true;
-    this.message = '';
-    this.errorMessage = '';
+
+    if (!preserveMessage) {
+      this.message = '';
+      this.errorMessage = '';
+    }
 
     this.api
       .getExhibitions()
@@ -148,23 +151,23 @@ export class Exhibitions implements OnInit, OnDestroy {
 
           this.items = Array.isArray(data.items)
             ? data.items.map((item: any, index: number) => {
-                const defaultId = `exhibition-${index + 1}`;
+              const defaultId = `exhibition-${index + 1}`;
 
-                return {
-                  id: item.id ?? defaultId,
-                  slug: item.slug ?? item.id ?? defaultId,
-                  label: item.label ?? '',
-                  imageAlt: item.imageAlt ?? '',
-                  hoverText: item.hoverText ?? '',
-                  imageFile: null,
-                  imagePreview: '',
-                  existingImageUrl: this.extractImageUrl(
-                    item,
-                    images,
-                    index
-                  ),
-                };
-              })
+              return {
+                id: item.id ?? defaultId,
+                slug: item.slug ?? item.id ?? defaultId,
+                label: item.label ?? '',
+                imageAlt: item.imageAlt ?? '',
+                hoverText: item.hoverText ?? '',
+                imageFile: null,
+                imagePreview: '',
+                existingImageUrl: this.extractImageUrl(
+                  item,
+                  images,
+                  index
+                ),
+              };
+            })
             : [];
 
           this.isEditMode =
@@ -269,7 +272,7 @@ export class Exhibitions implements OnInit, OnDestroy {
         label: item.label.trim(),
         imageField: `items[${index}].image`,
         imageAlt: item.imageAlt.trim() || item.label.trim(),
-        hoverText: item.hoverText?.trim() || item.label.trim(),
+        hoverText: item.hoverText.trim(),
       })),
     };
 
@@ -292,18 +295,19 @@ export class Exhibitions implements OnInit, OnDestroy {
         timeout(60000),
         finalize(() => {
           this.saving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
       .subscribe({
         next: (response: any) => {
-          this.message =
-            response?.message ??
-            (this.isEditMode
-              ? 'Exhibitions updated successfully.'
-              : 'Exhibitions created successfully.');
+          this.isEditMode = true;
 
-          this.loadExhibitions();
+          this.message =
+            response?.message ?? 'Exhibitions saved successfully.';
+
+          this.loadExhibitions(true);
+          this.cdr.markForCheck();
         },
         error: (error: any) => {
           this.errorMessage =
@@ -331,6 +335,7 @@ export class Exhibitions implements OnInit, OnDestroy {
         timeout(60000),
         finalize(() => {
           this.deleting = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )

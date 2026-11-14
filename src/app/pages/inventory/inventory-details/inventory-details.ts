@@ -27,15 +27,12 @@ interface InventoryItem {
 interface InventoryReservation {
   orderId: string;
   orderNumber: string;
-  productId: string;
   quantity: number;
   orderStatus: string;
   paymentStatus: string;
   customer: {
-    _id: string;
     email: string;
     name: string;
-    mobile: string;
   };
   createdAt: string;
 }
@@ -165,14 +162,12 @@ export class InventoryDetails implements OnInit {
         next: (response: any) => {
           const result = this.extractData<any>(response);
 
-          // Actual API response: data is a direct array.
           if (Array.isArray(result)) {
             this.reservations = result;
             this.reservationTotal = result.length;
             this.reservationPage = 1;
             this.reservationPages = 1;
           } else {
-            // Supports paginated response if backend changes.
             this.reservations = Array.isArray(result?.items)
               ? result.items
               : Array.isArray(result?.reservations)
@@ -350,13 +345,6 @@ export class InventoryDetails implements OnInit {
       .replace(/\b\w/g, (letter) => letter.toUpperCase());
   }
 
-  // Payment Status
-  getPaymentStatusLabel(status: string): string {
-    return (status || 'Unknown')
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, (letter) => letter.toUpperCase());
-  }
-
   // Movement Details
   getMovementLabel(value: string): string {
     return (value || 'Unknown')
@@ -376,12 +364,6 @@ export class InventoryDetails implements OnInit {
       movement?.created_at ||
       null
     );
-  }
-
-  getReservationDate(
-    reservation: InventoryReservation
-  ): string | null {
-    return reservation?.createdAt || null;
   }
 
   getMovementReference(movement: any): string {

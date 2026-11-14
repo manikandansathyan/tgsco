@@ -5,6 +5,10 @@
   color: #252525;
 }
 
+.scheme-card {
+  scroll-margin-top: 30px;
+}
+
 .govt-page {
   max-width: 1500px;
   margin: 0 auto;

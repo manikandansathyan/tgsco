@@ -61,8 +61,6 @@
             <a routerLink="/home/featured-collections" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Featured Collections</a>
             <a routerLink="/home/government-initiatives" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Government Initiatives</a>
             <a routerLink="/home/blog" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Blog</a>
-            <a routerLink="/home/news-events" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">News &amp; Events</a>
-            <a routerLink="/home/footer" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Footer Content</a>
           </div>
         }
 
@@ -184,7 +182,7 @@
           <svg class="nav-chevron" lucideChevronDown [size]="15"></svg>
         </button>
 
-        @if (isVideoOpen) { 
+        @if (isVideoOpen) {
           <div class="submenu">
             <a routerLink="/video" routerLinkActive="active" class="sub-link" (click)="closeMenu.emit()">Add Video</a>
           </div>
@@ -207,14 +205,9 @@
     @if (isCatalogueOpen) {
       <div class="portfolio-submenu">
         <div class="submenu">
-          <a
-            routerLink="/catalogue"
-            routerLinkActive="active"
-            class="nav-link nav-parent section-nav-link"
-            (click)="closeMenu.emit()"
-          >
-            Catalogue
-          </a>
+          <a routerLink="/catalogue" routerLinkActive="active" class="nav-link nav-parent section-nav-link" (click)="closeMenu.emit()" >  Catalogue Groups </a>         
+          <a routerLink="/catalogue-categories"routerLinkActive="active"class="nav-link nav-parent section-nav-link"(click)="closeMenu.emit()">Categories </a>
+          <a routerLink="/catalogue-products" routerLinkActive="active" class="nav-link nav-parent section-nav-link" (click)="closeMenu.emit()">Products </a>
         </div>
       </div>
     }

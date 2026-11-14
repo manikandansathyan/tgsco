@@ -130,6 +130,7 @@ export class ProfileSecurity implements OnInit {
         timeout(60000),
         finalize(() => {
           this.isSavingProfile = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -202,6 +203,7 @@ export class ProfileSecurity implements OnInit {
         timeout(60000),
         finalize(() => {
           this.isChangingPassword = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )

@@ -346,6 +346,7 @@ export class HonouredForHeritage implements OnInit, OnDestroy {
         timeout(60000),
         finalize(() => {
           this.saving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -390,6 +391,7 @@ export class HonouredForHeritage implements OnInit, OnDestroy {
         timeout(60000),
         finalize(() => {
           this.deleting = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )

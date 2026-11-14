@@ -223,17 +223,19 @@
 
                   <span
                     class="customer-email"
-                    *ngIf="getCustomerEmail(order)"
+                    *ngIf="getCustomerEmail(order); else customerMobile"
                   >
                     {{ getCustomerEmail(order) }}
                   </span>
 
-                  <span
-                    class="customer-email"
-                    *ngIf="!getCustomerEmail(order) && getCustomerMobile(order)"
-                  >
-                    {{ getCustomerMobile(order) }}
-                  </span>
+                  <ng-template #customerMobile>
+                    <span
+                      class="customer-email"
+                      *ngIf="getCustomerMobile(order)"
+                    >
+                      {{ getCustomerMobile(order) }}
+                    </span>
+                  </ng-template>
                 </div>
               </div>
             </td>
@@ -274,7 +276,7 @@
 
               <span
                 class="return-status"
-                *ngIf="getReturnStatus(order) !== 'none'"
+                *ngIf="getReturnStatus(order) && getReturnStatus(order) !== 'none'"
               >
                 Return: {{ formatStatus(getReturnStatus(order)) }}
               </span>
@@ -296,18 +298,12 @@
             </td>
 
             <td class="amount-column">
-              <span *ngIf="getOrderTotal(order) !== null; else noTotal">
-                {{
-                  formatCurrency(
-                    getOrderTotal(order),
-                    getOrderCurrency(order)
-                  )
-                }}
-              </span>
-
-              <ng-template #noTotal>
-                <span class="muted-value">—</span>
-              </ng-template>
+              {{
+                formatCurrency(
+                  getOrderTotal(order),
+                  getOrderCurrency(order)
+                )
+              }}
             </td>
 
             <td class="action-column">

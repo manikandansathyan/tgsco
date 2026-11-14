@@ -32,7 +32,7 @@
   </div>
 
   <form
-    *ngIf="!isLoading"
+    *ngIf="hasLoaded"
     class="content-form"
     (ngSubmit)="saveWhoWeAre()"
   >
@@ -70,7 +70,7 @@
 
         <div
           class="paragraph-item"
-          *ngFor="let paragraph of content.paragraphs; let i = index"
+          *ngFor="let paragraph of content.paragraphs; let i = index; trackBy: trackByIndex"
         >
           <div class="paragraph-header">
             <label [for]="'paragraph-' + i">

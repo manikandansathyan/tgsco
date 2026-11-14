@@ -163,6 +163,7 @@ loadSchemesHero(): void {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -226,6 +227,7 @@ loadSchemesHero(): void {
         timeout(60000),
         finalize(() => {
           this.isDeleting = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )

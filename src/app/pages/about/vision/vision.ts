@@ -186,6 +186,7 @@ loadVision(): void {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -231,6 +232,7 @@ loadVision(): void {
         timeout(60000),
         finalize(() => {
           this.isDeleting = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )

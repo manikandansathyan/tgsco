@@ -211,6 +211,7 @@ loadPurpose(): void {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -251,6 +252,7 @@ loadPurpose(): void {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -286,4 +288,7 @@ loadPurpose(): void {
         }
       });
   }
+  trackByIndex(index: number): number {
+  return index;
+}
 }

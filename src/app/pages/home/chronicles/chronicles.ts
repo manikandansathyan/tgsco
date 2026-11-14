@@ -271,6 +271,7 @@ getChronicles(): void {
         timeout(60000),
         finalize(() => {
           this.saving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -319,6 +320,7 @@ getChronicles(): void {
         timeout(60000),
         finalize(() => {
           this.deleting = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )

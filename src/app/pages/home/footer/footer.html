@@ -1,33 +1,45 @@
 <div class="development-page">
-  <div class="development-card">
-    <div class="icon-wrapper">
-      <span class="construction-icon">🚧</span>
-    </div>
+  <span class="orb orb-one"></span>
+  <span class="orb orb-two"></span>
 
-    <span class="status-label">UNDER DEVELOPMENT</span>
+  <div class="development-card">
+    <span class="card-accent"></span>
+    <span class="watermark" aria-hidden="true">404</span>
+
+    <div class="icon-wrapper">
+  <span class="ring ring-outer"></span>
+  <span class="ring ring-inner"></span>
+  <span class="orbit"><i></i></span>
+  <span class="error-code"><b>4</b><b>0</b><b>4</b></span>
+</div>
+
+    <span class="status-label">
+      <i class="status-dot"></i>
+      PAGE NOT FOUND
+    </span>
 
     <h1>
-      Something <span>awesome</span> is brewing!
+      Oops! This page <span>doesn't exist.</span>
     </h1>
 
     <p class="description">
-      Our admin team is busy building this page.
-      We're adding the finishing touches to make your experience
-      even better. Stay tuned!
+      The page you're looking for may have been removed,
+      renamed, or is currently unavailable.
     </p>
 
     <div class="progress-info">
       <span class="progress-dot"></span>
-      <span>Our developers are on it!</span>
+      <span>Let's get you back on track.</span>
     </div>
 
     <button class="dashboard-button" (click)="goToDashboard()">
-      <span>←</span>
+      <span class="arrow">←</span>
       Back to Dashboard
     </button>
 
+    <div class="footer-divider"></div>
     <p class="footer-note">
-      Thanks for your patience. Great things take time!
+      Error Code: 404 | Page Not Found
     </p>
   </div>
 </div>

@@ -118,7 +118,7 @@
 
         @for (item of items; track $index; let i = $index) {
           <article class="press-card">
-            <div class="card-heading">
+            <div class="card-heading" [id]="'press-card-' + i">
               <div>
                 <span class="item-number">PRESS RELEASE {{ i + 1 }}</span>
                 <h3>{{ item.title || 'New Press Release' }}</h3>

@@ -84,6 +84,7 @@
       <div
         class="milestone-card"
         *ngFor="let item of content.milestones; let i = index"
+        [id]="'milestone-' + i"
       >
         <div class="milestone-card-header">
           <div class="milestone-number">{{ item.number || '—' }}</div>

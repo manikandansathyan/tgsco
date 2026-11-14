@@ -1,3 +1,4 @@
+
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +12,6 @@ interface HeroSlide {
   description: string;
   buttonLabel: string;
   buttonUrl: string;
-  altText: string;
   imageUrl: string;
   imageFile: File | null;
 }
@@ -56,7 +56,6 @@ export class Hero implements OnInit {
       description: '',
       buttonLabel: '',
       buttonUrl: '',
-      altText: '',
       imageUrl: '',
       imageFile: null,
     };
@@ -69,7 +68,7 @@ export class Hero implements OnInit {
     this.api
       .getHeroAPI()
       .pipe(
-        timeout(60000), // Render free tier can take ~60s to wake up
+        timeout(60000),
         finalize(() => {
           this.isLoading = false;
           this.cdr.markForCheck();
@@ -81,11 +80,17 @@ export class Hero implements OnInit {
           const slideData: any[] = Array.isArray(data?.content?.slides)
             ? data.content.slides
             : [];
-          const images: any[] = Array.isArray(data?.images) ? data.images : [];
+          const images: any[] = Array.isArray(data?.images)
+            ? data.images
+            : [];
 
           this.slides = slideData.map((item, index): HeroSlide => {
-            const fieldName = item.imageField ?? `slides[${index}].image`;
-            const image = images.find((img) => img.field === fieldName);
+            const fieldName =
+              item.imageField ?? `slides[${index}].image`;
+
+            const image = images.find(
+              (img) => img.field === fieldName
+            );
 
             return {
               eyebrow: item.eyebrow ?? '',
@@ -94,7 +99,6 @@ export class Hero implements OnInit {
               description: item.description ?? '',
               buttonLabel: item.button?.label ?? '',
               buttonUrl: item.button?.url ?? '',
-              altText: item.alt ?? '',
               imageUrl: image?.url ?? '',
               imageFile: null,
             };
@@ -105,10 +109,12 @@ export class Hero implements OnInit {
         },
         error: (error: any) => {
           console.error('Hero API error:', error);
+
           this.errorMessage =
             error?.name === 'TimeoutError'
               ? 'The server is taking too long to respond. Please try again.'
               : error?.error?.message ?? 'Unable to load hero content.';
+
           this.slides = [];
           this.isExistingContent = false;
           this.cdr.markForCheck();
@@ -151,6 +157,7 @@ export class Hero implements OnInit {
 
     this.isModalOpen = false;
     this.errorMessage = '';
+    this.cdr.markForCheck();
   }
 
   onImageSelected(event: Event): void {
@@ -168,6 +175,7 @@ export class Hero implements OnInit {
     }
 
     const slide = this.slides[this.selectedSlideIndex];
+
     if (!slide) {
       return;
     }
@@ -179,6 +187,7 @@ export class Hero implements OnInit {
     slide.imageFile = file;
     slide.imageUrl = URL.createObjectURL(file);
     this.errorMessage = '';
+    this.cdr.markForCheck();
   }
 
   saveHeroContent(): void {
@@ -212,14 +221,18 @@ export class Hero implements OnInit {
           url: slide.buttonUrl,
         },
         imageField: `slides[${index}].image`,
-        alt: slide.altText,
+        alt: slide.title.trim() || 'TGSCO hero banner',
       })),
     };
 
-    // keep each file paired with its slide position
     const images: HeroImageUpload[] = this.slides
-      .map((slide, index) => ({ index, file: slide.imageFile }))
-      .filter((item): item is HeroImageUpload => item.file !== null);
+      .map((slide, index) => ({
+        index,
+        file: slide.imageFile,
+      }))
+      .filter(
+        (item): item is HeroImageUpload => item.file !== null
+      );
 
     const request$ = this.isExistingContent
       ? this.api.updateHeroAPI(content, images)
@@ -229,6 +242,7 @@ export class Hero implements OnInit {
       .pipe(
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -241,15 +255,21 @@ export class Hero implements OnInit {
         },
         error: (error: any) => {
           console.error('Save hero error:', error);
+
           this.errorMessage =
             error?.error?.message ?? 'Failed to save hero content.';
+
           this.cdr.markForCheck();
         },
       });
   }
 
   deleteHeroSection(): void {
-    if (!confirm('Are you sure you want to delete the entire Hero Section?')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete the entire Hero Section?'
+      )
+    ) {
       return;
     }
 
@@ -262,6 +282,7 @@ export class Hero implements OnInit {
       .pipe(
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -275,12 +296,14 @@ export class Hero implements OnInit {
         },
         error: (error: any) => {
           console.error('Delete hero error:', error);
+
           this.errorMessage =
             error?.error?.message ?? 'Failed to delete hero section.';
+
           this.cdr.markForCheck();
         },
       });
-  } 
+  }
 
   trackByIndex(index: number): number {
     return index;

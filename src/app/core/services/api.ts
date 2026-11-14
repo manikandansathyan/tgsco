@@ -11,8 +11,8 @@ export interface HeroImageUpload {
 })
 export class Api {
 
-  // baseURL: string = 'https://tgscobackend.qmarkdesk.com/api/v1' //mainURL
-  baseURL: string = 'https://tgsco.onrender.com/api/v1';
+  baseURL: string = 'https://tgscobackend.qmarkdesk.com/api/v1' //mainURL
+  // baseURL: string = 'https://tgsco.onrender.com/api/v1';
 
 
   constructor(private http: HttpClient) { }
@@ -2412,6 +2412,90 @@ export class Api {
     );
   }
 
+
+  createCatalogueBulkProductAPI(data: {
+    name: string;
+    slug: string;
+    categoryIds?: string[];
+    color?: string;
+    shortDescription?: string;
+    description?: string;
+    price?: number;
+    originalPrice?: number;
+    discountPercent?: number;
+    currency?: string;
+    stockQuantity?: number;
+    lowStockThreshold?: number;
+    reorderQuantity?: number;
+    active?: boolean;
+    attributes?: Record<string, unknown>;
+    bulkPricing?: {
+      minimumQuantity: number;
+      maximumQuantity?: number;
+      price: number;
+    }[];
+    overview?: string;
+    craftStory?: string;
+    materialCare?: string;
+    shippingReturns?: string;
+    sizes?: {
+      size: string;
+      price: number;
+      originalPrice?: number;
+      discountPercent?: number;
+      stockQuantity: number;
+    }[];
+    mainImage?: File | null;
+    galleryImages?: File[];
+    images?: File[];
+  }) {
+    const formData = new FormData();
+
+    // Regular fields
+    Object.entries(data).forEach(([key, value]) => {
+      if (
+        value === undefined ||
+        value === null ||
+        key === 'mainImage' ||
+        key === 'galleryImages' ||
+        key === 'images'
+      ) {
+        return;
+      }
+
+      if (typeof value === 'object') {
+        formData.append(key, JSON.stringify(value));
+      } else {
+        formData.append(key, String(value));
+      }
+    });
+
+    // Main image
+    if (data.mainImage) {
+      formData.append('mainImage', data.mainImage);
+    }
+
+    // Gallery images
+    if (data.galleryImages?.length) {
+      data.galleryImages.forEach((file) => {
+        formData.append('galleryImages', file);
+      });
+    }
+
+    // Additional indexed images
+    if (data.images?.length) {
+      data.images.forEach((file, index) => {
+        formData.append(`images[${index}].url`, file);
+      });
+    }
+
+    return this.http.post(
+      `${this.baseURL}/catalog/admin/products/bulk`,
+      formData,
+      this.appendToken()
+    );
+  }
+
   // 13. Update product
   updateCatalogueProductAPI(
     id: string,
@@ -3218,39 +3302,50 @@ export class Api {
 
 
   // Chronicles of Thread
-// Chronicles of Thread
+  // Chronicles of Thread
 
-/* 1. Get Chronicles of Thread */
-getChroniclesOfThreadAPI() {
-  return this.http.get(
-    `${this.baseURL}/home-content/chronicles-of-thread`,
-    this.appendToken()
-  );
-}
+  /* 1. Get Chronicles of Thread */
+  getChroniclesOfThreadAPI() {
+    return this.http.get(
+      `${this.baseURL}/home-content/chronicles-of-thread`,
+      this.appendToken()
+    );
+  }
 
-/* 2. Add Chronicles of Thread */
-addChroniclesOfThreadAPI(formData: FormData) {
-  return this.http.post(
-    `${this.baseURL}/home-content/chronicles-of-thread`,
-    formData,
-    this.appendToken()
-  );
-}
+  /* 2. Add Chronicles of Thread */
+  addChroniclesOfThreadAPI(formData: FormData) {
+    return this.http.post(
+      `${this.baseURL}/home-content/chronicles-of-thread`,
+      formData,
+      this.appendToken()
+    );
+  }
 
-/* 3. Update Chronicles of Thread */
-updateChroniclesOfThreadAPI(formData: FormData) {
-  return this.http.patch(
-    `${this.baseURL}/home-content/chronicles-of-thread`,
-    formData,
-    this.appendToken()
-  );
-}
+  /* 3. Update Chronicles of Thread */
+  updateChroniclesOfThreadAPI(formData: FormData) {
+    return this.http.patch(
+      `${this.baseURL}/home-content/chronicles-of-thread`,
+      formData,
+      this.appendToken()
+    );
+  }
 
-/* 4. Delete Chronicles of Thread */
-deleteChroniclesOfThreadAPI() {
-  return this.http.delete(
-    `${this.baseURL}/home-content/chronicles-of-thread`,
-    this.appendToken()
-  );
-}
+  /* 4. Delete Chronicles of Thread */
+  deleteChroniclesOfThreadAPI() {
+    return this.http.delete(
+      `${this.baseURL}/home-content/chronicles-of-thread`,
+      this.appendToken()
+    );
+  }
+
+
+
+
+
+  scrollToTop(): void {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  }
 }

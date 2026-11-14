@@ -73,6 +73,7 @@
           />
         </div>
 
+        <!--
         <div class="form-group">
           <label for="previousLabel">Previous Button Label</label>
           <input
@@ -97,6 +98,7 @@
             placeholder="01 / 03"
           />
         </div>
+        -->
       </div>
     </section>
 
@@ -111,7 +113,7 @@
       <div class="main-map-layout">
         <div class="map-preview">
           @if (mapImagePreview) {
-            <img [src]="mapImagePreview" [alt]="mapImageAlt" />
+            <img [src]="mapImagePreview" alt="Telangana regional map" />
           } @else {
             <div class="image-placeholder">
               <span class="placeholder-symbol">＋</span>
@@ -136,6 +138,7 @@
             <p class="selected-file">{{ mapImageFile.name }}</p>
           }
 
+          <!--
           <div class="form-group">
             <label for="mapImageAlt">Map Image Alt Text</label>
             <input
@@ -144,6 +147,7 @@
               placeholder="Describe the map image"
             />
           </div>
+          -->
         </div>
       </div>
     </section>
@@ -175,6 +179,7 @@
           </div>
 
           <div class="office-actions">
+            <!--
             <button
               type="button"
               class="btn btn-outline btn-small"
@@ -183,6 +188,7 @@
             >
               Fetch Office
             </button>
+            -->
 
             <button
               type="button"
@@ -201,7 +207,7 @@
 
             <div class="office-image-preview">
               @if (office.previewUrl) {
-                <img [src]="office.previewUrl" [alt]="office.mapImageAlt" />
+                <img [src]="office.previewUrl" alt="Regional office map" />
               } @else {
                 <div class="image-placeholder">
                   <span class="placeholder-symbol">＋</span>
@@ -225,6 +231,7 @@
               <p class="selected-file">{{ office.imageFile.name }}</p>
             }
 
+            <!--
             <div class="form-group">
               <label [for]="'officeImageAlt' + i">Image Alt Text</label>
               <input
@@ -234,6 +241,7 @@
                 placeholder="Describe this image"
               />
             </div>
+            -->
           </div>
 
           <div class="office-fields">
@@ -248,6 +256,7 @@
                 />
               </div>
 
+              <!--
               <div class="form-group">
                 <label [for]="'officeSlug' + i">Slug</label>
                 <input
@@ -257,6 +266,7 @@
                   placeholder="hyderabad-head-office"
                 />
               </div>
+              -->
 
               <div class="form-group">
                 <label [for]="'mapLabel' + i">Map Label</label>
@@ -308,12 +318,13 @@
               <div class="form-group full-width">
                 <label [for]="'hours' + i">Working Hours</label>
                 <input
-                  [id]="'hours' + i"
+                  id="hours"
                   [(ngModel)]="office.hours"
                   [name]="'hours' + i"
                 />
               </div>
 
+              <!--
               <div class="form-group">
                 <label [for]="'directionsLabel' + i">Directions Label</label>
                 <input
@@ -322,6 +333,7 @@
                   [name]="'directionsLabel' + i"
                 />
               </div>
+              -->
 
               <div class="form-group">
                 <label [for]="'directionsUrl' + i">Directions URL</label>

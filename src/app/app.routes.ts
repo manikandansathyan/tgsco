@@ -104,11 +104,6 @@ export const routes: Routes = [
                 (m) => m.NewsEvents,
               ),
           },
-          {
-            path: 'footer',
-            loadComponent: () =>
-              import('./pages/home/footer/footer').then((m) => m.Footer),
-          },
         ],
       },
 
@@ -356,6 +351,20 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'catalogue-products',
+        loadComponent: () =>
+          import('./pages/catalogue/products/products').then(
+            (m) => m.Products
+          ),
+      },
+      {
+        path: 'catalogue-categories',
+        loadComponent: () =>
+          import('./pages/catalogue/categories/categories').then(
+            (m) => m.Categories
+          ),
+      },
+      {
         path: 'catalogue/groups',
         loadComponent: () =>
           import('./pages/catalogue/catalogue-detail/catalogue-detail').then(
@@ -447,6 +456,7 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'dashboard',
+    loadComponent: () =>
+      import('./pages/home/footer/footer').then((m) => m.Footer),
   },
 ];

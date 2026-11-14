@@ -109,7 +109,7 @@ export class MeetTheMakers implements OnInit {
   constructor(
     private readonly api: Api,
     private readonly cdr: ChangeDetectorRef
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.resetToDefaults();
@@ -118,6 +118,43 @@ export class MeetTheMakers implements OnInit {
 
   private resetToDefaults(): void {
     this.makers = this.defaultMakers.map((maker) => ({ ...maker }));
+  }
+
+  private createSlug(value: string): string {
+    return value
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  private createUniqueSlug(name: string, index: number): string {
+    const baseSlug = this.createSlug(name) || `maker-${index + 1}`;
+
+    const duplicateIndex = this.makers.findIndex(
+      (maker, makerIndex) =>
+        makerIndex !== index &&
+        this.createSlug(maker.name) === baseSlug
+    );
+
+    return duplicateIndex !== -1
+      ? `${baseSlug}-${index + 1}`
+      : baseSlug;
+  }
+
+  private getMakerImageAlt(name: string, role: string): string {
+    const makerName = name.trim();
+    const makerRole = role.trim();
+
+    if (makerName && makerRole) {
+      return `${makerName} - ${makerRole}`;
+    }
+
+    return makerName
+      ? `${makerName} - TGSCO artisan`
+      : 'TGSCO artisan';
   }
 
   loadMakers(): void {
@@ -141,9 +178,13 @@ export class MeetTheMakers implements OnInit {
 
           if (content && Array.isArray(content.items)) {
             this.title = content.title ?? this.title;
+
             this.previousLabel =
               content.navigation?.previousLabel ?? 'Previous';
-            this.nextLabel = content.navigation?.nextLabel ?? 'Next';
+
+            this.nextLabel =
+              content.navigation?.nextLabel ?? 'Next';
+
             this.counterFormat =
               content.navigation?.counterFormat ?? '01 / 05';
 
@@ -164,18 +205,31 @@ export class MeetTheMakers implements OnInit {
 
                 const imageUrl =
                   matchedImage?.url ??
-                  (typeof item.image === 'string' ? item.image : item.image?.url) ??
+                  (typeof item.image === 'string'
+                    ? item.image
+                    : item.image?.url) ??
                   item.imageUrl ??
                   '';
 
+                const name = item.name ?? '';
+                const role = item.role ?? '';
+
                 return {
-                  id: item.id ?? defaultMaker?.id ?? `maker-${index + 1}`,
-                  slug: item.slug ?? defaultMaker?.slug ?? `maker-${index + 1}`,
-                  name: item.name ?? '',
-                  role: item.role ?? '',
+                  id:
+                    item.id ??
+                    defaultMaker?.id ??
+                    `maker-${index + 1}`,
+
+                  slug:
+                    item.slug ??
+                    defaultMaker?.slug ??
+                    this.createSlug(name),
+
+                  name,
+                  role,
                   quote: item.quote ?? '',
                   imageField,
-                  imageAlt: item.imageAlt ?? '',
+                  imageAlt: this.getMakerImageAlt(name, role),
                   imageUrl,
                   imageFile: null,
                 };
@@ -192,9 +246,11 @@ export class MeetTheMakers implements OnInit {
         },
         error: (error: any) => {
           console.error('Failed to load makers:', error);
+
           this.errorMessage =
             error?.error?.message ??
             'Unable to load makers. Please try again.';
+
           this.cdr.markForCheck();
         },
       });
@@ -210,36 +266,49 @@ export class MeetTheMakers implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
 
-    this.api.getMakerBySlugAPI(maker.slug).pipe(
-      timeout(60000)
-    ).subscribe({
-      next: (response: any) => {
-        const data = response?.data ?? response;
-        const item = data?.content ?? data;
+    this.api
+      .getMakerBySlugAPI(maker.slug)
+      .pipe(timeout(60000))
+      .subscribe({
+        next: (response: any) => {
+          const data = response?.data ?? response;
+          const item = data?.content ?? data;
 
-        if (item) {
-          this.makers[index] = {
-            ...maker,
-            ...item,
-            imageUrl:
-              item.imageUrl ??
-              item.image?.url ??
-              (typeof item.image === 'string' ? item.image : '') ??
-              maker.imageUrl,
-            imageFile: maker.imageFile,
-          };
-        }
+          if (item) {
+            const name = item.name ?? maker.name;
+            const role = item.role ?? maker.role;
 
-        this.cdr.markForCheck();
-      },
-      error: (error: any) => {
-        console.error('Failed to load maker details:', error);
-        this.errorMessage =
-          error?.error?.message ??
-          `Unable to load details for ${maker.name}.`;
-        this.cdr.markForCheck();
-      },
-    });
+            this.makers[index] = {
+              ...maker,
+              ...item,
+              id: item.id ?? maker.id,
+              slug: item.slug ?? maker.slug,
+              name,
+              role,
+              quote: item.quote ?? maker.quote,
+              imageField: item.imageField ?? maker.imageField,
+              imageAlt: this.getMakerImageAlt(name, role),
+              imageUrl:
+                item.imageUrl ??
+                item.image?.url ??
+                (typeof item.image === 'string' ? item.image : '') ??
+                maker.imageUrl,
+              imageFile: maker.imageFile,
+            };
+          }
+
+          this.cdr.markForCheck();
+        },
+        error: (error: any) => {
+          console.error('Failed to load maker details:', error);
+
+          this.errorMessage =
+            error?.error?.message ??
+            `Unable to load details for ${maker.name}.`;
+
+          this.cdr.markForCheck();
+        },
+      });
   }
 
   onImageSelected(event: Event, index: number): void {
@@ -294,10 +363,8 @@ export class MeetTheMakers implements OnInit {
 
       if (
         !maker.name.trim() ||
-        !maker.slug.trim() ||
         !maker.role.trim() ||
-        !maker.quote.trim() ||
-        !maker.imageAlt.trim()
+        !maker.quote.trim()
       ) {
         this.errorMessage =
           `Please complete all text fields for maker ${i + 1}.`;
@@ -307,15 +374,30 @@ export class MeetTheMakers implements OnInit {
 
     const content = {
       title: this.title.trim(),
-      items: this.makers.map((maker, index) => ({
-        id: maker.id,
-        slug: maker.slug.trim(),
-        name: maker.name.trim(),
-        role: maker.role.trim(),
-        quote: maker.quote.trim(),
-        imageField: `makers[${index}].image`,
-        imageAlt: maker.imageAlt.trim(),
-      })),
+
+      items: this.makers.map((maker, index) => {
+        const slug = this.createUniqueSlug(maker.name, index);
+        const imageField = `makers[${index}].image`;
+        const imageAlt = this.getMakerImageAlt(
+          maker.name,
+          maker.role
+        );
+
+        maker.slug = slug;
+        maker.imageField = imageField;
+        maker.imageAlt = imageAlt;
+
+        return {
+          id: maker.id,
+          slug,
+          name: maker.name.trim(),
+          role: maker.role.trim(),
+          quote: maker.quote.trim(),
+          imageField,
+          imageAlt,
+        };
+      }),
+
       navigation: {
         previousLabel: this.previousLabel.trim(),
         nextLabel: this.nextLabel.trim(),
@@ -336,6 +418,7 @@ export class MeetTheMakers implements OnInit {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -348,15 +431,21 @@ export class MeetTheMakers implements OnInit {
               : 'Makers section created successfully.');
 
           this.isExistingContent = true;
-          this.makers.forEach((maker) => (maker.imageFile = null));
+
+          this.makers.forEach((maker) => {
+            maker.imageFile = null;
+          });
+
           this.loadMakers();
           this.cdr.markForCheck();
         },
         error: (error: any) => {
           console.error('Failed to save makers:', error);
+
           this.errorMessage =
             error?.error?.message ??
             'Unable to save the makers section. Please try again.';
+
           this.cdr.markForCheck();
         },
       });
@@ -381,6 +470,7 @@ export class MeetTheMakers implements OnInit {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -393,9 +483,11 @@ export class MeetTheMakers implements OnInit {
         },
         error: (error: any) => {
           console.error('Failed to delete makers:', error);
+
           this.errorMessage =
             error?.error?.message ??
             'Unable to delete the makers section. Please try again.';
+
           this.cdr.markForCheck();
         },
       });
@@ -405,4 +497,3 @@ export class MeetTheMakers implements OnInit {
     return maker.id || String(index);
   }
 }
-

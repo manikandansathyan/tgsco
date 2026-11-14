@@ -163,6 +163,7 @@ export class HeritageHero implements OnInit, OnDestroy {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -208,6 +209,7 @@ export class HeritageHero implements OnInit, OnDestroy {
         timeout(60000),
         finalize(() => {
           this.isDeleting = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )

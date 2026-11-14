@@ -85,6 +85,7 @@
           />
         </div>
 
+        <!--
         <div class="form-group">
           <label for="submitAction">Submit Action</label>
           <input
@@ -97,6 +98,7 @@
             This value configures the website form action; it does not submit an inquiry from this admin page.
           </span>
         </div>
+        -->
       </div>
     </section>
 
@@ -111,7 +113,10 @@
       <div class="image-layout">
         <div class="image-preview">
           @if (formImagePreview) {
-            <img [src]="formImagePreview" [alt]="imageAlt" />
+            <img
+              [src]="formImagePreview"
+              alt="Contact form"
+            />
           } @else {
             <div class="image-placeholder">
               <span class="placeholder-symbol">＋</span>
@@ -145,6 +150,7 @@
             </div>
           }
 
+          <!--
           <div class="form-group">
             <label for="imageAlt">Image Alt Text</label>
             <input
@@ -154,6 +160,7 @@
               placeholder="Describe the image"
             />
           </div>
+          -->
         </div>
       </div>
     </section>

@@ -1,3 +1,4 @@
+
 <div class="inventory-page">
   <div class="page-header">
     <div>
@@ -38,6 +39,18 @@
       class="alert-close"
       aria-label="Dismiss error message"
       (click)="errorMessage = ''"
+    >
+      ×
+    </button>
+  </div>
+
+  <div *ngIf="summaryErrorMessage" class="alert alert-error">
+    <span>{{ summaryErrorMessage }}</span>
+    <button
+      type="button"
+      class="alert-close"
+      aria-label="Dismiss summary error"
+      (click)="summaryErrorMessage = ''"
     >
       ×
     </button>
@@ -148,7 +161,11 @@
 
       <div class="filter-field">
         <label for="sortFilter">Sort By</label>
-        <select id="sortFilter" name="sort" [(ngModel)]="sort">
+        <select
+          id="sortFilter"
+          name="sort"
+          [(ngModel)]="sort"
+        >
           <option value="newest">Newest First</option>
           <option value="oldest">Oldest First</option>
           <option value="name">Product Name</option>
@@ -178,179 +195,162 @@
       </div>
     </div>
 
-   <div class="table-container">
-  <table class="inventory-table">
-    <thead>
-      <tr>
-        <th>Product</th>
-        <th>SKU / Barcode</th>
-        <th class="number-cell">Stock</th>
-        <th class="number-cell">Reserved</th>
-        <th class="number-cell">Available</th>
-        <th>Status</th>
-        <th>Active</th>
-        <th class="actions-heading">Actions</th>
-      </tr>
-    </thead>
+    <div class="table-container">
+      <table class="inventory-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>SKU / Barcode</th>
+            <th class="number-cell">Stock</th>
+            <th class="number-cell">Reserved</th>
+            <th class="number-cell">Available</th>
+            <th>Status</th>
+            <th>Active</th>
+            <th class="actions-heading">Actions</th>
+          </tr>
+        </thead>
 
-    <tbody>
-      <!-- Loading -->
-      <tr *ngIf="loading">
-        <td colspan="8" class="state-cell">
-          <span class="loader"></span>
-          Loading inventory...
-        </td>
-      </tr>
+        <tbody>
+          <tr *ngIf="loading">
+            <td colspan="8" class="state-cell">
+              <span class="loader"></span>
+              Loading inventory...
+            </td>
+          </tr>
 
-      <!-- Empty State -->
-      <tr *ngIf="!loading && inventory.length === 0">
-        <td colspan="8" class="state-cell">
-          <div class="empty-state">
-            <span class="empty-icon">▦</span>
-            <h3>No inventory found</h3>
-            <p>Try changing your search or filter options.</p>
-          </div>
-        </td>
-      </tr>
+          <tr *ngIf="!loading && inventory.length === 0">
+            <td colspan="8" class="state-cell">
+              <div class="empty-state">
+                <span class="empty-icon">▦</span>
+                <h3>No inventory found</h3>
+                <p>Try changing your search or filter options.</p>
+              </div>
+            </td>
+          </tr>
 
-      <!-- Inventory Items -->
-      <tr
-        *ngFor="let item of inventory; trackBy: trackByProductId"
-      >
-        <!-- Product -->
-        <td>
-          <div class="product-cell">
-            <div class="product-avatar">
-              {{ (item.name || 'P').charAt(0).toUpperCase() }}
-            </div>
-
-            <div class="product-info">
-              <span class="product-name">
-                {{ item.name || 'Unnamed Product' }}
-              </span>
-
-              <span class="product-id">
-                {{ item.productId }}
-              </span>
-            </div>
-          </div>
-        </td>
-
-        <!-- SKU / Barcode -->
-        <td>
-          <div class="sku-info">
-            <span>{{ item.sku || '—' }}</span>
-            <small>{{ item.barcode || 'No barcode' }}</small>
-          </div>
-        </td>
-
-        <!-- Stock -->
-        <td class="number-cell">
-          <span class="quantity-value">
-            {{ item.stockQuantity }}
-          </span>
-        </td>
-
-        <!-- Reserved -->
-        <td class="number-cell">
-          <span class="muted-value">
-            {{ item.reservedQuantity}}
-          </span>
-        </td>
-
-        <!-- Available -->
-        <td class="number-cell">
-          <span class="quantity-value">
-            {{ item.availableQuantity}}
-          </span>
-        </td>
-
-        <!-- Stock Status -->
-        <td>
-          <span
-            class="status-badge"
-            [ngClass]="getStatusClass(item.status)"
+          <tr
+            *ngFor="let item of inventory; trackBy: trackByProductId"
           >
-            <span class="status-dot"></span>
-            {{ getStatusLabel(item.status) }}
-          </span>
-        </td>
+            <td>
+              <div class="product-cell">
+                <div class="product-avatar">
+                  {{ (item.name || 'P').charAt(0).toUpperCase() }}
+                </div>
 
-        <!-- Active Status -->
-        <td>
-          <span
-            class="active-badge"
-            [class.active-yes]="item.active"
-            [class.active-no]="!item.active"
-          >
-            {{ item.active ? 'Active' : 'Inactive' }}
-          </span>
-        </td>
+                <div class="product-info">
+                  <span class="product-name">
+                    {{ item.name || 'Unnamed Product' }}
+                  </span>
+                </div>
+              </div>
+            </td>
 
-        <!-- Actions -->
-        <td>
-          <div class="action-buttons">
+            <td>
+              <div class="sku-info">
+                <span>{{ item.sku || '—' }}</span>
+                <small>{{ item.barcode || 'No barcode' }}</small>
+              </div>
+            </td>
 
-            <button
-              type="button"
-              class="action-btn action-view"
-              [routerLink]="['/inventory', item.productId]"
-              title="View inventory details"
-            >
-              View
-            </button>
+            <td class="number-cell">
+              <span class="quantity-value">
+                {{ item.stockQuantity }}
+              </span>
+            </td>
 
-            <button
-              type="button"
-              class="action-btn action-restock"
-              (click)="openOperation('restock', item)"
-              title="Add stock"
-            >
-              + Stock
-            </button>
+            <td class="number-cell">
+              <span class="muted-value">
+                {{ item.reservedQuantity }}
+              </span>
+            </td>
 
-            <button
-              type="button"
-              class="action-btn action-adjust"
-              (click)="openOperation('adjust', item)"
-              title="Adjust stock"
-            >
-              Adjust
-            </button>
+            <td class="number-cell">
+              <span class="quantity-value">
+                {{ item.availableQuantity }}
+              </span>
+            </td>
 
-            <button
-              type="button"
-              class="action-btn action-damage"
-              (click)="openOperation('damage', item)"
-              title="Record damaged stock"
-            >
-              Damage
-            </button>
+            <td>
+              <span
+                class="status-badge"
+                [ngClass]="getStatusClass(item.status)"
+              >
+                <span class="status-dot"></span>
+                {{ getStatusLabel(item.status) }}
+              </span>
+            </td>
 
-            <button
-              type="button"
-              class="action-btn action-return"
-              (click)="openOperation('return', item)"
-              title="Record returned stock"
-            >
-              Return
-            </button>
+            <td>
+              <span
+                class="active-badge"
+                [class.active-yes]="item.active"
+                [class.active-no]="!item.active"
+              >
+                {{ item.active ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
 
-            <button
-              type="button"
-              class="action-btn action-reconcile"
-              (click)="openOperation('reconcile', item)"
-              title="Reconcile physical stock"
-            >
-              Count
-            </button>
+            <td>
+              <div class="action-buttons">
+                <button
+                  type="button"
+                  class="action-btn action-view"
+                  [routerLink]="['/inventory', item.productId]"
+                  title="View inventory details"
+                >
+                  View
+                </button>
 
-          </div>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+                <button
+                  type="button"
+                  class="action-btn action-restock"
+                  (click)="openOperation('restock', item)"
+                  title="Add stock"
+                >
+                  + Stock
+                </button>
+
+                <button
+                  type="button"
+                  class="action-btn action-adjust"
+                  (click)="openOperation('adjust', item)"
+                  title="Adjust stock"
+                >
+                  Adjust
+                </button>
+
+                <button
+                  type="button"
+                  class="action-btn action-damage"
+                  (click)="openOperation('damage', item)"
+                  title="Record damaged stock"
+                >
+                  Damage
+                </button>
+
+                <button
+                  type="button"
+                  class="action-btn action-return"
+                  (click)="openOperation('return', item)"
+                  title="Record returned stock"
+                >
+                  Return
+                </button>
+
+                <button
+                  type="button"
+                  class="action-btn action-reconcile"
+                  (click)="openOperation('reconcile', item)"
+                  title="Reconcile physical stock"
+                >
+                  Count
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <div class="table-footer">
       <div class="page-size-control">

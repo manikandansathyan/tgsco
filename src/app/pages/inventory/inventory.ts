@@ -19,9 +19,7 @@ interface InventoryItem {
   stockQuantity: number;
   reservedQuantity: number;
   availableQuantity: number;
-  lowStockThreshold: number;
-  reorderQuantity: number;
-  status: 'in_stock' | 'low_stock' | 'out_of_stock' | string;
+  status: string;
 }
 
 interface InventorySummary {
@@ -97,6 +95,7 @@ export class Inventory implements OnInit {
   saving = false;
 
   errorMessage = '';
+  summaryErrorMessage = '';
   successMessage = '';
 
   showOperationModal = false;
@@ -104,6 +103,9 @@ export class Inventory implements OnInit {
   operationProduct: InventoryItem | null = null;
 
   form: OperationForm = this.createEmptyForm();
+
+  private inventoryRequestCount = 0;
+  private summaryRequestCount = 0;
 
   constructor(
     private api: Api,
@@ -147,16 +149,22 @@ export class Inventory implements OnInit {
     return result as T;
   }
 
-  // Inventory Summary
   loadSummary(): void {
+    this.summaryRequestCount++;
     this.summaryLoading = true;
+    this.summaryErrorMessage = '';
 
     this.api
       .getAdminInventorySummary()
       .pipe(
         timeout(60000),
         finalize(() => {
-          this.summaryLoading = false;
+          this.summaryRequestCount--;
+
+          if (this.summaryRequestCount === 0) {
+            this.summaryLoading = false;
+          }
+
           this.cdr.markForCheck();
         })
       )
@@ -172,18 +180,24 @@ export class Inventory implements OnInit {
             lowStock: Number(result?.lowStock) || 0,
             outOfStock: Number(result?.outOfStock) || 0,
           };
+
+          this.cdr.markForCheck();
         },
         error: (error: any) => {
-          this.errorMessage =
-            error?.error?.message ||
-            error?.error?.error ||
-            'Unable to load inventory summary.';
+          this.summaryErrorMessage =
+            error?.name === 'TimeoutError'
+              ? 'The server is taking too long to respond. Please try again.'
+              : error?.error?.message ||
+                error?.error?.error ||
+                'Unable to load inventory summary.';
+
+          this.cdr.markForCheck();
         },
       });
   }
 
-  // Inventory List
   loadInventory(): void {
+    this.inventoryRequestCount++;
     this.loading = true;
     this.errorMessage = '';
 
@@ -199,7 +213,12 @@ export class Inventory implements OnInit {
       .pipe(
         timeout(60000),
         finalize(() => {
-          this.loading = false;
+          this.inventoryRequestCount--;
+
+          if (this.inventoryRequestCount === 0) {
+            this.loading = false;
+          }
+
           this.cdr.markForCheck();
         })
       )
@@ -215,6 +234,8 @@ export class Inventory implements OnInit {
           this.page = Number(result?.page) || this.page;
           this.limit = Number(result?.limit) || this.limit;
           this.pages = Number(result?.pages) || 0;
+
+          this.cdr.markForCheck();
         },
         error: (error: any) => {
           this.inventory = [];
@@ -222,9 +243,13 @@ export class Inventory implements OnInit {
           this.pages = 0;
 
           this.errorMessage =
-            error?.error?.message ||
-            error?.error?.error ||
-            'Unable to load inventory. Please try again.';
+            error?.name === 'TimeoutError'
+              ? 'The server is taking too long to respond. Please try again.'
+              : error?.error?.message ||
+                error?.error?.error ||
+                'Unable to load inventory. Please try again.';
+
+          this.cdr.markForCheck();
         },
       });
   }
@@ -340,6 +365,7 @@ export class Inventory implements OnInit {
     this.showOperationModal = false;
     this.operationProduct = null;
     this.form = this.createEmptyForm();
+    this.errorMessage = '';
   }
 
   get operationTitle(): string {
@@ -391,9 +417,10 @@ export class Inventory implements OnInit {
       operation !== 'reconcile' &&
       (this.form.quantity === null ||
         !Number.isFinite(quantity) ||
-        quantity <= 0)
+        quantity <= 0 ||
+        !Number.isInteger(quantity))
     ) {
-      this.errorMessage = 'Quantity must be greater than zero.';
+      this.errorMessage = 'Enter a valid whole quantity greater than zero.';
       return;
     }
 
@@ -401,9 +428,10 @@ export class Inventory implements OnInit {
       operation === 'reconcile' &&
       (this.form.physicalQuantity === null ||
         !Number.isFinite(Number(this.form.physicalQuantity)) ||
-        Number(this.form.physicalQuantity) < 0)
+        Number(this.form.physicalQuantity) < 0 ||
+        !Number.isInteger(Number(this.form.physicalQuantity)))
     ) {
-      this.errorMessage = 'Enter a valid physical stock quantity.';
+      this.errorMessage = 'Enter a valid whole physical stock quantity.';
       return;
     }
 
@@ -482,6 +510,7 @@ export class Inventory implements OnInit {
         timeout(60000),
         finalize(() => {
           this.saving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -500,12 +529,17 @@ export class Inventory implements OnInit {
 
           this.loadInventory();
           this.loadSummary();
+          this.cdr.markForCheck();
         },
         error: (error: any) => {
           this.errorMessage =
-            error?.error?.message ||
-            error?.error?.error ||
-            `Unable to complete ${operation}. Please try again.`;
+            error?.name === 'TimeoutError'
+              ? 'The server is taking too long to respond. Please try again.'
+              : error?.error?.message ||
+                error?.error?.error ||
+                `Unable to complete ${operation}. Please try again.`;
+
+          this.cdr.markForCheck();
         },
       });
   }

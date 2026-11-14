@@ -1,3 +1,4 @@
+
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectorRef,
@@ -23,17 +24,6 @@ export class Orders implements OnInit {
   private cdr = inject(ChangeDetectorRef);
 
   orders: any[] = [];
-
-  chargeTypes: string[] = [];
-  couriers: string[] = [];
-  currencies: string[] = ['INR'];
-
-  filterTotals = {
-    min: 0,
-    max: 0,
-    earliest: '',
-    latest: '',
-  };
 
   loading = false;
   errorMessage = '';
@@ -76,54 +66,35 @@ export class Orders implements OnInit {
     this.loadOrders();
   }
 
- loadFilters(): void {
-  this.api
-    .getAdminOrderFilters()
-    .pipe(
-      timeout(60000),
-      finalize(() => {
-        this.cdr.markForCheck();
-      })
-    )
-    .subscribe({
-      next: (response: any) => {
-        const data = response?.data ?? response;
+  loadFilters(): void {
+    this.api
+      .getAdminOrderFilters()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const data = response?.data ?? response;
 
-        this.statusOptions = Array.isArray(data?.orderStatuses)
-          ? data.orderStatuses
-          : this.statusOptions;
+          this.statusOptions = Array.isArray(data?.orderStatuses)
+            ? data.orderStatuses
+            : this.statusOptions;
 
-        this.paymentStatusOptions = Array.isArray(data?.paymentStatuses)
-          ? data.paymentStatuses
-          : this.paymentStatusOptions;
+          this.paymentStatusOptions = Array.isArray(data?.paymentStatuses)
+            ? data.paymentStatuses
+            : this.paymentStatusOptions;
 
-        this.chargeTypes = Array.isArray(data?.chargeTypes)
-          ? data.chargeTypes
-          : [];
-
-        this.couriers = Array.isArray(data?.couriers)
-          ? data.couriers
-          : [];
-
-        this.currencies = Array.isArray(data?.currencies)
-          ? data.currencies
-          : ['INR'];
-
-        this.filterTotals = {
-          min: Number(data?.totals?.min ?? 0),
-          max: Number(data?.totals?.max ?? 0),
-          earliest: data?.totals?.earliest ?? '',
-          latest: data?.totals?.latest ?? '',
-        };
-
-        this.cdr.markForCheck();
-      },
-      error: (error) => {
-        console.error('Failed to load order filters:', error);
-        this.cdr.markForCheck();
-      },
-    });
-}
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          console.error('Failed to load order filters:', error);
+          this.cdr.markForCheck();
+        },
+      });
+  }
 
   loadOrders(): void {
     this.loading = true;
@@ -162,7 +133,7 @@ export class Orders implements OnInit {
         finalize(() => {
           this.loading = false;
           this.cdr.markForCheck();
-        }),
+        })
       )
       .subscribe({
         next: (response: any) => {
@@ -187,7 +158,7 @@ export class Orders implements OnInit {
             pagination?.total ??
             pagination?.totalItems ??
             pagination?.count ??
-            this.orders.length,
+            this.orders.length
           );
 
           this.page = Number(pagination?.page ?? this.page);
@@ -196,7 +167,7 @@ export class Orders implements OnInit {
           this.totalPages = Number(
             pagination?.pages ??
             pagination?.totalPages ??
-            Math.max(1, Math.ceil(this.total / this.limit)),
+            Math.max(1, Math.ceil(this.total / this.limit))
           );
 
           if (this.totalPages < 1) {
@@ -214,8 +185,8 @@ export class Orders implements OnInit {
             error?.name === 'TimeoutError'
               ? 'The request timed out. Please try again.'
               : error?.error?.message ??
-              error?.message ??
-              'Failed to load orders. Please try again.';
+                error?.message ??
+                'Failed to load orders. Please try again.';
 
           this.cdr.markForCheck();
         },
@@ -285,7 +256,7 @@ export class Orders implements OnInit {
       order?.number ??
       this.getOrderId(order) ??
       '—'
-    );
+    ) || '—';
   }
 
   getCustomerName(order: any): string {
@@ -325,7 +296,7 @@ export class Orders implements OnInit {
       (typeof customer === 'object' ? customer?.email : '') ||
       order?.customerEmail ||
       order?.email ||
-      '—'
+      ''
     );
   }
 
@@ -342,7 +313,7 @@ export class Orders implements OnInit {
         : '') ||
       order?.mobile ||
       order?.phone ||
-      '—'
+      ''
     );
   }
 
@@ -366,7 +337,7 @@ export class Orders implements OnInit {
     return (
       order?.returnStatus ??
       order?.return?.status ??
-      '—'
+      ''
     );
   }
 
@@ -376,11 +347,7 @@ export class Orders implements OnInit {
       order?.payment?.method ??
       order?.paymentMethodName;
 
-    if (!method) {
-      return '—';
-    }
-
-    return this.formatStatus(String(method));
+    return method ? String(method) : '—';
   }
 
   getOrderTotal(order: any): number {
@@ -424,7 +391,7 @@ export class Orders implements OnInit {
     return items.reduce(
       (total: number, item: any) =>
         total + Number(item?.quantity ?? 1),
-      0,
+      0
     );
   }
 
@@ -449,29 +416,6 @@ export class Orders implements OnInit {
     return `${name} + ${items.length - 1} more`;
   }
 
-  getShippingAddress(order: any): string {
-    const address = order?.shippingAddress;
-
-    if (!address) {
-      return '—';
-    }
-
-    if (typeof address === 'string') {
-      return address;
-    }
-
-    return [
-      address.addressLine1,
-      address.addressLine2,
-      address.city,
-      address.state,
-      address.postalCode,
-      address.country,
-    ]
-      .filter(Boolean)
-      .join(', ') || '—';
-  }
-
   formatStatus(value: string | null | undefined): string {
     if (!value) {
       return '—';
@@ -482,13 +426,13 @@ export class Orders implements OnInit {
       .replace(/\s+/g, ' ')
       .trim()
       .replace(/\b\w/g, (character) =>
-        character.toUpperCase(),
+        character.toUpperCase()
       );
   }
 
   formatCurrency(
     amount: number | string | null | undefined,
-    currency = 'INR',
+    currency = 'INR'
   ): string {
     const value = Number(amount ?? 0);
 

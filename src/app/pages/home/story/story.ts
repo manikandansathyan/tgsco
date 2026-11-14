@@ -10,21 +10,6 @@ interface StoryStat {
   label: string;
 }
 
-interface OurStoryContent {
-  title: string;
-  description: string;
-  buttonLabel: string;
-  buttonUrl: string;
-  imageAlt: string;
-  imageUrl: string;
-  storyImage: File | null;
-  videoUrl: string;
-  videoAlt: string;
-  stats: StoryStat[];
-}
-
-type ModalMode = 'preview' | 'create' | 'edit';
-
 @Component({
   selector: 'app-story',
   standalone: true,
@@ -51,9 +36,6 @@ export class Story implements OnInit {
   errorMessage = '';
   successMessage = '';
 
-  isModalOpen = false;
-  modalMode: ModalMode = 'preview';
-
   constructor(
     private api: Api,
     private cdr: ChangeDetectorRef
@@ -61,24 +43,6 @@ export class Story implements OnInit {
 
   ngOnInit(): void {
     this.loadOurStory();
-  }
-
-  createEmptyStory(): OurStoryContent {
-    return {
-      title: '',
-      description: '',
-      buttonLabel: '',
-      buttonUrl: '',
-      imageAlt: '',
-      imageUrl: '',
-      storyImage: null,
-      videoUrl: '',
-      videoAlt: '',
-      stats: [
-        { value: '', label: '' },
-        { value: '', label: '' },
-      ],
-    };
   }
 
   loadOurStory(): void {
@@ -96,8 +60,6 @@ export class Story implements OnInit {
       )
       .subscribe({
         next: (response: any) => {
-          console.log('Our Story API response:', response);
-
           const data = response?.data ?? response;
           const content = data?.content ?? data;
 
@@ -137,16 +99,6 @@ export class Story implements OnInit {
 
           this.isExistingContent = !!data?.id;
 
-          console.log('Mapped Our Story:', {
-            title: this.title,
-            description: this.description,
-            buttonLabel: this.buttonLabel,
-            buttonUrl: this.buttonUrl,
-            imageUrl: this.imageUrl,
-            videoUrl: this.videoUrl,
-            stats: this.stats,
-          });
-
           this.cdr.markForCheck();
         },
         error: (error: any) => {
@@ -161,44 +113,6 @@ export class Story implements OnInit {
           this.cdr.markForCheck();
         },
       });
-  }
-
-  openPreview(): void {
-    this.modalMode = 'preview';
-    this.isModalOpen = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-  }
-
-  openCreateModal(): void {
-    const emptyStory = this.createEmptyStory();
-
-    this.title = emptyStory.title;
-    this.description = emptyStory.description;
-    this.buttonLabel = emptyStory.buttonLabel;
-    this.buttonUrl = emptyStory.buttonUrl;
-    this.imageAlt = emptyStory.imageAlt;
-    this.imageUrl = emptyStory.imageUrl;
-    this.storyImage = emptyStory.storyImage;
-    this.videoUrl = emptyStory.videoUrl;
-    this.videoAlt = emptyStory.videoAlt;
-    this.stats = emptyStory.stats;
-
-    this.modalMode = 'create';
-    this.isModalOpen = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-  }
-
-  editSelectedStory(): void {
-    this.modalMode = 'edit';
-    this.errorMessage = '';
-    this.successMessage = '';
-  }
-
-  closeModal(): void {
-    this.isModalOpen = false;
-    this.errorMessage = '';
   }
 
   onImageSelected(event: Event): void {
@@ -227,6 +141,10 @@ export class Story implements OnInit {
   }
 
   addStat(): void {
+    if (this.stats.length >= 6) {
+      return;
+    }
+
     this.stats.push({ value: '', label: '' });
     this.cdr.markForCheck();
   }
@@ -273,14 +191,15 @@ export class Story implements OnInit {
 
     request$
       .pipe(
+        timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
       .subscribe({
         next: () => {
-          this.isModalOpen = false;
           this.successMessage = 'Our Story content saved successfully.';
           this.cdr.markForCheck();
           this.loadOurStory();
@@ -289,8 +208,10 @@ export class Story implements OnInit {
           console.error('Save Our Story error:', error);
 
           this.errorMessage =
-            error?.error?.message ??
-            'Failed to save Our Story content.';
+            error?.name === 'TimeoutError'
+              ? 'The server is taking too long to respond. Please try again.'
+              : error?.error?.message ??
+                'Failed to save Our Story content.';
 
           this.cdr.markForCheck();
         },
@@ -311,8 +232,10 @@ export class Story implements OnInit {
     this.api
       .deleteOurStoryAPI()
       .pipe(
+        timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -329,7 +252,7 @@ export class Story implements OnInit {
           this.videoAlt = '';
           this.stats = [];
           this.isExistingContent = false;
-          this.isModalOpen = false;
+
           this.successMessage = 'Our Story section deleted successfully.';
           this.cdr.markForCheck();
         },
@@ -337,15 +260,13 @@ export class Story implements OnInit {
           console.error('Delete Our Story error:', error);
 
           this.errorMessage =
-            error?.error?.message ??
-            'Failed to delete Our Story content.';
+            error?.name === 'TimeoutError'
+              ? 'The server is taking too long to respond. Please try again.'
+              : error?.error?.message ??
+                'Failed to delete Our Story content.';
 
           this.cdr.markForCheck();
         },
       });
-  }
-
-  trackByIndex(index: number): number {
-    return index;
   }
 }

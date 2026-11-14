@@ -118,6 +118,7 @@ export class ContactInquiries implements OnInit {
         timeout(60000),
         finalize(() => {
           this.isSubmitting = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         }),
       )

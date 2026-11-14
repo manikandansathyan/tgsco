@@ -1,3 +1,4 @@
+
 <div class="govt-page">
   <header class="page-header">
     <div>
@@ -64,7 +65,6 @@
   </div>
 
   <ng-container *ngIf="!isLoading">
-
     <!-- Page Settings -->
     <section class="editor-card page-settings">
       <div class="card-heading">
@@ -73,10 +73,7 @@
           <p>Configure the page heading and main image.</p>
         </div>
 
-        <span
-          class="status-pill"
-          [class.status-existing]="isEditing"
-        >
+        <span class="status-pill" [class.status-existing]="isEditing">
           {{ isEditing ? 'Existing Content' : 'New Content' }}
         </span>
       </div>
@@ -201,7 +198,12 @@
     <div class="scheme-list">
       <section
         class="editor-card scheme-card"
-        *ngFor="let scheme of schemes; let i = index"
+        *ngFor="
+          let scheme of schemes;
+          let i = index;
+          trackBy: trackByIndex
+        "
+        [id]="'scheme-card-' + i"
       >
         <!-- Scheme Header -->
         <div class="card-heading scheme-card-heading">
@@ -225,7 +227,6 @@
 
         <div class="scheme-form">
           <div class="form-grid">
-
             <!-- Basic Information -->
             <div class="form-group">
               <label [for]="'scheme-title-' + i">
@@ -367,7 +368,7 @@
                   <strong>
                     {{
                       scheme.detailImageFile?.name ||
-                        'Current detail image'
+                      'Current detail image'
                     }}
                   </strong>
 
@@ -401,7 +402,8 @@
                 class="dynamic-field"
                 *ngFor="
                   let item of scheme.whoCanApply.items;
-                  let j = index
+                  let j = index;
+                  trackBy: trackByIndex
                 "
               >
                 <input
@@ -414,12 +416,7 @@
                 <button
                   type="button"
                   class="btn btn-danger-outline"
-                  (click)="
-                    removeArrayItem(
-                      scheme.whoCanApply.items,
-                      j
-                    )
-                  "
+                  (click)="removeArrayItem(scheme.whoCanApply.items, j)"
                 >
                   Remove
                 </button>
@@ -583,9 +580,7 @@
                 <button
                   type="button"
                   class="btn btn-danger-outline"
-                  (click)="
-                    removeArrayItem(scheme.howToApply.steps, j)
-                  "
+                  (click)="removeArrayItem(scheme.howToApply.steps, j)"
                 >
                   Remove
                 </button>
@@ -646,9 +641,7 @@
               <button
                 type="button"
                 class="btn btn-secondary"
-                (click)="
-                  addArrayItem(scheme.documentsRequired.items)
-                "
+                (click)="addArrayItem(scheme.documentsRequired.items)"
               >
                 + Add Required Document
               </button>
@@ -678,9 +671,7 @@
               >
                 <input
                   type="text"
-                  [(ngModel)]="
-                    scheme.membershipBenefits.items[j]
-                  "
+                  [(ngModel)]="scheme.membershipBenefits.items[j]"
                   [name]="'membershipBenefit' + i + '_' + j"
                   placeholder="Enter membership benefit"
                 />
@@ -709,7 +700,6 @@
                 + Add Membership Benefit
               </button>
             </div>
-
           </div>
         </div>
       </section>
@@ -748,6 +738,5 @@
         }}
       </button>
     </div>
-
   </ng-container>
 </div>

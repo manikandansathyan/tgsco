@@ -219,8 +219,23 @@ export class Calender implements OnInit, OnDestroy {
   }
 
   addItem(): void {
-    this.items.push(this.createEmptyItem(this.items.length));
-  }
+  this.items.push(this.createEmptyItem(this.items.length));
+
+  const newIndex = this.items.length - 1;
+
+  this.cdr.detectChanges();
+
+  setTimeout(() => {
+    const newEventElement = document.getElementById(
+      `event-card-${newIndex}`
+    );
+
+    newEventElement?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }, 100);
+}
 
   removeItem(index: number): void {
     this.revokeUrl(this.items[index]?.imagePreview);
@@ -377,6 +392,7 @@ export class Calender implements OnInit, OnDestroy {
         timeout(60000),
         finalize(() => {
           this.saving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -417,6 +433,7 @@ export class Calender implements OnInit, OnDestroy {
         timeout(60000),
         finalize(() => {
           this.deleting = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )

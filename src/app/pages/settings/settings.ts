@@ -45,8 +45,6 @@ export class Settings implements OnInit {
 
   invoiceSettings: any = this.getDefaultInvoice();
 
-  orderPolicies: any = this.getDefaultOrderPolicies();
-
   shippingRules: any[] = [];
   packingRules: any[] = [];
   charges: any[] = [];
@@ -150,14 +148,6 @@ export class Settings implements OnInit {
       },
 
       active: true,
-    };
-  }
-
-  private getDefaultOrderPolicies(): any {
-    return {
-      key: 'default',
-      cancellationAllowedUntil: 'shipped',
-      returnWindowDays: 7,
     };
   }
 
@@ -339,17 +329,6 @@ export class Settings implements OnInit {
             ? data.charges
             : [];
 
-          // Aggregate order policies
-          if (
-            data?.orderPolicies &&
-            typeof data.orderPolicies === 'object'
-          ) {
-            this.orderPolicies = {
-              ...this.getDefaultOrderPolicies(),
-              ...data.orderPolicies,
-            };
-          }
-
           this.cdr.markForCheck();
         },
 
@@ -375,91 +354,6 @@ export class Settings implements OnInit {
         error: () => {
           this.metadata = {};
           this.cdr.markForCheck();
-        },
-      });
-
-    // Load policies from their dedicated endpoint
-    this.loadOrderPolicies();
-  }
-
-  // ==========================================
-  // ORDER POLICIES
-  // ==========================================
-
-  loadOrderPolicies(): void {
-    this.startLoading();
-
-    this.api
-      .getAdminOrderPolicies()
-      .pipe(
-        timeout(60000),
-        finalize(() => this.finishLoading())
-      )
-      .subscribe({
-        next: (response: any) => {
-          const data = this.unwrap(response);
-
-          this.orderPolicies = {
-            ...this.getDefaultOrderPolicies(),
-            ...(data || {}),
-          };
-
-          this.cdr.markForCheck();
-        },
-
-        error: (error: any) => {
-          this.handleLoadError(error);
-        },
-      });
-  }
-
-  saveOrderPolicies(): void {
-    this.clearMessages();
-
-    const payload = {
-      cancellationAllowedUntil:
-        this.orderPolicies.cancellationAllowedUntil,
-
-      returnWindowDays: Number(this.orderPolicies.returnWindowDays),
-    };
-
-    if (
-      !payload.cancellationAllowedUntil ||
-      !Number.isFinite(payload.returnWindowDays) ||
-      payload.returnWindowDays < 0
-    ) {
-      this.errorMessage = 'Please enter valid order policy details.';
-      return;
-    }
-
-    this.saving = true;
-
-    this.api
-      .updateAdminOrderPolicies(payload)
-      .pipe(
-        timeout(60000),
-        finalize(() => {
-          this.saving = false;
-          this.cdr.markForCheck();
-        })
-      )
-      .subscribe({
-        next: (response: any) => {
-          const data = this.unwrap(response);
-
-          if (data && typeof data === 'object') {
-            this.orderPolicies = {
-              ...this.orderPolicies,
-              ...data,
-            };
-          }
-
-          this.successMessage = 'Order policies saved successfully.';
-          this.cdr.markForCheck();
-        },
-
-        error: (error: any) => {
-          this.handleSaveError(error);
         },
       });
   }
@@ -571,6 +465,7 @@ export class Settings implements OnInit {
         timeout(60000),
         finalize(() => {
           this.saving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -862,6 +757,7 @@ export class Settings implements OnInit {
         timeout(60000),
         finalize(() => {
           this.saving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -951,6 +847,7 @@ export class Settings implements OnInit {
         timeout(60000),
         finalize(() => {
           this.saving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -985,13 +882,6 @@ export class Settings implements OnInit {
       .replace(/([A-Z])/g, ' $1')
       .replace(/[_-]/g, ' ')
       .replace(/^./, (letter) => letter.toUpperCase());
-  }
-
-  isObject(value: any): boolean {
-    return (
-      value !== null &&
-      typeof value === 'object'
-    );
   }
 
   objectEntries(

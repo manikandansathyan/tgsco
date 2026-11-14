@@ -1,3 +1,4 @@
+
 import {
   ChangeDetectorRef,
   Component,
@@ -15,7 +16,7 @@ interface WhyChooseUsCard {
 
 @Component({
   selector: 'app-why-choose-us',
-  standalone: true, 
+  standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './why-choose-us.html',
   styleUrl: './why-choose-us.css',
@@ -97,8 +98,10 @@ export class WhyChooseUs implements OnInit {
           console.error('Failed to load Why Choose Us:', error);
 
           this.errorMessage =
-            error?.error?.message ??
-            'Unable to load the Why Choose Us section. Please try again.';
+            error?.name === 'TimeoutError'
+              ? 'The server is taking too long to respond. Please try again.'
+              : error?.error?.message ??
+                'Unable to load the Why Choose Us section. Please try again.';
 
           this.cdr.markForCheck();
         },
@@ -149,6 +152,7 @@ export class WhyChooseUs implements OnInit {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -165,8 +169,10 @@ export class WhyChooseUs implements OnInit {
           console.error('Failed to save Why Choose Us:', error);
 
           this.errorMessage =
-            error?.error?.message ??
-            'Unable to save the Why Choose Us section. Please try again.';
+            error?.name === 'TimeoutError'
+              ? 'The server is taking too long to respond. Please try again.'
+              : error?.error?.message ??
+                'Unable to save the Why Choose Us section. Please try again.';
 
           this.cdr.markForCheck();
         },
@@ -192,6 +198,7 @@ export class WhyChooseUs implements OnInit {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -214,8 +221,10 @@ export class WhyChooseUs implements OnInit {
           console.error('Failed to delete Why Choose Us:', error);
 
           this.errorMessage =
-            error?.error?.message ??
-            'Unable to delete the section. Please try again.';
+            error?.name === 'TimeoutError'
+              ? 'The server is taking too long to respond. Please try again.'
+              : error?.error?.message ??
+                'Unable to delete the section. Please try again.';
 
           this.cdr.markForCheck();
         },

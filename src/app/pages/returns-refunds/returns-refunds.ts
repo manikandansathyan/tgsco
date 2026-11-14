@@ -418,6 +418,7 @@ private updateStatus(
     timeout(60000),
     finalize(() => {
       this.updatingId = null;
+      this.api.scrollToTop();
       this.cdr.markForCheck();
     })
   ).subscribe({

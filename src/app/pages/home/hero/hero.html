@@ -60,7 +60,7 @@
               <div class="thumbnail-wrapper">
                 @if (slide.imageUrl) {
                 <img class="table-thumbnail" [src]="slide.imageUrl"
-                  [alt]="slide.altText || slide.title || 'Hero banner'" loading="lazy" />
+                  [alt]="slide.title || slide.title || 'Hero banner'" loading="lazy" />
                 } @else {
                 <div class="thumbnail-placeholder">
                   <span>No image</span>
@@ -150,7 +150,7 @@
     <div class="preview-body">
       <div class="hero-preview">
         @if (slide.imageUrl) {
-        <img class="preview-background" [src]="slide.imageUrl" [alt]="slide.altText || slide.title" />
+        <img class="preview-background" [src]="slide.imageUrl" [alt]="slide.title || 'TGSCO hero banner'" />
         } @else {
         <div class="preview-placeholder">
           <span>No banner image uploaded</span>
@@ -208,10 +208,10 @@
           </strong>
         </div>
 
-        <div class="detail-item">
+        <!-- <div class="detail-item">
           <span>Image alt text</span>
-          <strong>{{ slide.altText || '—' }}</strong>
-        </div>
+          <strong>{{ slide.title || '—' }}</strong>
+        </div> -->
       </div>
     </div>
 
@@ -273,7 +273,7 @@
 
       <div class="field">
         <label for="hero-alt">Image alt text</label>
-        <input id="hero-alt" type="text" name="heroAlt" [(ngModel)]="slide.altText"
+        <input id="hero-alt" type="text" name="heroAlt" [(ngModel)]="slide.title"
           placeholder="Describe the image for accessibility" />
       </div>
 
@@ -282,7 +282,7 @@
 
         <label class="upload-area" for="hero-image">
           @if (slide.imageUrl) {
-          <img class="upload-preview" [src]="slide.imageUrl" [alt]="slide.altText || 'Selected banner image'" />
+          <img class="upload-preview" [src]="slide.imageUrl" [alt]="slide.title || 'Selected banner image'" />
           <span>Choose a different image</span>
           } @else {
           <span class="upload-symbol">↑</span>

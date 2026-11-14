@@ -101,110 +101,110 @@ export class FeaturedCollections implements OnInit {
     };
   }
 
- loadFeaturedCollections(): void {
-  this.isLoading = true;
-  this.errorMessage = '';
+  loadFeaturedCollections(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
 
-  this.api
-    .getFeaturedCollectionsAPI()
-    .pipe(
-      timeout(60000),
-      finalize(() => {
-        this.isLoading = false;
-        this.cdr.markForCheck();
-      })
-    )
-    .subscribe({
-      next: (response: any) => {
-        console.log('Featured Collections API:', response);
+    this.api
+      .getFeaturedCollectionsAPI()
+      .pipe(
+        timeout(60000),
+        finalize(() => {
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          console.log('Featured Collections API:', response);
 
-        const data = response?.data ?? response;
-        const savedContent = data?.content ?? data;
+          const data = response?.data ?? response;
+          const savedContent = data?.content ?? data;
 
-        if (
-          savedContent &&
-          typeof savedContent === 'object' &&
-          Array.isArray(savedContent.items)
-        ) {
-          const defaults = this.getDefaultContent();
+          if (
+            savedContent &&
+            typeof savedContent === 'object' &&
+            Array.isArray(savedContent.items)
+          ) {
+            const defaults = this.getDefaultContent();
 
-          // API returns images as an array
-          const returnedImages: any[] = Array.isArray(data?.images)
-            ? data.images
-            : [];
+            // API returns images as an array
+            const returnedImages: any[] = Array.isArray(data?.images)
+              ? data.images
+              : [];
 
-          this.content = {
-            title: savedContent.title ?? defaults.title,
-            description:
-              savedContent.description ?? defaults.description,
+            this.content = {
+              title: savedContent.title ?? defaults.title,
+              description:
+                savedContent.description ?? defaults.description,
 
-            items: defaults.items.map((defaultItem, index) => {
-              const savedItem = savedContent.items[index] ?? {};
+              items: defaults.items.map((defaultItem, index) => {
+                const savedItem = savedContent.items[index] ?? {};
 
-              // Match main image using its field name
-              const mainImage = returnedImages.find(
-                (image: any) =>
-                  image.field === `items[${index}].mainImage`
-              );
+                // Match main image using its field name
+                const mainImage = returnedImages.find(
+                  (image: any) =>
+                    image.field === `items[${index}].mainImage`
+                );
 
-              // Match border image using its field name
-              const borderImage = returnedImages.find(
-                (image: any) =>
-                  image.field === `items[${index}].borderImage`
-              );
+                // Match border image using its field name
+                const borderImage = returnedImages.find(
+                  (image: any) =>
+                    image.field === `items[${index}].borderImage`
+                );
 
-              return {
-                ...defaultItem,
+                return {
+                  ...defaultItem,
 
-                name: savedItem.name ?? defaultItem.name,
-                description:
-                  savedItem.description ?? defaultItem.description,
-                buttonText:
-                  savedItem.buttonText ?? defaultItem.buttonText,
+                  name: savedItem.name ?? defaultItem.name,
+                  description:
+                    savedItem.description ?? defaultItem.description,
+                  buttonText:
+                    savedItem.buttonText ?? defaultItem.buttonText,
 
-                mainImageUrl:
-                  mainImage?.url ??
-                  this.getImageUrl(savedItem.mainImageUrl ?? savedItem.mainImage),
+                  mainImageUrl:
+                    mainImage?.url ??
+                    this.getImageUrl(savedItem.mainImageUrl ?? savedItem.mainImage),
 
-                borderImageUrl:
-                  borderImage?.url ??
-                  this.getImageUrl(savedItem.borderImageUrl ?? savedItem.borderImage),
+                  borderImageUrl:
+                    borderImage?.url ??
+                    this.getImageUrl(savedItem.borderImageUrl ?? savedItem.borderImage),
 
-                mainImageFile: null,
-                borderImageFile: null,
-              };
-            }),
-          };
+                  mainImageFile: null,
+                  borderImageFile: null,
+                };
+              }),
+            };
 
-          this.isExistingContent = !!data?.id;
-        } else {
-          this.content = this.getDefaultContent();
-          this.isExistingContent = false;
-        }
+            this.isExistingContent = !!data?.id;
+          } else {
+            this.content = this.getDefaultContent();
+            this.isExistingContent = false;
+          }
 
-        console.log(
-          'Mapped Featured Collections:',
-          this.content.items.map((item) => ({
-            name: item.name,
-            mainImageUrl: item.mainImageUrl,
-            borderImageUrl: item.borderImageUrl,
-          }))
-        );
+          console.log(
+            'Mapped Featured Collections:',
+            this.content.items.map((item) => ({
+              name: item.name,
+              mainImageUrl: item.mainImageUrl,
+              borderImageUrl: item.borderImageUrl,
+            }))
+          );
 
-        this.cdr.markForCheck();
-      },
+          this.cdr.markForCheck();
+        },
 
-      error: (error) => {
-        console.error('Failed to load Featured Collections:', error);
+        error: (error) => {
+          console.error('Failed to load Featured Collections:', error);
 
-        this.errorMessage =
-          error?.error?.message ??
-          'Could not load saved Featured Collections content.';
+          this.errorMessage =
+            error?.error?.message ??
+            'Could not load saved Featured Collections content.';
 
-        this.cdr.markForCheck();
-      },
-    });
-}
+          this.cdr.markForCheck();
+        },
+      });
+  }
 
   private getImageUrl(image: any): string {
     if (typeof image === 'string') {
@@ -289,7 +289,11 @@ export class FeaturedCollections implements OnInit {
       })),
     };
 
-    const images = this.getImages();
+    const images = this.content.items.map((item, index) => ({
+      index,
+      mainImage: item.mainImageFile || null,
+      borderImage: item.borderImageFile || null,
+    }));
     this.isSaving = true;
 
     const request$ = this.isExistingContent
@@ -301,6 +305,7 @@ export class FeaturedCollections implements OnInit {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -349,6 +354,7 @@ export class FeaturedCollections implements OnInit {
         timeout(60000),
         finalize(() => {
           this.isDeleting = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )

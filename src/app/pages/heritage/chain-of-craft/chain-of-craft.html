@@ -165,7 +165,7 @@
               </div>
             </div>
 
-            <!-- Image Alt -->
+            <!--
             <div class="form-group">
               <label [for]="'roleImageAlt' + i">
                 Image Alt Text <span>*</span>
@@ -179,6 +179,7 @@
                 required
               />
             </div>
+            -->
 
             <!-- Role Image -->
             <div class="form-group full-width">
@@ -243,7 +244,7 @@
                   <img
                     class="role-image-preview"
                     [src]="role.imagePreview || role.imageUrl"
-                    [alt]="role.imageAlt || role.title"
+                    [alt]="role.title"
                   />
 
                   @if (selectedImages[i]) {

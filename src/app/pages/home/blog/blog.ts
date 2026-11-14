@@ -3,7 +3,10 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectorRef,
   Component,
+  ElementRef,
   OnInit,
+  QueryList,
+  ViewChildren,
   inject,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -18,12 +21,14 @@ interface BlogArticle {
   url: string;
   imageUrl: string;
   imageFile: File | null;
+  isNew?: boolean;
 }
 
 interface BlogContent {
   title: string;
   articles: BlogArticle[];
 }
+
 
 @Component({
   selector: 'app-blog',
@@ -32,7 +37,11 @@ interface BlogContent {
   templateUrl: './blog.html',
   styleUrl: './blog.css',
 })
+
+
 export class Blog implements OnInit {
+  @ViewChildren('articleCard') articleCards!: QueryList<ElementRef<HTMLElement>>;
+
   private readonly api = inject(Api);
   private readonly cdr = inject(ChangeDetectorRef);
 
@@ -175,6 +184,9 @@ export class Blog implements OnInit {
   }
 
   addArticle(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+
     this.content.articles.push({
       date: '',
       title: '',
@@ -183,6 +195,16 @@ export class Blog implements OnInit {
       url: '',
       imageUrl: '',
       imageFile: null,
+      isNew: true,
+    });
+
+    this.cdr.detectChanges();
+
+    const newArticle = this.articleCards.last;
+
+    newArticle?.nativeElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
     });
   }
 
@@ -237,20 +259,10 @@ export class Blog implements OnInit {
       return;
     }
 
-    const invalidArticle = this.content.articles.some(
-      (article) =>
-        !article.date.trim() ||
-        !article.title.trim() ||
-        !article.description.trim() ||
-        !article.buttonText.trim() ||
-        !article.url.trim()
-    );
-
-    if (invalidArticle) {
-      this.errorMessage =
-        'Please complete all fields for every article.';
-      return;
-    }
+    const images = this.content.articles.map((article, index) => ({
+      index,
+      image: article.imageFile,
+    }));
 
     const payload = {
       title: this.content.title.trim(),
@@ -264,12 +276,6 @@ export class Blog implements OnInit {
       })),
     };
 
-    const images = this.content.articles.map((article, index) => ({
-      index,
-      image: article.imageFile,
-    }));
-
-
     this.isSaving = true;
 
     const request$ = this.isExistingContent
@@ -281,6 +287,7 @@ export class Blog implements OnInit {
         timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -292,6 +299,7 @@ export class Blog implements OnInit {
 
           this.content.articles.forEach((article) => {
             article.imageFile = null;
+            article.isNew = false;
           });
 
           this.cdr.markForCheck();
@@ -325,6 +333,7 @@ export class Blog implements OnInit {
         timeout(60000),
         finalize(() => {
           this.isDeleting = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )

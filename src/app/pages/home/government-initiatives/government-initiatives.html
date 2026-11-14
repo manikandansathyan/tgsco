@@ -120,7 +120,7 @@
             />
           </div>
 
-          <div class="form-group">
+          <!-- <div class="form-group">
             <label [for]="'schemeSlug' + i">Slug</label>
 
             <input
@@ -129,7 +129,7 @@
               [(ngModel)]="scheme.slug"
               placeholder="scheme-slug"
             />
-          </div>
+          </div> -->
 
           <div class="form-group">
             <label [for]="'schemeCategory' + i">Category</label>
@@ -188,7 +188,7 @@
               </small>
             </div>
 
-            <div class="form-group">
+            <!-- <div class="form-group">
               <label [for]="'schemeImageAlt' + i">Image Alt Text</label>
 
               <input
@@ -197,7 +197,7 @@
                 [(ngModel)]="scheme.imageAlt"
                 placeholder="Describe the image"
               />
-            </div>
+            </div> -->
 
           </div>
         </div>
@@ -509,17 +509,6 @@
 
         </div>
 
-      </div>
-
-      <div class="empty-state" *ngIf="content.schemes.length === 0">
-        <p>No schemes added yet.</p>
-        <button
-          type="button"
-          class="secondary-button"
-          (click)="addScheme()"
-        >
-          + Add First Scheme
-        </button>
       </div>
 
     </section>

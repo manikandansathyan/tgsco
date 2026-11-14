@@ -1,6 +1,11 @@
-
-import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import {
+  CommonModule,
+} from '@angular/common';
+import {
+  ChangeDetectorRef,
+  Component,
+  OnInit,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize, timeout } from 'rxjs';
 import { Api } from '../../../core/services/api';
@@ -24,7 +29,6 @@ interface TechniqueItem {
 })
 export class StateTechniques implements OnInit {
   title = '';
-  backgroundImageAlt = '';
   backgroundImageUrl = '';
   backgroundImageFile: File | null = null;
 
@@ -37,6 +41,9 @@ export class StateTechniques implements OnInit {
   errorMessage = '';
   successMessage = '';
 
+  private readonly backgroundAltText =
+    'Traditional Telangana handloom techniques';
+
   constructor(
     private api: Api,
     private cdr: ChangeDetectorRef
@@ -47,16 +54,16 @@ export class StateTechniques implements OnInit {
   }
 
   createEmptyItem(): TechniqueItem {
-  return {
-    name: '',
-    description: '',
-    mainImageUrl: '',
-    borderImageUrl: '',
-    mainImageFile: null,
-    borderImageFile: null,
-    isExpanded: true,
-  };
-}
+    return {
+      name: '',
+      description: '',
+      mainImageUrl: '',
+      borderImageUrl: '',
+      mainImageFile: null,
+      borderImageFile: null,
+      isExpanded: true,
+    };
+  }
 
   loadTechniques(): void {
     this.isLoading = true;
@@ -73,13 +80,10 @@ export class StateTechniques implements OnInit {
       )
       .subscribe({
         next: (response: any) => {
-          console.log('Techniques API response:', response);
-
           const data = response?.data ?? response;
           const content = data?.content ?? data;
 
           this.title = content?.title ?? '';
-          this.backgroundImageAlt = content?.backgroundImageAlt ?? '';
 
           const images: any[] = Array.isArray(data?.images)
             ? data.images
@@ -115,33 +119,27 @@ export class StateTechniques implements OnInit {
                 (image: any) => image.field === borderImageField
               );
 
-             return {
-  name: item.name ?? '',
-  description: item.description ?? '',
-  mainImageUrl:
-    mainImage?.url ??
-    item.mainImage?.url ??
-    item.mainImageUrl ??
-    '',
-  borderImageUrl:
-    borderImage?.url ??
-    item.borderImage?.url ??
-    item.borderImageUrl ??
-    '',
-  mainImageFile: null,
-  borderImageFile: null,
-  isExpanded: false,
-};
+              return {
+                name: item.name ?? '',
+                description: item.description ?? '',
+                mainImageUrl:
+                  mainImage?.url ??
+                  item.mainImage?.url ??
+                  item.mainImageUrl ??
+                  '',
+                borderImageUrl:
+                  borderImage?.url ??
+                  item.borderImage?.url ??
+                  item.borderImageUrl ??
+                  '',
+                mainImageFile: null,
+                borderImageFile: null,
+                isExpanded: false,
+              };
             }
           );
 
-          this.isExistingContent = !!data?.id;
-
-          console.log('Mapped Techniques:', {
-            title: this.title,
-            backgroundImageUrl: this.backgroundImageUrl,
-            items: this.items,
-          });
+          this.isExistingContent = !!data?.id || !!content?.id;
 
           this.cdr.markForCheck();
         },
@@ -250,6 +248,9 @@ export class StateTechniques implements OnInit {
   }
 
   saveTechniques(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+
     if (!this.title.trim()) {
       this.errorMessage = 'Please enter the section title.';
       return;
@@ -271,17 +272,13 @@ export class StateTechniques implements OnInit {
       return;
     }
 
-    this.isSaving = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-
     const content = {
-      title: this.title,
+      title: this.title.trim(),
       items: this.items.map((item) => ({
-        name: item.name,
-        description: item.description,
+        name: item.name.trim(),
+        description: item.description.trim(),
       })),
-      backgroundImageAlt: this.backgroundImageAlt,
+      backgroundImageAlt: this.backgroundAltText,
     };
 
     const imageUploads = this.items.map((item, index) => ({
@@ -289,6 +286,8 @@ export class StateTechniques implements OnInit {
       mainImage: item.mainImageFile,
       borderImage: item.borderImageFile,
     }));
+
+    this.isSaving = true;
 
     const request$ = this.isExistingContent
       ? this.api.updateTechniquesAPI(
@@ -304,8 +303,10 @@ export class StateTechniques implements OnInit {
 
     request$
       .pipe(
+        timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
@@ -319,8 +320,10 @@ export class StateTechniques implements OnInit {
           console.error('Save techniques error:', error);
 
           this.errorMessage =
-            error?.error?.message ??
-            'Failed to save techniques content.';
+            error?.name === 'TimeoutError'
+              ? 'The server is taking too long to respond. Please try again.'
+              : error?.error?.message ??
+                'Failed to save techniques content.';
 
           this.cdr.markForCheck();
         },
@@ -343,19 +346,21 @@ export class StateTechniques implements OnInit {
     this.api
       .deleteTechniquesAPI()
       .pipe(
+        timeout(60000),
         finalize(() => {
           this.isSaving = false;
+          this.api.scrollToTop();
           this.cdr.markForCheck();
         })
       )
       .subscribe({
         next: () => {
           this.title = '';
-          this.backgroundImageAlt = '';
           this.backgroundImageUrl = '';
           this.backgroundImageFile = null;
           this.items = [];
           this.isExistingContent = false;
+
           this.successMessage =
             'State Techniques section deleted successfully.';
 
@@ -365,8 +370,10 @@ export class StateTechniques implements OnInit {
           console.error('Delete techniques error:', error);
 
           this.errorMessage =
-            error?.error?.message ??
-            'Failed to delete techniques section.';
+            error?.name === 'TimeoutError'
+              ? 'The server is taking too long to respond. Please try again.'
+              : error?.error?.message ??
+                'Failed to delete techniques section.';
 
           this.cdr.markForCheck();
         },
@@ -374,8 +381,8 @@ export class StateTechniques implements OnInit {
   }
 
   toggleTechnique(index: number): void {
-  this.items[index].isExpanded = !this.items[index].isExpanded;
-}
+    this.items[index].isExpanded = !this.items[index].isExpanded;
+  }
 
   trackByIndex(index: number): number {
     return index;

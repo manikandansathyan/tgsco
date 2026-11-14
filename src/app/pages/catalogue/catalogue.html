@@ -1,230 +1,202 @@
-
 <div class="catalogue-page">
   <header class="page-header">
     <div>
       <span class="eyebrow">WEBSITE MANAGEMENT</span>
-      <h1>Catalogue Management</h1>
-      <p>Manage catalogue groups, categories, and products.</p>
+      <h1>Catalogue Groups</h1>
+      <p>Manage your catalogue groups and their details.</p>
     </div>
 
     <button
       class="refresh-button"
       type="button"
-      (click)="loadCatalogue()"
+      (click)="loadGroups()"
       [disabled]="loading"
     >
-      ↻ Refresh
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M20 7v5h-5"></path>
+        <path d="M4 17v-5h5"></path>
+        <path d="M5.64 9A7 7 0 0 1 17.5 6.5L20 12"></path>
+        <path d="M18.36 15A7 7 0 0 1 6.5 17.5L4 12"></path>
+      </svg>
+      Refresh
     </button>
   </header>
 
-  <div *ngIf="errorMessage" class="alert error-alert" role="alert">
-    <span>{{ errorMessage }}</span>
-    <button type="button" (click)="loadCatalogue()" [disabled]="loading">
-      Retry
+  <div class="alert alert-success" *ngIf="successMessage">
+    <span>{{ successMessage }}</span>
+    <button type="button" (click)="successMessage = ''" aria-label="Close">
+      &times;
     </button>
   </div>
 
-  <div *ngIf="successMessage" class="alert success-alert" role="status">
-    {{ successMessage }}
+  <div class="alert alert-error" *ngIf="errorMessage">
+    <span>{{ errorMessage }}</span>
+    <button type="button" (click)="errorMessage = ''" aria-label="Close">
+      &times;
+    </button>
   </div>
 
-  <div class="summary-grid">
-    <div class="summary-card">
-      <div class="summary-icon groups-icon">▤</div>
+  <section class="listing-card">
+    <div class="listing-toolbar">
       <div>
-        <p>Total Groups</p>
-        <h2>{{ groups.length }}</h2>
-      </div>
-    </div>
-
-    <div class="summary-card">
-      <div class="summary-icon categories-icon">▦</div>
-      <div>
-        <p>Total Categories</p>
-        <h2>{{ categories.length }}</h2>
-      </div>
-    </div>
-
-    <div class="summary-card">
-      <div class="summary-icon products-icon">□</div>
-      <div>
-        <p>Total Products</p>
-        <h2>{{ products.length }}</h2>
-      </div>
-    </div>
-  </div>
-
-  <div class="category-shortcuts">
-    <div>
-      <h2>Product Categories</h2>
-      <p>Quickly view categories by type.</p>
-    </div>
-
-    <div class="shortcut-buttons">
-      <button type="button" (click)="viewCategories('weaves')">Weaves</button>
-      <button type="button" (click)="viewCategories('occasions')">Occasions</button>
-      <button type="button" (click)="viewCategories('fabric')">Fabric</button>
-    </div>
-  </div>
-
-  <div *ngIf="loading" class="loading-state">
-    <div class="loader"></div>
-    <p>Loading catalogue...</p>
-  </div>
-
-  <ng-container *ngIf="!loading">
-    <section class="listing-section">
-      <div class="section-header">
-        <div>
-          <h2>Catalogue Groups</h2>
-          <p>Manage the main groups in your catalogue.</p>
-        </div>
-
-        <div class="section-actions">
-          <button class="secondary-button" type="button" (click)="viewDetails('groups')">
-            View Details
-          </button>
-          <button class="primary-button" type="button" (click)="createNew('groups')">
-            + Create New
-          </button>
-        </div>
+        <h2>All Groups</h2>
+        <p>View and manage your catalogue groups.</p>
       </div>
 
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Group Name</th>
-              <th>Slug</th>
-              <th>Description</th>
-              <th>Sort Order</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let group of groups; trackBy: trackById">
-              <td class="item-name">{{ getName(group) }}</td>
-              <td>{{ group.slug || '—' }}</td>
-              <td class="description-cell">{{ getDescription(group) }}</td>
-              <td>{{ group.sortOrder ?? '—' }}</td>
-              <td>
-                <span class="status" [class.inactive]="group.active === false">
-                  {{ getStatus(group) }}
+      <span class="total-count">
+        {{ groups.length }} {{ groups.length === 1 ? 'Group' : 'Groups' }}
+      </span>
+    </div>
+
+    <div class="loading-state" *ngIf="loading">
+      <span class="loader"></span>
+      <p>Loading catalogue groups...</p>
+    </div>
+
+    <div
+      class="table-wrapper"
+      *ngIf="!loading && groups.length > 0"
+    >
+      <table>
+        <thead>
+          <tr>
+            <th class="number-column">#</th>
+            <th>Group Name</th>
+            <th>Slug</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th class="action-column">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr
+            *ngFor="let group of groups; let i = index; trackBy: trackById"
+          >
+            <td class="number-cell">
+              {{ i + 1 }}
+            </td>
+
+            <td>
+              <div class="group-name">
+                <span class="group-avatar">
+                  {{ getGroupName(group).charAt(0).toUpperCase() }}
                 </span>
-              </td>
-            </tr>
-            <tr *ngIf="groups.length === 0">
-              <td colspan="5" class="empty-state">No groups found.</td>
-            </tr>
-          </tbody>
-        </table>
+
+                <span>{{ getGroupName(group) }}</span>
+              </div>
+            </td>
+
+            <td>
+              <span class="slug-text">
+                {{ group.slug || '—' }}
+              </span>
+            </td>
+
+            <td>
+              <span class="description-text">
+                {{ getGroupDescription(group) }}
+              </span>
+            </td>
+
+            <td>
+              <span
+                class="status-pill"
+                [class.inactive]="group.active === false"
+              >
+                <span class="status-dot"></span>
+                {{ getGroupStatus(group) }}
+              </span>
+            </td>
+
+            <td>
+              <div class="row-actions">
+                <button
+                  class="icon-button view-button"
+                  type="button"
+                  title="View details"
+                  aria-label="View group details"
+                  (click)="viewGroup(group)"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"
+                    ></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+
+                <button
+                  class="icon-button delete-button"
+                  type="button"
+                  title="Delete group"
+                  aria-label="Delete group"
+                  [disabled]="deletingId === getGroupId(group)"
+                  (click)="deleteGroup(group)"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M3 6h18"></path>
+                    <path d="M8 6V4h8v2"></path>
+                    <path d="m19 6-1 14H6L5 6"></path>
+                    <path d="M10 11v5"></path>
+                    <path d="M14 11v5"></path>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading && groups.length === 0">
+      <div class="empty-icon">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="3" y="3" width="8" height="8" rx="1.5"></rect>
+          <rect x="13" y="3" width="8" height="8" rx="1.5"></rect>
+          <rect x="3" y="13" width="8" height="8" rx="1.5"></rect>
+          <rect x="13" y="13" width="8" height="8" rx="1.5"></rect>
+        </svg>
       </div>
-    </section>
 
-    <section class="listing-section">
-      <div class="section-header">
-        <div>
-          <h2>Catalogue Categories</h2>
-          <p>Manage product categories and their types.</p>
-        </div>
+      <h3>No catalogue groups found</h3>
+      <p>There are currently no groups available.</p>
 
-        <div class="section-actions">
-          <button class="secondary-button" type="button" (click)="viewDetails('categories')">
-            View Details
-          </button>
-          <button class="primary-button" type="button" (click)="createNew('categories')">
-            + Create New
-          </button>
-        </div>
-      </div>
-
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Category Name</th>
-              <th>Slug</th>
-              <th>Type</th>
-              <th>Group</th>
-              <th>Description</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let category of categories; trackBy: trackById">
-              <td class="item-name">{{ getName(category) }}</td>
-              <td>{{ category.slug || '—' }}</td>
-              <td>
-                <span class="type-label">{{ getCategoryType(category) }}</span>
-              </td>
-              <td>{{ getGroupName(category) }}</td>
-              <td class="description-cell">{{ getDescription(category) }}</td>
-              <td>
-                <span class="status" [class.inactive]="category.active === false">
-                  {{ getStatus(category) }}
-                </span>
-              </td>
-            </tr>
-            <tr *ngIf="categories.length === 0">
-              <td colspan="6" class="empty-state">No categories found.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="listing-section">
-      <div class="section-header">
-        <div>
-          <h2>Catalogue Products</h2>
-          <p>Manage products, pricing, and stock availability.</p>
-        </div>
-
-        <div class="section-actions">
-          <button class="secondary-button" type="button" (click)="viewDetails('products')">
-            View Details
-          </button>
-          <button class="primary-button" type="button" (click)="createNew('products')">
-            + Create New
-          </button>
-        </div>
-      </div>
-
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Product Name</th>
-              <th>SKU</th>
-              <th>Category</th>
-              <th>Type</th>
-              <th>Price</th>
-              <th>Stock</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let product of products; trackBy: trackById">
-              <td class="item-name">{{ getName(product) }}</td>
-              <td>{{ product.sku || '—' }}</td>
-              <td class="description-cell">{{ getProductCategoryNames(product) }}</td>
-              <td>
-                <span class="type-label">{{ getProductTypes(product) }}</span>
-              </td>
-              <td>{{ getProductPrice(product) }}</td>
-              <td>{{ getStockQuantity(product) }}</td>
-              <td>
-                <span class="status" [class.inactive]="product.active === false">
-                  {{ getStatus(product) }}
-                </span>
-              </td>
-            </tr>
-            <tr *ngIf="products.length === 0">
-              <td colspan="7" class="empty-state">No products found.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </ng-container>
+      <button
+        class="refresh-button empty-refresh"
+        type="button"
+        (click)="loadGroups()"
+      >
+        Refresh Groups
+      </button>
+    </div>
+  </section>
 </div>

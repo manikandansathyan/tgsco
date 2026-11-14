@@ -112,10 +112,13 @@ export class Threads implements OnInit, OnDestroy {
     return image?.url ?? '';
   }
 
-  loadThreads(): void {
-    this.isLoading = true;
+  loadThreads(preserveMessage = false): void {
+  this.isLoading = true;
+
+  if (!preserveMessage) {
     this.errorMessage = '';
     this.successMessage = '';
+  }
 
     this.subscription.add(
       this.api
@@ -365,18 +368,23 @@ export class Threads implements OnInit, OnDestroy {
           timeout(60000),
           finalize(() => {
             this.isSaving = false;
+            this.api.scrollToTop();
             this.cdr.markForCheck();
           })
         )
         .subscribe({
           next: () => {
-            this.successMessage = this.isEditMode
-              ? 'Threads of Triumph updated successfully.'
-              : 'Threads of Triumph created successfully.';
+  const wasEditMode = this.isEditMode;
 
-            this.isEditMode = true;
-            this.loadThreads();
-          },
+  this.isEditMode = true;
+
+  this.successMessage = wasEditMode
+    ? 'Threads of Triumph updated successfully.'
+    : 'Featured Weaver added successfully.';
+
+  this.loadThreads(true);
+  this.cdr.markForCheck();
+},
           error: (error: any) => {
             this.errorMessage =
               error?.error?.message ||
@@ -406,6 +414,7 @@ export class Threads implements OnInit, OnDestroy {
           timeout(60000),
           finalize(() => {
             this.isDeleting = false;
+            this.api.scrollToTop();
             this.cdr.markForCheck();
           })
         )

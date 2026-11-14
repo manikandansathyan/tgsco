@@ -1,3 +1,4 @@
+
 <div class="why-choose-page">
   <header class="page-header">
     <div>
@@ -75,7 +76,6 @@
           <h2>Value Cards</h2>
           <p>Edit the three reasons customers can trust TGSCO.</p>
         </div>
-        <span class="count-badge">{{ cards.length }} Cards</span>
       </div>
 
       <article
@@ -111,28 +111,9 @@
               rows="4"
               placeholder="Describe this value proposition"
             ></textarea>
-            <small>
-              {{ card.description.length }} characters
-            </small>
           </div>
         </div>
       </article>
     </section>
-
-    <footer class="form-footer">
-      <div>
-        <h3>Ready to publish?</h3>
-        <p>Save your changes to update the homepage content.</p>
-      </div>
-
-      <button
-        type="button"
-        class="save-button"
-        (click)="saveWhyChooseUs()" 
-        [disabled]="isSaving"
-      >
-        {{ isSaving ? 'Saving...' : 'Save Section' }}
-      </button>
-    </footer>
   </ng-container>
 </div>
