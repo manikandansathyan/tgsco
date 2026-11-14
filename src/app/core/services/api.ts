@@ -11,8 +11,8 @@ export interface HeroImageUpload {
 })
 export class Api {
 
-  baseURL: string = 'https://tgscobackend.qmarkdesk.com/api/v1' //mainURL
-  // baseURL: string = 'https://tgsco.onrender.com/api/v1';
+  // baseURL: string = 'https://tgscobackend.qmarkdesk.com/api/v1' //mainURL
+  baseURL: string = 'https://tgsco.onrender.com/api/v1';
 
 
   constructor(private http: HttpClient) { }
